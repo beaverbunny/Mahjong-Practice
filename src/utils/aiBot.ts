@@ -1,6 +1,5 @@
 import { Tile, Meld, Wind, DifficultyLevel } from '../types/mahjong';
 import {
-  evaluateWin,
   canPeng,
   canMingGang,
   getChiCombinations,
@@ -10,11 +9,13 @@ import {
 import { generateDiscardRecommendations } from './strategyEngine';
 
 export interface BotDecision {
-  action: 'hu' | 'gang' | 'peng' | 'chi' | 'pass';
+  action: 'gang' | 'peng' | 'chi' | 'pass';
   tiles?: Tile[]; // for chi or gang
   meld?: Meld;
 }
 
+// Decide whether a bot calls Gang / Peng / Chi on a discard.
+// Winning on a discard (Hu) is checked separately in App's checkCallResponses.
 export function evaluateBotCallResponse(
   botIndex: number,
   botHand: Tile[],
@@ -23,22 +24,8 @@ export function evaluateBotCallResponse(
   discarderIndex: number,
   prevailingWind: Wind,
   botSeatWind: Wind,
-  isUnderTheSea: boolean,
   difficulty: DifficultyLevel = 'intermediate'
 ): BotDecision {
-  // 1. Can Bot Hu (Win on discard)? Always declare Hu!
-  const testHand = [...botHand, discardedTile];
-  const winEval = evaluateWin(testHand, botMelds, discardedTile, {
-    isSelfDraw: false,
-    prevailingWind,
-    seatWind: botSeatWind,
-    isUnderTheSea,
-  });
-
-  if (winEval.isWin && winEval.totalFan >= 1) {
-    return { action: 'hu' };
-  }
-
   // Melds probability scaled by difficulty
   const gangProb = difficulty === 'beginner' ? 0.35 : difficulty === 'intermediate' ? 0.65 : 0.85;
   const pengProb = difficulty === 'beginner' ? 0.35 : difficulty === 'intermediate' ? 0.70 : 0.90;

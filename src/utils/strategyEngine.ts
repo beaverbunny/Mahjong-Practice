@@ -89,103 +89,72 @@ export function calculateShanten(hand: Tile[], melds: Meld[] = []): number {
   return Math.min(kokushiShanten, standardShanten);
 }
 
+// Index tiles 0-33: wan 0-8, tiao 9-17, tong 18-26, honors 27-33
+function tileIndex(type: string): number {
+  return ALL_34_TYPES.indexOf(type as TileType);
+}
+
+// Exact standard-hand shanten: searches every split into sets, taatsu and a pair.
+// Mahjong standard formula: 8 - 2 * sets - taatsu - (hasPair ? 1 : 0), with sets + taatsu <= 4
 function calculateStandardShanten(hand: Tile[], meldCount: number): number {
-  const counts: Record<string, number> = {};
+  const counts = new Array(34).fill(0);
   for (const t of hand) {
-    counts[t.type] = (counts[t.type] || 0) + 1;
+    counts[tileIndex(t.type)]++;
   }
 
   let minShanten = 8;
-  const uniqueTypes = Object.keys(counts);
 
-  // Case 1: Try with each possible pair
-  for (const pairType of uniqueTypes) {
-    if (counts[pairType] >= 2) {
-      counts[pairType] -= 2;
-      const shanten = evaluateSetsAndTaatsu(counts, meldCount, true);
-      minShanten = Math.min(minShanten, shanten);
-      counts[pairType] += 2;
+  const search = (i: number, sets: number, taatsu: number, hasPair: boolean) => {
+    while (i < 34 && counts[i] === 0) i++;
+    if (i >= 34) {
+      const usableTaatsu = Math.min(4 - sets, taatsu);
+      minShanten = Math.min(minShanten, 8 - 2 * sets - usableTaatsu - (hasPair ? 1 : 0));
+      return;
     }
-  }
 
-  // Case 2: Try without pair
-  const shantenNoPair = evaluateSetsAndTaatsu(counts, meldCount, false);
-  minShanten = Math.min(minShanten, shantenNoPair);
+    const isSuit = i < 27;
+    const val = i % 9; // 0-based value within the suit
+
+    // Triplet
+    if (counts[i] >= 3) {
+      counts[i] -= 3;
+      search(i, sets + 1, taatsu, hasPair);
+      counts[i] += 3;
+    }
+    // Sequence
+    if (isSuit && val <= 6 && counts[i + 1] > 0 && counts[i + 2] > 0) {
+      counts[i]--; counts[i + 1]--; counts[i + 2]--;
+      search(i, sets + 1, taatsu, hasPair);
+      counts[i]++; counts[i + 1]++; counts[i + 2]++;
+    }
+    // Pair (as the eyes, or as a triplet taatsu)
+    if (counts[i] >= 2) {
+      counts[i] -= 2;
+      if (!hasPair) search(i, sets, taatsu, true);
+      search(i, sets, taatsu + 1, hasPair);
+      counts[i] += 2;
+    }
+    // Two-sided / edge taatsu
+    if (isSuit && val <= 7 && counts[i + 1] > 0) {
+      counts[i]--; counts[i + 1]--;
+      search(i, sets, taatsu + 1, hasPair);
+      counts[i]++; counts[i + 1]++;
+    }
+    // Closed taatsu
+    if (isSuit && val <= 6 && counts[i + 2] > 0) {
+      counts[i]--; counts[i + 2]--;
+      search(i, sets, taatsu + 1, hasPair);
+      counts[i]++; counts[i + 2]++;
+    }
+    // Leave this tile isolated
+    counts[i]--;
+    search(i, sets, taatsu, hasPair);
+    counts[i]++;
+  };
+
+  search(0, meldCount, 0, false);
 
   return Math.max(0, minShanten);
-}
-
-function evaluateSetsAndTaatsu(
-  counts: Record<string, number>,
-  meldCount: number,
-  hasPair: boolean
-): number {
-  let sets = meldCount;
-  let taatsu = 0;
-
-  const tempCounts = { ...counts };
-
-  // 1. Extract Triplets
-  for (const type of Object.keys(tempCounts)) {
-    while (tempCounts[type] >= 3) {
-      sets++;
-      tempCounts[type] -= 3;
-    }
-  }
-
-  // 2. Extract Sequences
-  const suits: ('wan' | 'tiao' | 'tong')[] = ['wan', 'tiao', 'tong'];
-  for (const suit of suits) {
-    for (let val = 1; val <= 7; val++) {
-      const t1 = `${val}${suit}`;
-      const t2 = `${val + 1}${suit}`;
-      const t3 = `${val + 2}${suit}`;
-
-      while (tempCounts[t1] > 0 && tempCounts[t2] > 0 && tempCounts[t3] > 0) {
-        sets++;
-        tempCounts[t1]--;
-        tempCounts[t2]--;
-        tempCounts[t3]--;
-      }
-    }
-  }
-
-  // 3. Extract Taatsu (Pairs & Incomplete Sequences)
-  for (const type of Object.keys(tempCounts)) {
-    if (tempCounts[type] >= 2) {
-      taatsu++;
-      tempCounts[type] -= 2;
-    }
-  }
-
-  for (const suit of suits) {
-    for (let val = 1; val <= 8; val++) {
-      const t1 = `${val}${suit}`;
-      const t2 = `${val + 1}${suit}`;
-      if (tempCounts[t1] > 0 && tempCounts[t2] > 0) {
-        taatsu++;
-        tempCounts[t1]--;
-        tempCounts[t2]--;
-      }
-    }
-    for (let val = 1; val <= 7; val++) {
-      const t1 = `${val}${suit}`;
-      const t3 = `${val + 2}${suit}`;
-      if (tempCounts[t1] > 0 && tempCounts[t3] > 0) {
-        taatsu++;
-        tempCounts[t1]--;
-        tempCounts[t3]--;
-      }
-    }
-  }
-
-  // Mahjong standard formula:
-  // 8 - 2 * sets - taatsu - (hasPair ? 1 : 0)
-  // Limited by: sets + taatsu <= 4
-  const usableTaatsu = Math.min(4 - sets, taatsu);
-  const shanten = 8 - 2 * sets - usableTaatsu - (hasPair ? 1 : 0);
-
-  return shanten;
 }
 
 // Calculate Tenpai Waits (听牌张数 & 预估番数)
@@ -253,7 +222,8 @@ export function evaluateTileSafety(
   level: 'safe' | 'medium' | 'danger';
   reason: string;
 } {
-  // 1. Genbutsu (现物): Discarded by all tenpai opponents
+  // 1. Genbutsu (现物): Discarded by all tenpai opponents.
+  // These rules have no furiten, so an opponent can still win on a tile they discarded earlier.
   let safeAgainstAllTenpai = true;
   let tenpaiOpponentCount = 0;
 
@@ -270,9 +240,9 @@ export function evaluateTileSafety(
 
   if (tenpaiOpponentCount > 0 && safeAgainstAllTenpai) {
     return {
-      score: 100,
+      score: 85,
       level: 'safe',
-      reason: '现物绝对安全：听牌对手已打过此牌，无法出冲',
+      reason: '现物较安全：听牌对手打过此牌，但本规则无振听，仍有被和可能',
     };
   }
 
@@ -319,9 +289,9 @@ export function evaluateTileSafety(
 
       if (neighborSeenInTenpaiDiscards) {
         return {
-          score: 85,
-          level: 'safe',
-          reason: `筋一九：对手打过${neighbor}${suit === 'wan' ? '万' : suit === 'tiao' ? '条' : '筒'}，避开两面听`,
+          score: 70,
+          level: 'medium',
+          reason: `筋一九：对手打过${neighbor}${suit === 'wan' ? '万' : suit === 'tiao' ? '条' : '筒'}，两面听可能性较低（本规则无振听，并非绝对安全）`,
         };
       }
       return {
@@ -517,7 +487,7 @@ export function analyzeTurnBlunder(
       severity: 'critical',
       type: 'dangerous_discard',
       typeName: '高危出冲点炮 (防守恶手)',
-      reason: `危险防守失误：对手已听牌，实战切出高危生张【${chosenRec.tile.displayName}】（放铳风险极高）。手牌中存在现物安全牌【${bestRec.tile.displayName}】可保安全过巡。`,
+      reason: `危险防守失误：对手已听牌，实战切出高危生张【${chosenRec.tile.displayName}】（放铳风险极高）。手牌中存在较安全的牌【${bestRec.tile.displayName}】可降低放铳风险。`,
       bestChoice: bestRec.tile,
       bestRec,
       chosenRec,

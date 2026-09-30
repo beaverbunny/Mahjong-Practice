@@ -90,6 +90,8 @@ export default function App() {
   const [isUnderTheSea, setIsUnderTheSea] = React.useState(false);
   // Seat whose latest tile is a Kong replacement draw (for A6 Self-Draw on Kong)
   const [kongDrawPlayer, setKongDrawPlayer] = React.useState<number | null>(null);
+  // Seat that just called Chi/Peng and must discard (no self-draw win or Kong this turn)
+  const [calledMeldPlayer, setCalledMeldPlayer] = React.useState<number | null>(null);
 
   // Modals & Panels
   const [isStrategyPanelOpen, setIsStrategyPanelOpen] = React.useState(true);
@@ -281,6 +283,7 @@ export default function App() {
     setUserGangCandidates([]);
     setIsUnderTheSea(false);
     setKongDrawPlayer(null);
+    setCalledMeldPlayer(null);
     setActionBanner(null);
 
     // Initial check for dealer if human
@@ -400,36 +403,43 @@ export default function App() {
     const bot = players[botIdx];
     if (!bot || bot.hand.length === 0) return;
 
-    // 1. Check Bot Self-draw Hu
-    const drawnTile = bot.hand[bot.hand.length - 1];
-    const isSea = wall.length === 0;
+    // After calling Chi/Peng the bot must discard: its last tile wasn't drawn,
+    // so it can't declare a self-draw win or a Kong this turn.
+    const justCalledMeld = calledMeldPlayer === botIdx;
 
-    const winEval = evaluateWin(bot.hand, bot.melds, drawnTile, {
-      isSelfDraw: true,
-      prevailingWind,
-      seatWind: bot.seatWind,
-      isUnderTheSea: isSea,
-      isSelfDrawOnKong: kongDrawPlayer === botIdx,
-    });
+    if (!justCalledMeld) {
+      // 1. Check Bot Self-draw Hu
+      const drawnTile = bot.hand[bot.hand.length - 1];
+      const isSea = wall.length === 0;
 
-    if (winEval.isWin && winEval.totalFan >= 1) {
-      soundManager.playHu();
-      handleRoundFinish(botIdx, null, drawnTile, true, winEval.fanDetails, winEval.totalFan);
-      return;
+      const winEval = evaluateWin(bot.hand, bot.melds, drawnTile, {
+        isSelfDraw: true,
+        prevailingWind,
+        seatWind: bot.seatWind,
+        isUnderTheSea: isSea,
+        isSelfDrawOnKong: kongDrawPlayer === botIdx,
+      });
+
+      if (winEval.isWin && winEval.totalFan >= 1) {
+        soundManager.playHu();
+        handleRoundFinish(botIdx, null, drawnTile, true, winEval.fanDetails, winEval.totalFan);
+        return;
+      }
+
+      // 2. Check Bot Concealed / Added Kong
+      const kongAction = checkBotConcealedKong(bot.hand, bot.melds);
+      if (kongAction && wall.length > 0) {
+        soundManager.playKong();
+        executeBotKong(botIdx, kongAction);
+        return;
+      }
     }
 
-    // 2. Check Bot Concealed / Added Kong
-    const kongAction = checkBotConcealedKong(bot.hand, bot.melds);
-    if (kongAction && wall.length > 0) {
-      soundManager.playKong();
-      executeBotKong(botIdx, kongAction);
-      return;
-    }
-
-    // 3. Bot Discard
-    const allVisible = getAllVisibleTiles();
+    // 3. Bot Discard, using only information this bot can see
+    const allVisible = getVisibleTilesFor(botIdx);
     const opponentDiscards = players.map((p) => p.discards);
-    const opponentTenpais = players.map((p) => p.isTenpai);
+    // Hidden hands are unknown to the bot, so it treats an opponent with 2+ exposed melds as a threat
+    const opponentTenpais = players.map((p, idx) => idx !== botIdx && p.melds.length >= 2);
 
     const tileToDiscard = chooseBotDiscard(
       bot.hand,
@@ -488,6 +498,7 @@ export default function App() {
     const newHand = player.hand.filter((t) => t.id !== tile.id);
     const newDiscards = [...player.discards, tile];
     setKongDrawPlayer(null);
+    setCalledMeldPlayer(null);
 
     // Check shanten & tenpai after discard
     const newShanten = calculateShanten(newHand, player.melds);
@@ -636,7 +647,6 @@ export default function App() {
         discarderIdx,
         prevailingWind,
         bot.seatWind,
-        isSea,
         difficulty
       );
 
@@ -717,7 +727,9 @@ export default function App() {
     setActivePlayerIndex(botIdx);
     setLastDiscardedTile(null);
 
-    if (meldType === 'ming_gang') {
+    if (meldType !== 'ming_gang') {
+      setCalledMeldPlayer(botIdx);
+    } else {
       // Draw kong replacement
       if (wall.length > 0) {
         const drawn = wall[0];
@@ -786,7 +798,6 @@ export default function App() {
 
       // Check if any bot wants to call Peng / Gang / Chi on this tile
       let botCalled = false;
-      const isSea = wall.length === 0;
 
       for (let i = 1; i < 4; i++) {
         if (i === discarderIdx) continue;
@@ -799,7 +810,6 @@ export default function App() {
           discarderIdx,
           prevailingWind,
           bot.seatWind,
-          isSea,
           difficulty
         );
 
@@ -1191,17 +1201,21 @@ export default function App() {
   };
 
   // Collect all visible tiles for shanten and safety calculations
-  const getAllVisibleTiles = (): Tile[] => {
+  // Tiles a given seat can see: every discard and exposed meld, plus its own hand
+  const getVisibleTilesFor = (playerIdx: number): Tile[] => {
     const visible: Tile[] = [];
     players.forEach((p) => {
       p.discards.forEach((d) => visible.push(d));
       p.melds.forEach((m) => m.tiles.forEach((t) => visible.push(t)));
     });
-    if (players[0]) {
-      players[0].hand.forEach((h) => visible.push(h));
+    if (players[playerIdx]) {
+      players[playerIdx].hand.forEach((h) => visible.push(h));
     }
     return visible;
   };
+
+  // Tiles visible to the human player
+  const getAllVisibleTiles = (): Tile[] => getVisibleTilesFor(0);
 
   // Live strategy calculations for Human player
   const human = players[0];
