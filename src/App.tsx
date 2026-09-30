@@ -88,6 +88,8 @@ export default function App() {
   const [userCanHu, setUserCanHu] = React.useState(false);
   const [isSelfDrawHu, setIsSelfDrawHu] = React.useState(false);
   const [isUnderTheSea, setIsUnderTheSea] = React.useState(false);
+  // Seat whose latest tile is a Kong replacement draw (for A6 Self-Draw on Kong)
+  const [kongDrawPlayer, setKongDrawPlayer] = React.useState<number | null>(null);
 
   // Modals & Panels
   const [isStrategyPanelOpen, setIsStrategyPanelOpen] = React.useState(true);
@@ -278,6 +280,7 @@ export default function App() {
     setUserCanGang(false);
     setUserGangCandidates([]);
     setIsUnderTheSea(false);
+    setKongDrawPlayer(null);
     setActionBanner(null);
 
     // Initial check for dealer if human
@@ -295,7 +298,8 @@ export default function App() {
   const checkHumanTurnOptions = (
     humanPlayer: PlayerState,
     currentWallLength: number,
-    roundWind?: Wind
+    roundWind?: Wind,
+    isKongDraw = false
   ) => {
     if (humanPlayer.hand.length % 3 !== 2) {
       setUserCanHu(false);
@@ -316,6 +320,7 @@ export default function App() {
       prevailingWind: effectivePrevailingWind,
       seatWind: humanPlayer.seatWind,
       isUnderTheSea: isSea,
+      isSelfDrawOnKong: isKongDraw,
     });
 
     if (winEval.isWin && winEval.totalFan >= 1) {
@@ -404,6 +409,7 @@ export default function App() {
       prevailingWind,
       seatWind: bot.seatWind,
       isUnderTheSea: isSea,
+      isSelfDrawOnKong: kongDrawPlayer === botIdx,
     });
 
     if (winEval.isWin && winEval.totalFan >= 1) {
@@ -469,6 +475,7 @@ export default function App() {
     newHand.push(drawn);
 
     setWall(newWall);
+    setKongDrawPlayer(botIdx);
     setPlayers((prev) =>
       prev.map((p, idx) => (idx === botIdx ? { ...p, hand: newHand, melds: newMelds } : p))
     );
@@ -480,6 +487,7 @@ export default function App() {
     const player = players[playerIdx];
     const newHand = player.hand.filter((t) => t.id !== tile.id);
     const newDiscards = [...player.discards, tile];
+    setKongDrawPlayer(null);
 
     // Check shanten & tenpai after discard
     const newShanten = calculateShanten(newHand, player.melds);
@@ -568,6 +576,7 @@ export default function App() {
           // Human can Hu!
           setUserCanHu(true);
           setIsSelfDrawHu(false);
+          setIsUnderTheSea(isSea);
           // Wait for human decision
           return;
         } else {
@@ -713,6 +722,7 @@ export default function App() {
       if (wall.length > 0) {
         const drawn = wall[0];
         setWall((w) => w.slice(1));
+        setKongDrawPlayer(botIdx);
         setPlayers((prev) =>
           prev.map((p, idx) => (idx === botIdx ? { ...p, hand: [...p.hand, drawn] } : p))
         );
@@ -977,11 +987,14 @@ export default function App() {
     }
 
     // Draw Kong replacement
+    let newWallLength = wall.length;
     if (wall.length > 0) {
       const drawn = wall[0];
       const newWall = wall.slice(1);
       newHand.push(drawn);
       setWall(newWall);
+      newWallLength = newWall.length;
+      setKongDrawPlayer(0);
     }
 
     setPlayers((prev) =>
@@ -1019,6 +1032,9 @@ export default function App() {
     setActivePlayerIndex(0);
     setLastDiscardedTile(null);
     setSelectedTile(null);
+
+    // Check Self-Draw on Kong (A6) and further Kongs with the replacement tile
+    checkHumanTurnOptions({ ...players[0], hand: newHand, melds: newMelds }, newWallLength, undefined, true);
   };
 
   // Handle Human Hu
@@ -1040,6 +1056,7 @@ export default function App() {
       prevailingWind,
       seatWind: players[0].seatWind,
       isUnderTheSea,
+      isSelfDrawOnKong: isSelfDrawHu && kongDrawPlayer === 0,
     });
 
     // Guard: Hand MUST be evaluated as a legitimate win with >= 1 Fan!

@@ -211,11 +211,19 @@ export function calculateTenpaiWaits(
     const hypoTile = createHypotheticalTile(candidateType);
     const testHand = [...hand, hypoTile];
 
-    const evaluation = evaluateWin(testHand, melds, hypoTile, {
+    let evaluation = evaluateWin(testHand, melds, hypoTile, {
       isSelfDraw: false,
       prevailingWind,
       seatWind,
     });
+    // A 0 Fan hand can't win on a discard but still wins by self-draw (A2)
+    if (!evaluation.isWin) {
+      evaluation = evaluateWin(testHand, melds, hypoTile, {
+        isSelfDraw: true,
+        prevailingWind,
+        seatWind,
+      });
+    }
 
     if (evaluation.isWin && evaluation.totalFan >= 1) {
       const seen = visibleCounts[candidateType] || 0;
