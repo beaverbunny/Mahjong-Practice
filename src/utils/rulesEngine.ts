@@ -3,7 +3,7 @@ import { sortTiles } from './mahjongTiles';
 
 // Complete Winning Hand Definitions according to Appendix III
 export const DESIGNATED_HANDS = {
-  A1: { code: 'A1', name: '平胡 (Common Hand)', fan: 1, desc: '由4副顺子及1对序数牌眼组成的和牌' },
+  A1: { code: 'A1', name: '平胡 (Common Hand)', fan: 1, desc: '由4副序数牌顺子及1对将牌（可为字牌）组成的和牌' },
   A2: { code: 'A2', name: '自摸 (Self-Draw)', fan: 1, desc: '自己摸到和牌张并宣告和牌' },
   A3: { code: 'A3', name: '圈风刻 (Prevailing Wind Triplet)', fan: 1, desc: '与当前圈风相同的风牌刻子或杠' },
   A4: { code: 'A4', name: '门风刻 (Seat Wind Triplet)', fan: 1, desc: '与自己门风相同的风牌刻子或杠' },
@@ -220,11 +220,11 @@ export function evaluateWin(
     ? handTiles
     : [...handTiles, winningTile];
 
-  // All 14 tiles
+  // All tiles, including the 4th tile of any Kong (used for suit/honor analysis)
   const fullHand = [...effectiveHand, ...melds.flatMap((m) => m.tiles)];
 
-  // Hand must have exactly 14 tiles total to be a winning hand
-  if (fullHand.length !== 14) {
+  // Hand must have 14 tiles to be a winning hand, counting each meld (Kongs included) as 3
+  if (effectiveHand.length + melds.length * 3 !== 14) {
     return {
       isWin: false,
       fanDetails: [],
@@ -352,12 +352,8 @@ export function evaluateWin(
 
     // A1 Common Hand (平胡)
     // "A winning hand consisting of 1 pair and 4 sequences of suit tiles"
-    // Hand must have 4 sequences, 0 triplets, pair of suit tiles, no honors.
-    if (
-      decomp.sequences.length === 4 &&
-      decomp.triplets.length === 0 &&
-      decomp.pair[0].suit !== undefined
-    ) {
+    // Hand must have 4 sequences and 0 triplets; the pair may be suit or honor tiles.
+    if (decomp.sequences.length === 4 && decomp.triplets.length === 0) {
       fanDetails.push(DESIGNATED_HANDS.A1);
     }
 
@@ -404,12 +400,12 @@ export function evaluateWin(
 
     // Calculate sum of fan (capped at 10 as per rules)
     const rawFan = fanDetails.reduce((sum, f) => sum + f.fan, 0);
-    // Even if no specific high fan, a valid hand gives at least 1 Fan if Common Hand or Self-draw.
-    // If rawFan == 0, chicken hand (鸡胡) is counted as 1 Fan basic.
-    const totalFan = Math.min(10, Math.max(rawFan, 1));
+    // Hands not listed in Appendix III are not recognized, so a 0 Fan hand is not a win.
+    if (rawFan === 0) continue;
+    const totalFan = Math.min(10, rawFan);
     const pointsAwarded = totalFan * (context.isSelfDraw ? 15 : 10);
 
-    const description = fanDetails.map((f) => f.name.split(' ')[0]).join(' + ') || '基本和牌';
+    const description = fanDetails.map((f) => f.name.split(' ')[0]).join(' + ');
 
     const currentEval: WinEvaluation = {
       isWin: true,
@@ -425,7 +421,18 @@ export function evaluateWin(
     }
   }
 
-  return bestEval!;
+  if (!bestEval) {
+    return {
+      isWin: false,
+      fanDetails: [],
+      totalFan: 0,
+      pointsAwarded: 0,
+      description: '无番不和',
+      breakdown: null,
+    };
+  }
+
+  return bestEval;
 }
 
 // Check if player can Chi discarded tile

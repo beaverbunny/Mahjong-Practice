@@ -130,7 +130,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
         name: '平胡 (1番)',
         fan: 1,
         progress: 80,
-        tip: '四副序数顺子加序数对子，进攻防守最均衡',
+        tip: '四副序数顺子加任意对子，进攻防守最均衡',
       });
     }
 
