@@ -22,27 +22,35 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
     tag: string;
   }[] = [
     {
+      id: 'tournament',
+      title: '比赛实战 (Tournament Field · 推荐)',
+      subTitle: '模拟 TVB 外围赛真实对手 · 每位对手风格与水平各不相同',
+      desc: '每场随机分配三位对手：速攻型、大牌型、稳健型、防守型或随性型，水平从一般到高手不等。按真实比赛数据校准（每 16 局约 14-15 次和牌，平均每和约 2 番），让你在接近比赛的牌桌上练习。',
+      features: ['风格随机 · 场场不同', '依明牌判断危险', '整场结束后揭晓对手风格'],
+      tag: '推荐',
+    },
+    {
       id: 'beginner',
-      title: '入门研习 (Casual / 初级)',
-      subTitle: '轻松和牌 · 适合新手熟悉国标和牌番种与基础规则',
-      desc: 'AI 对手出牌牌效偏向宽松，不严格追求极限进张，很少副露鸣牌（吃碰杠频率低），不擅长防守危险牌，非常适合初学者练习和牌。',
-      features: ['牌效进张率 ~50%', '极少防守点炮', '副露频率极低 (~25%)'],
-      tag: '新手首选',
+      title: '入门研习 (Beginner / 初级)',
+      subTitle: '轻松上手 · 对手多为随性型玩家',
+      desc: '对手多为随性型：见牌就吃碰、很少防守、判断误差较大。适合熟悉 TVB 番种与计分规则。',
+      features: ['吃碰频繁', '几乎不防守', '判断误差大'],
+      tag: '新手',
     },
     {
       id: 'intermediate',
-      title: '进阶实战 (Standard / 中级 · 推荐)',
-      subTitle: '逼真手感 · 模拟现实牌桌雀友的常规水平',
-      desc: 'AI 具备扎实的牌效推算与向听优化，懂得利用字牌与序数两面搭子加速成牌；对手听牌时会进行适度防守，吃碰判断合理。',
-      features: ['牌效进张率 ~85%', '适度防守现物', '副露频率自然 (~60%)'],
-      tag: '当前默认',
+      title: '进阶实战 (Intermediate / 中级)',
+      subTitle: '常规牌友水平 · 各种风格混合',
+      desc: '对手风格混合，牌效扎实但偶有失误，会在明显危险时适度防守。',
+      features: ['风格混合', '适度防守', '偶有失误'],
+      tag: '进阶',
     },
     {
       id: 'master',
       title: '雀圣宗师 (Master / 高级)',
-      subTitle: '竞技天花板 · 极限牌效与深层现物/筋牌防守',
-      desc: 'AI 严格执行全局最高牌效与最大进张面切牌，深度结合对手弃牌河进行现物、筋牌（Suji）、绝张字牌防守，极难出冲放铳，进攻速度迅猛。',
-      features: ['牌效进张率 100%', '严密现物与筋牌防守', '敏锐进攻副露 (~85%)'],
+      subTitle: '高手牌桌 · 精准牌效与读牌防守',
+      desc: '对手均为高水平：精确计算进张与番数，积极做大牌，按对手副露推算危险度防守，几乎没有失误。',
+      features: ['精确牌效', '积极做番', '读牌防守'],
       tag: '高难挑战',
     },
   ];
@@ -61,7 +69,9 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
               <div className="text-xs text-stone-400">
                 当前难度：
                 <span className="text-amber-400 font-semibold ml-1">
-                  {currentDifficulty === 'beginner'
+                  {currentDifficulty === 'tournament'
+                    ? '比赛实战'
+                    : currentDifficulty === 'beginner'
                     ? '入门研习 (初级)'
                     : currentDifficulty === 'intermediate'
                     ? '进阶实战 (中级)'
@@ -134,7 +144,7 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs">
-          <span className="text-stone-400">切换后即时生效，可在对局中随时调整。</span>
+          <span className="text-stone-400">切换后从下一局开始生效，对手风格会重新抽取。</span>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold cursor-pointer transition-colors"

@@ -9,6 +9,7 @@ import {
 } from '../types/mahjong';
 import { evaluateWin, checkThirteenOrphans } from './rulesEngine';
 import { getTileNameByType, CHINESE_NUMS } from './mahjongTiles';
+import { shanten as fastShanten } from '../engine/shanten';
 
 const ALL_34_TYPES: TileType[] = [
   '1wan', '2wan', '3wan', '4wan', '5wan', '6wan', '7wan', '8wan', '9wan',
@@ -54,107 +55,9 @@ export function createHypotheticalTile(type: TileType): Tile {
 
 // Calculate Shanten (向听数)
 // 0 = Tenpai (听牌), 1 = 1-shanten (一向听), 2 = 2-shanten (二向听)...
+// Exact over standard hands and Thirteen Orphans; a complete hand also reports 0.
 export function calculateShanten(hand: Tile[], melds: Meld[] = []): number {
-  const fullHand = [...hand, ...melds.flatMap((m) => m.tiles)];
-
-  // Check 13 Orphans shanten if no open melds
-  let kokushiShanten = 99;
-  if (melds.length === 0) {
-    const orphanTypes: TileType[] = [
-      '1wan', '9wan', '1tiao', '9tiao', '1tong', '9tong',
-      'wind_E', 'wind_S', 'wind_W', 'wind_N',
-      'dragon_C', 'dragon_F', 'dragon_B',
-    ];
-    let uniqueCount = 0;
-    let hasPair = false;
-
-    const counts: Record<string, number> = {};
-    for (const t of hand) {
-      counts[t.type] = (counts[t.type] || 0) + 1;
-    }
-
-    for (const ot of orphanTypes) {
-      if (counts[ot]) {
-        uniqueCount++;
-        if (counts[ot] >= 2) hasPair = true;
-      }
-    }
-
-    kokushiShanten = 13 - uniqueCount - (hasPair ? 1 : 0);
-  }
-
-  // Calculate standard hand shanten
-  const standardShanten = calculateStandardShanten(hand, melds.length);
-
-  return Math.min(kokushiShanten, standardShanten);
-}
-
-// Index tiles 0-33: wan 0-8, tiao 9-17, tong 18-26, honors 27-33
-function tileIndex(type: string): number {
-  return ALL_34_TYPES.indexOf(type as TileType);
-}
-
-// Exact standard-hand shanten: searches every split into sets, taatsu and a pair.
-// Mahjong standard formula: 8 - 2 * sets - taatsu - (hasPair ? 1 : 0), with sets + taatsu <= 4
-function calculateStandardShanten(hand: Tile[], meldCount: number): number {
-  const counts = new Array(34).fill(0);
-  for (const t of hand) {
-    counts[tileIndex(t.type)]++;
-  }
-
-  let minShanten = 8;
-
-  const search = (i: number, sets: number, taatsu: number, hasPair: boolean) => {
-    while (i < 34 && counts[i] === 0) i++;
-    if (i >= 34) {
-      const usableTaatsu = Math.min(4 - sets, taatsu);
-      minShanten = Math.min(minShanten, 8 - 2 * sets - usableTaatsu - (hasPair ? 1 : 0));
-      return;
-    }
-
-    const isSuit = i < 27;
-    const val = i % 9; // 0-based value within the suit
-
-    // Triplet
-    if (counts[i] >= 3) {
-      counts[i] -= 3;
-      search(i, sets + 1, taatsu, hasPair);
-      counts[i] += 3;
-    }
-    // Sequence
-    if (isSuit && val <= 6 && counts[i + 1] > 0 && counts[i + 2] > 0) {
-      counts[i]--; counts[i + 1]--; counts[i + 2]--;
-      search(i, sets + 1, taatsu, hasPair);
-      counts[i]++; counts[i + 1]++; counts[i + 2]++;
-    }
-    // Pair (as the eyes, or as a triplet taatsu)
-    if (counts[i] >= 2) {
-      counts[i] -= 2;
-      if (!hasPair) search(i, sets, taatsu, true);
-      search(i, sets, taatsu + 1, hasPair);
-      counts[i] += 2;
-    }
-    // Two-sided / edge taatsu
-    if (isSuit && val <= 7 && counts[i + 1] > 0) {
-      counts[i]--; counts[i + 1]--;
-      search(i, sets, taatsu + 1, hasPair);
-      counts[i]++; counts[i + 1]++;
-    }
-    // Closed taatsu
-    if (isSuit && val <= 6 && counts[i + 2] > 0) {
-      counts[i]--; counts[i + 2]--;
-      search(i, sets, taatsu + 1, hasPair);
-      counts[i]++; counts[i + 2]++;
-    }
-    // Leave this tile isolated
-    counts[i]--;
-    search(i, sets, taatsu, hasPair);
-    counts[i]++;
-  };
-
-  search(0, meldCount, 0, false);
-
-  return Math.max(0, minShanten);
+  return Math.max(0, fastShanten(hand, melds.length));
 }
 
 // Calculate Tenpai Waits (听牌张数 & 预估番数)

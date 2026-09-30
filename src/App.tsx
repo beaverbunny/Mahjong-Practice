@@ -1,38 +1,37 @@
 import React from 'react';
 import {
-  PlayerState,
   Tile,
   Meld,
-  Wind,
   RoundResult,
-  TurnActionLog,
   GameStats,
   DiscardRecommendation,
   TenpaiWait,
   DifficultyLevel,
+  TurnActionLog,
 } from './types/mahjong';
-import { createFullDeck, shuffleDeck, sortTiles } from './utils/mahjongTiles';
-import {
-  evaluateWin,
-  calculatePointsDelta,
-  canPeng,
-  canMingGang,
-  getChiCombinations,
-  getAnGangCandidates,
-  getBuGangCandidates,
-} from './utils/rulesEngine';
 import {
   calculateShanten,
   generateDiscardRecommendations,
   calculateTenpaiWaits,
   analyzeTurnBlunder,
-  BlunderAnalysisResult,
 } from './utils/strategyEngine';
 import {
-  evaluateBotCallResponse,
-  chooseBotDiscard,
-  checkBotConcealedKong,
-} from './utils/aiBot';
+  TableState,
+  HANDS_PER_MATCH,
+  FALSE_WIN_PENALTY_EACH,
+  dealHand,
+  getTurnOptions,
+  getClaimOptions,
+  playersWithClaimOptions,
+  resolveClaims,
+  declareSelfDraw,
+  declareKong,
+  discard,
+  ClaimDecision,
+  KongCandidate,
+} from './engine/table';
+import { decideTurn, decideClaim } from './ai/brain';
+import { Persona, samplePersonas, STYLE_LABELS } from './ai/personas';
 import { soundManager } from './utils/audio';
 import { GameBoard } from './components/GameBoard';
 import { StrategyPanel } from './components/StrategyPanel';
@@ -53,45 +52,31 @@ import {
   Trophy,
   Bot,
   FileSearch,
+  ShieldCheck,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const STORAGE_KEY_STATS = 'mahjong_practice_career_stats_v1';
+const DIFFICULTIES: DifficultyLevel[] = ['tournament', 'beginner', 'intermediate', 'master'];
+
+type GangOption = { type: 'ming_gang' | 'an_gang' | 'bu_gang'; tiles: Tile[]; meld?: Meld };
+
+// Bots may only judge danger from what is visible: an opponent with 2+ exposed melds is a threat
+const visibleThreats = (t: TableState, viewer: number) =>
+  t.players.map((p, i) => i !== viewer && p.melds.length >= 2);
+
+const visibleTilesFor = (t: TableState, viewer: number): Tile[] => [
+  ...t.players.flatMap((p) => [...p.discards, ...p.melds.flatMap((m) => m.tiles)]),
+  ...t.players[viewer].hand,
+];
 
 export default function App() {
-  // Game match progression: 16 rounds (4 winds * 4)
-  const [currentRoundIndex, setCurrentRoundIndex] = React.useState(0); // 0 to 15
+  // Table state: every rule lives in the engine (src/engine/table.ts)
+  const [table, setTable] = React.useState<TableState | null>(null);
   const [isGameOver16, setIsGameOver16] = React.useState(false);
-
-  // Table state
-  const [wall, setWall] = React.useState<Tile[]>([]);
-  const [players, setPlayers] = React.useState<PlayerState[]>([]);
-  const [activePlayerIndex, setActivePlayerIndex] = React.useState(0);
   const [selectedTile, setSelectedTile] = React.useState<Tile | null>(null);
-  const [lastDiscardedTile, setLastDiscardedTile] = React.useState<{
-    tile: Tile;
-    fromPlayer: number;
-  } | null>(null);
-
-  // Turn logs for current round replay
-  const [currentActionLogs, setCurrentActionLogs] = React.useState<TurnActionLog[]>([]);
-  const [turnCounter, setTurnCounter] = React.useState(1);
-
-  // User interactive call prompt (when an opponent discards a tile human can Chi/Peng/Gang/Hu)
-  const [userCanChi, setUserCanChi] = React.useState(false);
-  const [userChiCombinations, setUserChiCombinations] = React.useState<Tile[][]>([]);
-  const [userCanPeng, setUserCanPeng] = React.useState(false);
-  const [userCanGang, setUserCanGang] = React.useState(false);
-  const [userGangCandidates, setUserGangCandidates] = React.useState<
-    { type: 'ming_gang' | 'an_gang' | 'bu_gang'; tiles: Tile[]; meld?: Meld }[]
-  >([]);
-  const [userCanHu, setUserCanHu] = React.useState(false);
-  const [isSelfDrawHu, setIsSelfDrawHu] = React.useState(false);
-  const [isUnderTheSea, setIsUnderTheSea] = React.useState(false);
-  // Seat whose latest tile is a Kong replacement draw (for A6 Self-Draw on Kong)
-  const [kongDrawPlayer, setKongDrawPlayer] = React.useState<number | null>(null);
-  // Seat that just called Chi/Peng and must discard (no self-draw win or Kong this turn)
-  const [calledMeldPlayer, setCalledMeldPlayer] = React.useState<number | null>(null);
+  // Own-turn Hu/Kong buttons the human dismissed with Pass (until the table changes)
+  const [dismissedTurnFor, setDismissedTurnFor] = React.useState<TableState | null>(null);
 
   // Modals & Panels
   const [isStrategyPanelOpen, setIsStrategyPanelOpen] = React.useState(true);
@@ -104,21 +89,41 @@ export default function App() {
   const [showRestartConfirmModal, setShowRestartConfirmModal] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
 
-  // AI Difficulty Level: 'beginner' | 'intermediate' | 'master'
+  // AI field: 'tournament' mimics a real qualifying field
   const [difficulty, setDifficulty] = React.useState<DifficultyLevel>(() => {
     try {
-      const saved = localStorage.getItem('mahjong_ai_difficulty');
-      if (saved === 'beginner' || saved === 'intermediate' || saved === 'master') {
-        return saved;
-      }
+      const saved = localStorage.getItem('mahjong_ai_difficulty_v2');
+      if (saved && (DIFFICULTIES as string[]).includes(saved)) return saved as DifficultyLevel;
     } catch {}
-    return 'intermediate';
+    return 'tournament';
   });
+  // Personas for seats 1-3, sampled per match (resampled at the next hand if the field changes)
+  const personasRef = React.useRef<{ difficulty: DifficultyLevel; personas: Persona[] }>({
+    difficulty,
+    personas: samplePersonas(difficulty),
+  });
+  const personaFor = (seat: number) => personasRef.current.personas[seat - 1];
+
+  // Strict mode: Hu is offered for any complete hand shape, and a 0-fan declaration is a false win
+  const [strictHu, setStrictHu] = React.useState<boolean>(() => {
+    try {
+      return localStorage.getItem('mahjong_strict_hu') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleStrictHu = () => {
+    const next = !strictHu;
+    setStrictHu(next);
+    try {
+      localStorage.setItem('mahjong_strict_hu', next ? '1' : '0');
+    } catch {}
+  };
 
   const handleSelectDifficulty = (newDiff: DifficultyLevel) => {
     setDifficulty(newDiff);
     try {
-      localStorage.setItem('mahjong_ai_difficulty', newDiff);
+      localStorage.setItem('mahjong_ai_difficulty_v2', newDiff);
     } catch {}
   };
 
@@ -130,33 +135,9 @@ export default function App() {
     } catch {
       // fallback
     }
-    return {
-      totalGames: 0,
-      totalRounds: 0,
-      humanWins: 0,
-      humanSelfDraws: 0,
-      humanDealIns: 0,
-      humanTenpaiCount: 0,
-      highestFan: 0,
-      highestFanNames: [],
-      totalPointsEarned: 0,
-      fansAchievedCounts: {},
-      historicalRounds: [],
-    };
+    return emptyStats();
   });
 
-  // Calculate current prevailing wind & dealer
-  const prevailingWind: Wind = ['E', 'S', 'W', 'N'][Math.floor(currentRoundIndex / 4)] as Wind;
-  const dealerIndex = currentRoundIndex % 4;
-
-  // Sound toggle
-  const toggleSound = () => {
-    const next = !soundEnabled;
-    setSoundEnabled(next);
-    soundManager.enabled = next;
-  };
-
-  // Save stats to localStorage
   const updateStats = (updater: (prev: GameStats) => GameStats) => {
     setCareerStats((prev) => {
       const next = updater(prev);
@@ -167,197 +148,14 @@ export default function App() {
     });
   };
 
-  // Initialize a fresh 16-round match
-  const startNew16RoundMatch = () => {
-    setCurrentRoundIndex(0);
-    setIsGameOver16(false);
-    setActiveRoundResult(null);
-    setReviewRoundResult(null);
-    setUserCanHu(false);
-    setIsSelfDrawHu(false);
-    setUserCanChi(false);
-    setUserChiCombinations([]);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-    setUserGangCandidates([]);
-    setSelectedTile(null);
-    setLastDiscardedTile(null);
-    setActionBanner(null);
-    initRound(0, [0, 0, 0, 0]);
-  };
-
-  // Initialize a single round
-  const initRound = (roundIdx: number, existingScores?: number[]) => {
-    const deck = shuffleDeck(createFullDeck());
-    const roundPrevailingWind: Wind = ['E', 'S', 'W', 'N'][Math.floor(roundIdx / 4)] as Wind;
-    const roundDealer = roundIdx % 4;
-
-    // Calculate seat winds for players [0=User, 1=Bot1, 2=Bot2, 3=Bot3]
-    const windCycle: Wind[] = ['E', 'S', 'W', 'N'];
-    const seatWinds: Wind[] = [];
-    for (let i = 0; i < 4; i++) {
-      const shift = (i - roundDealer + 4) % 4;
-      seatWinds.push(windCycle[shift]);
-    }
-
-    // Deal 13 cards each + 1 to dealer
-    const newPlayers: PlayerState[] = [
-      {
-        id: 'player_0',
-        name: '您 (玩家)',
-        isHuman: true,
-        seatWind: seatWinds[0],
-        hand: [],
-        melds: [],
-        discards: [],
-        score: existingScores ? existingScores[0] : 0,
-        startingScore: 0,
-        isTenpai: false,
-        tenpaiWaits: [],
-      },
-      {
-        id: 'player_1',
-        name: '下家 · 雀痴',
-        isHuman: false,
-        seatWind: seatWinds[1],
-        hand: [],
-        melds: [],
-        discards: [],
-        score: existingScores ? existingScores[1] : 0,
-        startingScore: 0,
-        isTenpai: false,
-        tenpaiWaits: [],
-      },
-      {
-        id: 'player_2',
-        name: '对家 · 雀皇',
-        isHuman: false,
-        seatWind: seatWinds[2],
-        hand: [],
-        melds: [],
-        discards: [],
-        score: existingScores ? existingScores[2] : 0,
-        startingScore: 0,
-        isTenpai: false,
-        tenpaiWaits: [],
-      },
-      {
-        id: 'player_3',
-        name: '上家 · 雀仙',
-        isHuman: false,
-        seatWind: seatWinds[3],
-        hand: [],
-        melds: [],
-        discards: [],
-        score: existingScores ? existingScores[3] : 0,
-        startingScore: 0,
-        isTenpai: false,
-        tenpaiWaits: [],
-      },
-    ];
-
-    let deckPtr = 0;
-    for (let p = 0; p < 4; p++) {
-      const cardCount = p === roundDealer ? 14 : 13;
-      newPlayers[p].hand = sortTiles(deck.slice(deckPtr, deckPtr + cardCount));
-      deckPtr += cardCount;
-    }
-
-    const remainingWall = deck.slice(deckPtr);
-    setWall(remainingWall);
-    setPlayers(newPlayers);
-    setActivePlayerIndex(roundDealer);
-    setSelectedTile(null);
-    setLastDiscardedTile(null);
-    setCurrentActionLogs([]);
-    setTurnCounter(1);
-    setActiveRoundResult(null);
-
-    // CRITICAL: Always reset all interactive call states at round initialization
-    setUserCanHu(false);
-    setIsSelfDrawHu(false);
-    setUserCanChi(false);
-    setUserChiCombinations([]);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-    setUserGangCandidates([]);
-    setIsUnderTheSea(false);
-    setKongDrawPlayer(null);
-    setCalledMeldPlayer(null);
-    setActionBanner(null);
-
-    // Initial check for dealer if human
-    if (roundDealer === 0) {
-      checkHumanTurnOptions(newPlayers[0], remainingWall.length, roundPrevailingWind);
-    }
-  };
-
-  // Mount on start
-  React.useEffect(() => {
-    initRound(0);
-  }, []);
-
-  // Check self-draw Hu, An-gang, Bu-gang for human player
-  const checkHumanTurnOptions = (
-    humanPlayer: PlayerState,
-    currentWallLength: number,
-    roundWind?: Wind,
-    isKongDraw = false
-  ) => {
-    if (humanPlayer.hand.length % 3 !== 2) {
-      setUserCanHu(false);
-      setIsSelfDrawHu(false);
-      setUserCanGang(false);
-      setUserGangCandidates([]);
-      return;
-    }
-
-    const drawnTile = humanPlayer.hand[humanPlayer.hand.length - 1];
-    const isSea = currentWallLength === 0;
-    setIsUnderTheSea(isSea);
-
-    // 1. Check Self-Draw Hu (Appendix III: A2)
-    const effectivePrevailingWind = roundWind || prevailingWind;
-    const winEval = evaluateWin(humanPlayer.hand, humanPlayer.melds, drawnTile, {
-      isSelfDraw: true,
-      prevailingWind: effectivePrevailingWind,
-      seatWind: humanPlayer.seatWind,
-      isUnderTheSea: isSea,
-      isSelfDrawOnKong: isKongDraw,
-    });
-
-    if (winEval.isWin && winEval.totalFan >= 1) {
-      setUserCanHu(true);
-      setIsSelfDrawHu(true);
-    } else {
-      setUserCanHu(false);
-      setIsSelfDrawHu(false);
-    }
-
-    // 2. Check An-Gang & Bu-Gang
-    const anGang = getAnGangCandidates(humanPlayer.hand).map((tiles) => ({
-      type: 'an_gang' as const,
-      tiles,
-    }));
-    const buGang = getBuGangCandidates(humanPlayer.hand, humanPlayer.melds).map((item) => ({
-      type: 'bu_gang' as const,
-      tiles: [item.tile],
-      meld: item.meld,
-    }));
-
-    const gangs = [...anGang, ...buGang];
-    if (gangs.length > 0) {
-      setUserCanGang(true);
-      setUserGangCandidates(gangs);
-    } else {
-      setUserCanGang(false);
-      setUserGangCandidates([]);
-    }
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    soundManager.enabled = next;
   };
 
   // Visual action announcement banner (碰！吃！杠！胡！)
   const [actionBanner, setActionBanner] = React.useState<{ text: string; playerIdx: number } | null>(null);
-
   const showActionBanner = (text: string, playerIdx: number) => {
     setActionBanner({ text, playerIdx });
     setTimeout(() => {
@@ -365,876 +163,276 @@ export default function App() {
     }, 1200);
   };
 
-  // Bot Turn Automation Effect
+  // ---------------------------------------------------------------------------
+  // Match flow
+  // ---------------------------------------------------------------------------
+
+  const startHand = (handIndex: number, scores: number[]) => {
+    if (personasRef.current.difficulty !== difficulty) {
+      personasRef.current = { difficulty, personas: samplePersonas(difficulty) };
+    }
+    setSelectedTile(null);
+    setActiveRoundResult(null);
+    setActionBanner(null);
+    setTable(dealHand(handIndex, scores));
+  };
+
+  const startNew16RoundMatch = () => {
+    personasRef.current = { difficulty, personas: samplePersonas(difficulty) };
+    setIsGameOver16(false);
+    setReviewRoundResult(null);
+    startHand(0, [0, 0, 0, 0]);
+  };
+
   React.useEffect(() => {
-    if (players.length === 0 || activeRoundResult !== null) return;
+    startNew16RoundMatch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Do NOT trigger bot turn if waiting for human action (Hu, Peng, Gang, Chi)
-    if (userCanHu || userCanPeng || userCanGang || userCanChi) return;
+  // Development-only hook so browser tests can set up exact table positions
+  React.useEffect(() => {
+    if (import.meta.env.DEV) (window as any).__mahjongTest = { table, setTable };
+  }, [table]);
 
-    // Do NOT trigger bot turn if a discard is currently pending resolution
-    if (lastDiscardedTile !== null) return;
+  // Resolve a pending claim with the human's decision (if they had options) and the bots'
+  const resolveWith = (t: TableState, humanDecision?: ClaimDecision): TableState => {
+    const decisions: (ClaimDecision | undefined)[] = [];
+    for (const q of playersWithClaimOptions(t)) {
+      if (q === 0) decisions[0] = humanDecision ?? { type: 'pass' };
+      else decisions[q] = decideClaim(t, q, getClaimOptions(t, q)!, personaFor(q));
+    }
+    return resolveClaims(t, decisions);
+  };
 
-    const activePlayer = players[activePlayerIndex];
-    if (!activePlayer || activePlayer.isHuman) return;
+  const runBotTurn = (t: TableState): TableState => {
+    const p = t.active;
+    const d = decideTurn(t, p, personaFor(p));
+    if (d.type === 'tsumo') return declareSelfDraw(t, p);
+    if (d.type === 'kong') return declareKong(t, p, d.candidate);
+    return discard(t, p, d.tileId);
+  };
 
-    // A bot can ONLY discard if it has drawn or called (hand.length % 3 === 2)
-    if (activePlayer.hand.length % 3 !== 2) return;
+  // What the human may do on the pending claim (null = nothing, so bots resolve it)
+  const humanClaim = React.useMemo(() => {
+    if (!table || table.phase !== 'claim') return null;
+    const o = getClaimOptions(table, 0);
+    if (!o) return null;
+    const canHu = strictHu ? o.shapeComplete : !!o.win;
+    if (!canHu && !o.pung && !o.kong && o.chi.length === 0) return null;
+    return { ...o, canHu };
+  }, [table, strictHu]);
 
-    // AI Bot takes action after realistic thinking delay (400ms - 600ms)
-    const timer = setTimeout(() => {
-      handleBotTurn(activePlayerIndex);
-    }, 450);
+  // What the human may do on their own turn
+  const humanTurn = React.useMemo(() => {
+    if (!table) return null;
+    const o = getTurnOptions(table, 0);
+    if (!o) return null;
+    const dismissed = dismissedTurnFor === table;
+    return {
+      ...o,
+      canHu: !dismissed && (strictHu ? o.shapeComplete : !!o.win),
+      kongs: dismissed ? [] : o.kongs,
+    };
+  }, [table, strictHu, dismissedTurnFor]);
 
-    return () => clearTimeout(timer);
-  }, [
-    activePlayerIndex,
-    players,
-    activeRoundResult,
-    userCanHu,
-    userCanPeng,
-    userCanGang,
-    userCanChi,
-    lastDiscardedTile,
-  ]);
+  // Drive bots and claim resolution
+  React.useEffect(() => {
+    if (!table || activeRoundResult) return;
+    if (table.phase === 'turn' && table.active !== 0) {
+      const timer = setTimeout(() => setTable((prev) => (prev === table ? runBotTurn(prev) : prev)), 450);
+      return () => clearTimeout(timer);
+    }
+    if (table.phase === 'claim' && !humanClaim) {
+      const timer = setTimeout(() => setTable((prev) => (prev === table ? resolveWith(prev) : prev)), 300);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table, activeRoundResult, humanClaim]);
 
-  // Execute Bot Turn
-  const handleBotTurn = (botIdx: number) => {
-    const bot = players[botIdx];
-    if (!bot || bot.hand.length === 0) return;
+  // Sounds and banners for new actions
+  const seenLogRef = React.useRef<{ hand: number; count: number }>({ hand: -1, count: 0 });
+  React.useEffect(() => {
+    if (!table) return;
+    if (seenLogRef.current.hand !== table.handIndex) seenLogRef.current = { hand: table.handIndex, count: 0 };
+    const fresh = table.log.slice(seenLogRef.current.count);
+    seenLogRef.current.count = table.log.length;
+    for (const e of fresh) announce(e);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table]);
 
-    // After calling Chi/Peng the bot must discard: its last tile wasn't drawn,
-    // so it can't declare a self-draw win or a Kong this turn.
-    const justCalledMeld = calledMeldPlayer === botIdx;
-
-    if (!justCalledMeld) {
-      // 1. Check Bot Self-draw Hu
-      const drawnTile = bot.hand[bot.hand.length - 1];
-      const isSea = wall.length === 0;
-
-      const winEval = evaluateWin(bot.hand, bot.melds, drawnTile, {
-        isSelfDraw: true,
-        prevailingWind,
-        seatWind: bot.seatWind,
-        isUnderTheSea: isSea,
-        isSelfDrawOnKong: kongDrawPlayer === botIdx,
-      });
-
-      if (winEval.isWin && winEval.totalFan >= 1) {
+  const announce = (e: TurnActionLog) => {
+    const who = e.playerIndex === 0 ? '' : `${e.playerName} `;
+    if (e.action === 'discard') soundManager.playTileDiscard();
+    else if (e.action === 'chi') {
+      soundManager.playMeld();
+      showActionBanner(`${who}吃！`, e.playerIndex);
+    } else if (e.action === 'peng') {
+      soundManager.playMeld();
+      showActionBanner(`${who}碰！`, e.playerIndex);
+    } else if (e.action === 'gang') {
+      soundManager.playKong();
+      showActionBanner(`${who}杠！`, e.playerIndex);
+    } else if (e.action === 'hu') {
+      if (e.aiComment?.includes('诈胡')) {
+        showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
+      } else {
         soundManager.playHu();
-        handleRoundFinish(botIdx, null, drawnTile, true, winEval.fanDetails, winEval.totalFan);
-        return;
-      }
-
-      // 2. Check Bot Concealed / Added Kong
-      const kongAction = checkBotConcealedKong(bot.hand, bot.melds);
-      if (kongAction && wall.length > 0) {
-        soundManager.playKong();
-        executeBotKong(botIdx, kongAction);
-        return;
-      }
-    }
-
-    // 3. Bot Discard, using only information this bot can see
-    const allVisible = getVisibleTilesFor(botIdx);
-    const opponentDiscards = players.map((p) => p.discards);
-    // Hidden hands are unknown to the bot, so it treats an opponent with 2+ exposed melds as a threat
-    const opponentTenpais = players.map((p, idx) => idx !== botIdx && p.melds.length >= 2);
-
-    const tileToDiscard = chooseBotDiscard(
-      bot.hand,
-      bot.melds,
-      allVisible,
-      prevailingWind,
-      bot.seatWind,
-      opponentDiscards,
-      opponentTenpais,
-      difficulty
-    );
-
-    executeDiscard(botIdx, tileToDiscard);
-  };
-
-  // Bot Kong execution
-  const executeBotKong = (
-    botIdx: number,
-    kong: { type: 'an_gang' | 'bu_gang'; tiles: Tile[]; meld?: Meld }
-  ) => {
-    const bot = players[botIdx];
-    let newHand = [...bot.hand];
-    let newMelds = [...bot.melds];
-
-    if (kong.type === 'an_gang') {
-      const tileType = kong.tiles[0].type;
-      newHand = newHand.filter((t) => t.type !== tileType);
-      newMelds.push({
-        id: `meld_bot_angang_${Date.now()}`,
-        type: 'an_gang',
-        tiles: kong.tiles,
-      });
-    } else if (kong.type === 'bu_gang' && kong.meld) {
-      newHand = newHand.filter((t) => t.id !== kong.tiles[0].id);
-      newMelds = newMelds.map((m) =>
-        m.id === kong.meld?.id ? { ...m, type: 'bu_gang' as const, tiles: [...m.tiles, kong.tiles[0]] } : m
-      );
-    }
-
-    // Draw replacement tile from wall
-    const drawn = wall[0];
-    const newWall = wall.slice(1);
-    newHand.push(drawn);
-
-    setWall(newWall);
-    setKongDrawPlayer(botIdx);
-    setPlayers((prev) =>
-      prev.map((p, idx) => (idx === botIdx ? { ...p, hand: newHand, melds: newMelds } : p))
-    );
-  };
-
-  // Discard a tile (by Human or Bot)
-  const executeDiscard = (playerIdx: number, tile: Tile) => {
-    soundManager.playTileDiscard();
-    const player = players[playerIdx];
-    const newHand = player.hand.filter((t) => t.id !== tile.id);
-    const newDiscards = [...player.discards, tile];
-    setKongDrawPlayer(null);
-    setCalledMeldPlayer(null);
-
-    // Check shanten & tenpai after discard
-    const newShanten = calculateShanten(newHand, player.melds);
-    const isNowTenpai = newShanten === 0;
-
-    // Record action log with AI blunder analysis
-    let blunderInfo: BlunderAnalysisResult = { isBlunder: false };
-    if (player.isHuman) {
-      const recs = generateDiscardRecommendations(
-        player.hand,
-        player.melds,
-        getAllVisibleTiles(),
-        prevailingWind,
-        player.seatWind,
-        players.map((p) => p.discards),
-        players.map((p) => p.isTenpai)
-      );
-      blunderInfo = analyzeTurnBlunder(tile, recs);
-    }
-
-    const actionLog: TurnActionLog = {
-      turnNumber: turnCounter,
-      playerIndex: playerIdx,
-      playerName: player.name,
-      action: 'discard',
-      tile,
-      shantenBefore: calculateShanten(player.hand, player.melds),
-      shantenAfter: newShanten,
-      isBlunder: blunderInfo.isBlunder,
-      blunderSeverity: blunderInfo.severity,
-      blunderType: blunderInfo.type,
-      blunderTypeName: blunderInfo.typeName,
-      blunderReason: blunderInfo.reason,
-      recommendedDiscard: blunderInfo.bestChoice,
-      bestRec: blunderInfo.bestRec,
-      chosenRec: blunderInfo.chosenRec,
-      aiComment: isNowTenpai
-        ? '成功进入听牌！随时准备荣和或自摸'
-        : blunderInfo.isBlunder
-        ? undefined
-        : `打出【${tile.displayName}】牌效发挥稳健，保持${newShanten === 0 ? '听牌' : newShanten + '向听'}`,
-    };
-
-    setCurrentActionLogs((prev) => [...prev, actionLog]);
-    setTurnCounter((prev) => prev + 1);
-
-    // Update player hand & discards
-    setPlayers((prev) =>
-      prev.map((p, idx) =>
-        idx === playerIdx
-          ? {
-              ...p,
-              hand: sortTiles(newHand),
-              discards: newDiscards,
-              isTenpai: isNowTenpai,
-            }
-          : p
-      )
-    );
-
-    setSelectedTile(null);
-    setLastDiscardedTile({ tile, fromPlayer: playerIdx });
-
-    // Check response from other 3 players
-    checkCallResponses(tile, playerIdx);
-  };
-
-  // Check if other players can Chi, Peng, Ming Gang, or Hu on the discarded tile
-  const checkCallResponses = (discardedTile: Tile, discarderIdx: number) => {
-    const isSea = wall.length === 0;
-
-    // 1. Check if ANY player can Hu on this discard (Appendix III Win)
-    // Priority: Hu > Gang/Peng > Chi
-    for (let i = 0; i < 4; i++) {
-      if (i === discarderIdx) continue;
-      const other = players[i];
-      const winEval = evaluateWin(other.hand, other.melds, discardedTile, {
-        isSelfDraw: false,
-        prevailingWind,
-        seatWind: other.seatWind,
-        isUnderTheSea: isSea,
-      });
-
-      if (winEval.isWin && winEval.totalFan >= 1) {
-        if (other.isHuman) {
-          // Human can Hu!
-          setUserCanHu(true);
-          setIsSelfDrawHu(false);
-          setIsUnderTheSea(isSea);
-          // Wait for human decision
-          return;
-        } else {
-          // Bot Hu!
-          soundManager.playHu();
-          handleRoundFinish(
-            i,
-            discarderIdx,
-            discardedTile,
-            false,
-            winEval.fanDetails,
-            winEval.totalFan
-          );
-          return;
-        }
-      }
-    }
-
-    // 2. Check Human options for Chi, Peng, Gang if human did not discard
-    if (discarderIdx !== 0) {
-      const human = players[0];
-      const canPengThis = canPeng(human.hand, discardedTile);
-      const canGangThis = canMingGang(human.hand, discardedTile);
-      // Chi only from player on left (seat 3 is left of seat 0)
-      const isFromLeft = (discarderIdx + 1) % 4 === 0;
-      const chiCombs = isFromLeft ? getChiCombinations(human.hand, discardedTile) : [];
-
-      if (canPengThis || canGangThis || chiCombs.length > 0) {
-        setUserCanPeng(canPengThis);
-        setUserCanGang(canGangThis);
-        if (canGangThis) {
-          setUserGangCandidates([
-            {
-              type: 'ming_gang',
-              tiles: [
-                ...human.hand.filter((t) => t.type === discardedTile.type).slice(0, 3),
-                discardedTile,
-              ],
-            },
-          ]);
-        }
-        setUserCanChi(chiCombs.length > 0);
-        setUserChiCombinations(chiCombs);
-        return; // wait for human input in UI!
-      }
-    }
-
-    // 3. Check Bots options for Peng / Gang / Chi
-    for (let i = 0; i < 4; i++) {
-      if (i === discarderIdx || i === 0) continue;
-      const bot = players[i];
-      const decision = evaluateBotCallResponse(
-        i,
-        bot.hand,
-        bot.melds,
-        discardedTile,
-        discarderIdx,
-        prevailingWind,
-        bot.seatWind,
-        difficulty
-      );
-
-      if (decision.action === 'gang' && decision.tiles) {
-        soundManager.playKong();
-        executeBotMeldCall(i, 'ming_gang', decision.tiles, discardedTile, discarderIdx);
-        return;
-      }
-      if (decision.action === 'peng' && decision.tiles) {
-        soundManager.playMeld();
-        executeBotMeldCall(i, 'peng', decision.tiles, discardedTile, discarderIdx);
-        return;
-      }
-      if (decision.action === 'chi' && decision.tiles) {
-        soundManager.playMeld();
-        executeBotMeldCall(i, 'chi', decision.tiles, discardedTile, discarderIdx);
-        return;
-      }
-    }
-
-    // No one calls -> next player's normal draw turn
-    proceedToNextPlayerDraw((discarderIdx + 1) % 4);
-  };
-
-  // Bot Meld execution
-  const executeBotMeldCall = (
-    botIdx: number,
-    meldType: 'chi' | 'peng' | 'ming_gang',
-    tiles: Tile[],
-    calledTile: Tile,
-    fromPlayer: number
-  ) => {
-    const bot = players[botIdx];
-    const tilesToRemove = tiles.filter((t) => t.id !== calledTile.id);
-    const removeIds = new Set(tilesToRemove.map((t) => t.id));
-    const newHand = bot.hand.filter((t) => !removeIds.has(t.id));
-
-    const newMeld: Meld = {
-      id: `meld_${botIdx}_${Date.now()}`,
-      type: meldType,
-      tiles: sortTiles(tiles),
-      fromPlayerIndex: fromPlayer,
-      calledTile,
-    };
-
-    setPlayers((prev) =>
-      prev.map((p, idx) => {
-        if (idx === botIdx) {
-          return { ...p, hand: sortTiles(newHand), melds: [...p.melds, newMeld] };
-        }
-        if (idx === fromPlayer) {
-          return {
-            ...p,
-            discards: p.discards.filter((d) => d.id !== calledTile.id),
-          };
-        }
-        return p;
-      })
-    );
-
-    // Record action log
-    const actionLog: TurnActionLog = {
-      turnNumber: turnCounter,
-      playerIndex: botIdx,
-      playerName: players[botIdx].name,
-      action: meldType === 'chi' ? 'chi' : meldType === 'peng' ? 'peng' : 'gang',
-      tile: calledTile,
-      meld: newMeld,
-      aiComment: `${players[botIdx].name}${meldType === 'chi' ? '吃牌' : meldType === 'peng' ? '碰牌' : '开杠'}`,
-    };
-    setCurrentActionLogs((prev) => [...prev, actionLog]);
-
-    showActionBanner(
-      `${players[botIdx].name} ${meldType === 'ming_gang' ? '杠！' : meldType === 'peng' ? '碰！' : '吃！'}`,
-      botIdx
-    );
-
-    setActivePlayerIndex(botIdx);
-    setLastDiscardedTile(null);
-
-    if (meldType !== 'ming_gang') {
-      setCalledMeldPlayer(botIdx);
-    } else {
-      // Draw kong replacement
-      if (wall.length > 0) {
-        const drawn = wall[0];
-        setWall((w) => w.slice(1));
-        setKongDrawPlayer(botIdx);
-        setPlayers((prev) =>
-          prev.map((p, idx) => (idx === botIdx ? { ...p, hand: [...p.hand, drawn] } : p))
-        );
+        showActionBanner(`${who}${e.aiComment ?? '和牌！'}`, e.playerIndex);
       }
     }
   };
 
-  // Proceed to next player drawing from wall
-  const proceedToNextPlayerDraw = (nextPlayerIdx: number) => {
-    // Check if wall is depleted -> Exhaustive Draw (流局 / 荒庄)
-    if (wall.length === 0) {
-      handleRoundFinish(null, null, null, false, [], 0);
-      return;
-    }
-
-    const drawnTile = wall[0];
-    const newWall = wall.slice(1);
-    setWall(newWall);
-    setActivePlayerIndex(nextPlayerIdx);
-    setLastDiscardedTile(null);
-
-    setPlayers((prev) =>
-      prev.map((p, idx) => {
-        if (idx === nextPlayerIdx) {
-          const newHand = [...p.hand, drawnTile];
-          return { ...p, hand: newHand };
-        }
-        return p;
-      })
-    );
-
-    // If next player is human, analyze actions
-    if (nextPlayerIdx === 0) {
-      const updatedHuman = {
-        ...players[0],
-        hand: [...players[0].hand, drawnTile],
-      };
-      checkHumanTurnOptions(updatedHuman, newWall.length);
-    }
-  };
-
-  // Handle Human Discard Confirmation
-  const handleHumanConfirmDiscard = (tile: Tile) => {
-    setUserCanHu(false);
-    setUserCanGang(false);
-    setUserCanPeng(false);
-    setUserCanChi(false);
-    executeDiscard(0, tile);
-  };
-
-  // Handle Human Pass (过)
-  const handleHumanPass = () => {
-    setUserCanHu(false);
-    setUserCanGang(false);
-    setUserCanPeng(false);
-    setUserCanChi(false);
-
-    if (lastDiscardedTile) {
-      const tile = lastDiscardedTile.tile;
-      const discarderIdx = lastDiscardedTile.fromPlayer;
-
-      // Check if any bot wants to call Peng / Gang / Chi on this tile
-      let botCalled = false;
-
-      for (let i = 1; i < 4; i++) {
-        if (i === discarderIdx) continue;
-        const bot = players[i];
-        const decision = evaluateBotCallResponse(
-          i,
-          bot.hand,
-          bot.melds,
-          tile,
-          discarderIdx,
-          prevailingWind,
-          bot.seatWind,
-          difficulty
-        );
-
-        if (decision.action === 'gang' && decision.tiles) {
-          soundManager.playKong();
-          executeBotMeldCall(i, 'ming_gang', decision.tiles, tile, discarderIdx);
-          botCalled = true;
-          break;
-        }
-        if (decision.action === 'peng' && decision.tiles) {
-          soundManager.playMeld();
-          executeBotMeldCall(i, 'peng', decision.tiles, tile, discarderIdx);
-          botCalled = true;
-          break;
-        }
-        if (decision.action === 'chi' && decision.tiles) {
-          soundManager.playMeld();
-          executeBotMeldCall(i, 'chi', decision.tiles, tile, discarderIdx);
-          botCalled = true;
-          break;
-        }
-      }
-
-      if (!botCalled) {
-        proceedToNextPlayerDraw((discarderIdx + 1) % 4);
-      }
-    }
-  };
-
-  // Handle Human Chi
-  const handleHumanChi = (selectedTiles: Tile[]) => {
-    if (!lastDiscardedTile) return;
-    const calledTile = lastDiscardedTile.tile;
-    const discarderPlayer = lastDiscardedTile.fromPlayer;
-
-    soundManager.playMeld();
-    showActionBanner('吃！', 0);
-
-    const tilesToRemove = selectedTiles.filter((t) => t.id !== calledTile.id);
-    const removeIds = new Set(tilesToRemove.map((t) => t.id));
-    const newHand = players[0].hand.filter((t) => !removeIds.has(t.id));
-
-    const newMeld: Meld = {
-      id: `meld_human_${Date.now()}`,
-      type: 'chi',
-      tiles: sortTiles(selectedTiles),
-      fromPlayerIndex: discarderPlayer,
-      calledTile,
-    };
-
-    setPlayers((prev) =>
-      prev.map((p, idx) => {
-        if (idx === 0) {
-          return { ...p, hand: sortTiles(newHand), melds: [...p.melds, newMeld] };
-        }
-        if (idx === discarderPlayer) {
-          return {
-            ...p,
-            discards: p.discards.filter((d) => d.id !== calledTile.id),
-          };
-        }
-        return p;
-      })
-    );
-
-    // Record action log
-    const actionLog: TurnActionLog = {
-      turnNumber: turnCounter,
-      playerIndex: 0,
-      playerName: players[0].name,
-      action: 'chi',
-      tile: calledTile,
-      meld: newMeld,
-      aiComment: `吃牌形成顺子【${selectedTiles.map((t) => t.displayName).join(' ')}】`,
-    };
-    setCurrentActionLogs((prev) => [...prev, actionLog]);
-
-    setUserCanChi(false);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-    setUserCanHu(false);
-    setActivePlayerIndex(0);
-    setLastDiscardedTile(null);
-    setSelectedTile(null);
-  };
-
-  // Handle Human Peng
-  const handleHumanPeng = () => {
-    if (!lastDiscardedTile) return;
-    const calledTile = lastDiscardedTile.tile;
-    const discarderPlayer = lastDiscardedTile.fromPlayer;
-
-    const matches = players[0].hand.filter((t) => t.type === calledTile.type).slice(0, 2);
-    if (matches.length < 2) return;
-
-    soundManager.playMeld();
-    showActionBanner('碰！', 0);
-
-    const removeIds = new Set(matches.map((t) => t.id));
-    const newHand = players[0].hand.filter((t) => !removeIds.has(t.id));
-
-    const newMeld: Meld = {
-      id: `meld_human_${Date.now()}`,
-      type: 'peng',
-      tiles: [...matches, calledTile],
-      fromPlayerIndex: discarderPlayer,
-      calledTile,
-    };
-
-    setPlayers((prev) =>
-      prev.map((p, idx) => {
-        if (idx === 0) {
-          return { ...p, hand: sortTiles(newHand), melds: [...p.melds, newMeld] };
-        }
-        if (idx === discarderPlayer) {
-          return {
-            ...p,
-            discards: p.discards.filter((d) => d.id !== calledTile.id),
-          };
-        }
-        return p;
-      })
-    );
-
-    // Record action log
-    const actionLog: TurnActionLog = {
-      turnNumber: turnCounter,
-      playerIndex: 0,
-      playerName: players[0].name,
-      action: 'peng',
-      tile: calledTile,
-      meld: newMeld,
-      aiComment: `碰牌形成刻子【${calledTile.displayName}】`,
-    };
-    setCurrentActionLogs((prev) => [...prev, actionLog]);
-
-    setUserCanChi(false);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-    setUserCanHu(false);
-    setActivePlayerIndex(0);
-    setLastDiscardedTile(null);
-    setSelectedTile(null);
-  };
-
-  // Handle Human Gang
-  const handleHumanGang = (candidate: {
-    type: 'ming_gang' | 'an_gang' | 'bu_gang';
-    tiles: Tile[];
-    meld?: Meld;
-  }) => {
-    soundManager.playKong();
-    let newHand = [...players[0].hand];
-    let newMelds = [...players[0].melds];
-    let discarderPlayer: number | null = null;
-    let calledTile: Tile | null = null;
-
-    if (candidate.type === 'ming_gang' && lastDiscardedTile) {
-      calledTile = lastDiscardedTile.tile;
-      discarderPlayer = lastDiscardedTile.fromPlayer;
-      const match = newHand.filter((t) => t.type === calledTile!.type).slice(0, 3);
-      const removeIds = new Set(match.map((t) => t.id));
-      newHand = newHand.filter((t) => !removeIds.has(t.id));
-      newMelds.push({
-        id: `meld_human_gang_${Date.now()}`,
-        type: 'ming_gang',
-        tiles: [...match, calledTile!],
-        fromPlayerIndex: discarderPlayer,
-      });
-    } else if (candidate.type === 'an_gang') {
-      const type = candidate.tiles[0].type;
-      newHand = newHand.filter((t) => t.type !== type);
-      newMelds.push({
-        id: `meld_human_angang_${Date.now()}`,
-        type: 'an_gang',
-        tiles: candidate.tiles,
-      });
-    } else if (candidate.type === 'bu_gang' && candidate.meld) {
-      newHand = newHand.filter((t) => t.id !== candidate.tiles[0].id);
-      newMelds = newMelds.map((m) =>
-        m.id === candidate.meld?.id
-          ? { ...m, type: 'bu_gang' as const, tiles: [...m.tiles, candidate.tiles[0]] }
-          : m
-      );
-    }
-
-    // Draw Kong replacement
-    let newWallLength = wall.length;
-    if (wall.length > 0) {
-      const drawn = wall[0];
-      const newWall = wall.slice(1);
-      newHand.push(drawn);
-      setWall(newWall);
-      newWallLength = newWall.length;
-      setKongDrawPlayer(0);
-    }
-
-    setPlayers((prev) =>
-      prev.map((p, idx) => {
-        if (idx === 0) {
-          return { ...p, hand: newHand, melds: newMelds };
-        }
-        if (discarderPlayer !== null && idx === discarderPlayer && calledTile) {
-          return {
-            ...p,
-            discards: p.discards.filter((d) => d.id !== calledTile!.id),
-          };
-        }
-        return p;
-      })
-    );
-
-    // Record action log
-    const actionLog: TurnActionLog = {
-      turnNumber: turnCounter,
-      playerIndex: 0,
-      playerName: players[0].name,
-      action: 'gang',
-      tile: candidate.tiles[0],
-      aiComment: `开杠【${candidate.tiles[0].displayName}】`,
-    };
-    setCurrentActionLogs((prev) => [...prev, actionLog]);
-
-    showActionBanner('杠！', 0);
-
-    setUserCanGang(false);
-    setUserCanPeng(false);
-    setUserCanChi(false);
-    setUserCanHu(false);
-    setActivePlayerIndex(0);
-    setLastDiscardedTile(null);
-    setSelectedTile(null);
-
-    // Check Self-Draw on Kong (A6) and further Kongs with the replacement tile
-    checkHumanTurnOptions({ ...players[0], hand: newHand, melds: newMelds }, newWallLength, undefined, true);
-  };
-
-  // Handle Human Hu
-  const handleHumanHu = () => {
-    if (!userCanHu) return;
-    setUserCanHu(false);
-
-    const winningTile = isSelfDrawHu
-      ? players[0].hand[players[0].hand.length - 1]
-      : lastDiscardedTile?.tile;
-
-    if (!winningTile) {
-      setIsSelfDrawHu(false);
-      return;
-    }
-
-    const winEval = evaluateWin(players[0].hand, players[0].melds, winningTile, {
-      isSelfDraw: isSelfDrawHu,
-      prevailingWind,
-      seatWind: players[0].seatWind,
-      isUnderTheSea,
-      isSelfDrawOnKong: isSelfDrawHu && kongDrawPlayer === 0,
-    });
-
-    // Guard: Hand MUST be evaluated as a legitimate win with >= 1 Fan!
-    if (!winEval.isWin || winEval.totalFan < 1) {
-      setIsSelfDrawHu(false);
-      return;
-    }
-
-    soundManager.playHu();
-    showActionBanner(isSelfDrawHu ? '自摸！' : '胡牌！', 0);
-
-    setUserCanHu(false);
-    setIsSelfDrawHu(false);
-    setUserCanChi(false);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-
-    handleRoundFinish(
-      0,
-      isSelfDrawHu ? null : lastDiscardedTile?.fromPlayer || null,
-      winningTile,
-      isSelfDrawHu,
-      winEval.fanDetails,
-      winEval.totalFan
-    );
-  };
-
-  // Round Finished: Calculate Points Delta and Save History
-  const handleRoundFinish = (
-    winnerIdx: number | null,
-    discarderIdx: number | null,
-    winningTile: Tile | null,
-    isSelfDraw: boolean,
-    fanDetails: any[],
-    totalFan: number
-  ) => {
-    // Immediately clear all prompt states to prevent carrying over to the next round
-    setUserCanHu(false);
-    setIsSelfDrawHu(false);
-    setUserCanChi(false);
-    setUserChiCombinations([]);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-    setUserGangCandidates([]);
-    setSelectedTile(null);
-    setLastDiscardedTile(null);
-
-    const pointsDelta =
-      winnerIdx !== null
-        ? calculatePointsDelta(totalFan, isSelfDraw, winnerIdx, discarderIdx)
-        : [0, 0, 0, 0];
-
-    // Update player scores
-    const updatedPlayers = players.map((p, idx) => ({
-      ...p,
-      score: p.score + pointsDelta[idx],
-    }));
-    setPlayers(updatedPlayers);
-
-    // Create RoundResult record
+  // Hand finished: record the result once
+  const recordedHandRef = React.useRef<TableState | null>(null);
+  React.useEffect(() => {
+    if (!table || table.phase !== 'ended' || !table.result || recordedHandRef.current === table) return;
+    recordedHandRef.current = table;
+    const r = table.result;
     const result: RoundResult = {
-      roundIndex: currentRoundIndex,
-      prevailingWind,
-      roundInWind: (currentRoundIndex % 4) + 1,
-      dealerIndex,
-      winnerIndex: winnerIdx,
-      winningTile,
-      isSelfDraw,
-      discarderIndex: discarderIdx,
-      fanDetails,
-      totalFan,
-      pointsDelta,
-      actionLogs: currentActionLogs,
-      handSnapshots: players.map((p) => ({
-        hand: [...p.hand],
-        melds: [...p.melds],
-      })),
+      roundIndex: table.handIndex,
+      prevailingWind: table.prevailingWind,
+      roundInWind: (table.handIndex % 4) + 1,
+      dealerIndex: table.dealer,
+      winnerIndex: r.winner,
+      winningTile: r.winningTile,
+      isSelfDraw: r.isSelfDraw,
+      discarderIndex: r.payer,
+      fanDetails: r.fanDetails,
+      totalFan: r.totalFan,
+      pointsDelta: r.pointsDelta,
+      actionLogs: table.log,
+      handSnapshots: table.players.map((p) => ({ hand: [...p.hand], melds: [...p.melds] })),
     };
-
     setActiveRoundResult(result);
+    setSelectedTile(null);
 
-    // Update career stats
     updateStats((prev) => {
-      const isHumanWin = winnerIdx === 0;
-      const isHumanDealIn = discarderIdx === 0;
-
+      const isHumanWin = r.winner === 0;
       const fanCounts = { ...prev.fansAchievedCounts };
-      if (isHumanWin) {
-        fanDetails.forEach((f) => {
-          fanCounts[f.code] = (fanCounts[f.code] || 0) + 1;
-        });
-      }
-
+      if (isHumanWin) r.fanDetails.forEach((f) => (fanCounts[f.code] = (fanCounts[f.code] || 0) + 1));
       return {
         ...prev,
         totalRounds: prev.totalRounds + 1,
         humanWins: prev.humanWins + (isHumanWin ? 1 : 0),
-        humanSelfDraws: prev.humanSelfDraws + (isHumanWin && isSelfDraw ? 1 : 0),
-        humanDealIns: prev.humanDealIns + (isHumanDealIn ? 1 : 0),
-        humanTenpaiCount: prev.humanTenpaiCount + (players[0].isTenpai ? 1 : 0),
-        highestFan: isHumanWin ? Math.max(prev.highestFan, totalFan) : prev.highestFan,
-        totalPointsEarned: prev.totalPointsEarned + (isHumanWin ? pointsDelta[0] : 0),
+        humanSelfDraws: prev.humanSelfDraws + (isHumanWin && r.isSelfDraw ? 1 : 0),
+        humanDealIns: prev.humanDealIns + (r.payer === 0 ? 1 : 0),
+        humanTenpaiCount: prev.humanTenpaiCount + (table.players[0].isTenpai ? 1 : 0),
+        highestFan: isHumanWin ? Math.max(prev.highestFan, r.totalFan) : prev.highestFan,
+        totalPointsEarned: prev.totalPointsEarned + (isHumanWin ? r.pointsDelta[0] : 0),
         fansAchievedCounts: fanCounts,
         historicalRounds: [...prev.historicalRounds, result],
       };
     });
-  };
+  }, [table]);
 
-  // Next round trigger
   const handleNextRound = () => {
+    if (!table) return;
     setActiveRoundResult(null);
-    setUserCanHu(false);
-    setIsSelfDrawHu(false);
-    setUserCanChi(false);
-    setUserChiCombinations([]);
-    setUserCanPeng(false);
-    setUserCanGang(false);
-    setUserGangCandidates([]);
-    setLastDiscardedTile(null);
-    setSelectedTile(null);
-
-    if (currentRoundIndex >= 15) {
-      // 16 rounds completed! Final championship game over!
+    if (table.handIndex >= HANDS_PER_MATCH - 1) {
       setIsGameOver16(true);
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
       updateStats((prev) => ({ ...prev, totalGames: prev.totalGames + 1 }));
     } else {
-      const nextIdx = currentRoundIndex + 1;
-      setCurrentRoundIndex(nextIdx);
-      initRound(nextIdx, players.map((p) => p.score));
+      startHand(table.handIndex + 1, table.players.map((p) => p.score));
     }
   };
 
-  // Collect all visible tiles for shanten and safety calculations
-  // Tiles a given seat can see: every discard and exposed meld, plus its own hand
-  const getVisibleTilesFor = (playerIdx: number): Tile[] => {
-    const visible: Tile[] = [];
-    players.forEach((p) => {
-      p.discards.forEach((d) => visible.push(d));
-      p.melds.forEach((m) => m.tiles.forEach((t) => visible.push(t)));
-    });
-    if (players[playerIdx]) {
-      players[playerIdx].hand.forEach((h) => visible.push(h));
-    }
-    return visible;
+  // ---------------------------------------------------------------------------
+  // Human actions (all validated by the engine)
+  // ---------------------------------------------------------------------------
+
+  const handleHumanConfirmDiscard = (tile: Tile) => {
+    if (!table || !humanTurn) return;
+    const pl = table.players[0];
+    const recs = generateDiscardRecommendations(
+      pl.hand,
+      pl.melds,
+      visibleTilesFor(table, 0),
+      table.prevailingWind,
+      pl.seatWind,
+      table.players.map((p) => p.discards),
+      visibleThreats(table, 0)
+    );
+    const blunder = analyzeTurnBlunder(tile, recs);
+    const shantenBefore = calculateShanten(pl.hand, pl.melds);
+    const shantenAfter = calculateShanten(
+      pl.hand.filter((t) => t.id !== tile.id),
+      pl.melds
+    );
+    setSelectedTile(null);
+    setTable(
+      discard(table, 0, tile.id, {
+        shantenBefore,
+        shantenAfter,
+        isBlunder: blunder.isBlunder,
+        blunderSeverity: blunder.severity,
+        blunderType: blunder.type,
+        blunderTypeName: blunder.typeName,
+        blunderReason: blunder.reason,
+        recommendedDiscard: blunder.bestChoice,
+        bestRec: blunder.bestRec,
+        chosenRec: blunder.chosenRec,
+        aiComment:
+          shantenAfter === 0
+            ? '成功进入听牌！'
+            : blunder.isBlunder
+            ? undefined
+            : `打出【${tile.displayName}】，保持${shantenAfter}向听`,
+      })
+    );
   };
 
-  // Tiles visible to the human player
-  const getAllVisibleTiles = (): Tile[] => getVisibleTilesFor(0);
+  const handleHumanHu = () => {
+    if (!table) return;
+    if (humanTurn?.canHu) setTable(declareSelfDraw(table, 0));
+    else if (humanClaim?.canHu) setTable(resolveWith(table, { type: 'hu' }));
+  };
 
-  // Live strategy calculations for Human player
+  const handleHumanPeng = () => {
+    if (table && humanClaim?.pung) setTable(resolveWith(table, { type: 'pung' }));
+  };
+
+  const handleHumanChi = (tiles: Tile[]) => {
+    if (table && humanClaim?.chi.length) setTable(resolveWith(table, { type: 'chi', tiles }));
+  };
+
+  const handleHumanGang = (candidate: GangOption) => {
+    if (!table) return;
+    if (humanClaim?.kong) {
+      setTable(resolveWith(table, { type: 'kong' }));
+      return;
+    }
+    const k = humanTurn?.kongs.find(
+      (c) => c.type === candidate.type && c.tiles[0].type === candidate.tiles[0].type
+    );
+    if (k) setTable(declareKong(table, 0, k as KongCandidate));
+  };
+
+  const handleHumanPass = () => {
+    if (!table) return;
+    if (humanClaim) setTable(resolveWith(table, { type: 'pass' }));
+    else if (humanTurn) setDismissedTurnFor(table);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Derived view data
+  // ---------------------------------------------------------------------------
+
+  const players = table?.players ?? [];
   const human = players[0];
-  const allVisibleTiles = getAllVisibleTiles();
+  const prevailingWind = table?.prevailingWind ?? 'E';
+  const currentRoundIndex = table?.handIndex ?? 0;
+  const dealerIndex = table?.dealer ?? 0;
+  const allVisibleTiles = table ? visibleTilesFor(table, 0) : [];
   const humanShanten = human ? calculateShanten(human.hand, human.melds) : 8;
 
   const tenpaiWaits: TenpaiWait[] =
-    human && human.hand.length % 3 === 1 && humanShanten === 0
-      ? calculateTenpaiWaits(
-          human.hand,
-          human.melds,
-          allVisibleTiles,
-          prevailingWind,
-          human.seatWind
-        )
+    table && human && human.hand.length % 3 === 1 && humanShanten === 0
+      ? calculateTenpaiWaits(human.hand, human.melds, allVisibleTiles, prevailingWind, human.seatWind)
       : [];
 
   const discardRecommendations: DiscardRecommendation[] =
-    human && human.hand.length % 3 === 2
+    table && human && humanTurn
       ? generateDiscardRecommendations(
           human.hand,
           human.melds,
@@ -1242,9 +440,22 @@ export default function App() {
           prevailingWind,
           human.seatWind,
           players.map((p) => p.discards),
-          players.map((p) => p.isTenpai)
+          visibleThreats(table, 0)
         )
       : [];
+
+  const gangCandidates: GangOption[] = humanClaim?.kong
+    ? [{ type: 'ming_gang', tiles: [...humanClaim.kong, table!.claim!.tile] }]
+    : humanTurn?.kongs ?? [];
+
+  const lastDiscardedTile =
+    table?.phase === 'claim' && table.claim ? { tile: table.claim.tile, fromPlayer: table.claim.from } : null;
+
+  const styleLabel = (seat: number) => {
+    const p = personaFor(seat);
+    const tier = p.skill >= 0.8 ? '高手' : p.skill >= 0.55 ? '中等' : '一般';
+    return `${STYLE_LABELS[p.style]} · ${tier}`;
+  };
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
@@ -1256,7 +467,7 @@ export default function App() {
             雀圣研习社
           </span>
           <span className="text-[11px] text-stone-500 hidden sm:inline">
-            · 国标麻将 16 局标准大局与牌效研习
+            · TVB 广东麻将比赛规则 · 16 局实战研习
           </span>
         </div>
 
@@ -1317,12 +528,32 @@ export default function App() {
           >
             <Bot className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden xs:inline">
-              {difficulty === 'beginner'
+              {difficulty === 'tournament'
+                ? 'AI: 比赛实战'
+                : difficulty === 'beginner'
                 ? 'AI: 入门'
                 : difficulty === 'intermediate'
                 ? 'AI: 进阶'
                 : 'AI: 宗师'}
             </span>
+          </button>
+
+          {/* Strict Hu: no legality hint, false wins are penalized */}
+          <button
+            onClick={toggleStrictHu}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors ${
+              strictHu
+                ? 'bg-rose-950/60 border-rose-700 text-rose-200'
+                : 'bg-stone-900 border-stone-800 text-stone-300 hover:bg-stone-800'
+            }`}
+            title={
+              strictHu
+                ? '严格和牌：只要牌型完整就可按和，是否有番需自行判断；无番诈胡罚每家 50 点且本局不得再和'
+                : '提示和牌：只有合法（至少 1 番）时才显示和牌按钮'
+            }
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">{strictHu ? '严格和牌' : '提示和牌'}</span>
           </button>
 
           {/* Sound Toggle */}
@@ -1364,21 +595,21 @@ export default function App() {
         {players.length === 4 && (
           <GameBoard
             players={players}
-            activePlayerIndex={activePlayerIndex}
+            activePlayerIndex={table!.active}
             prevailingWind={prevailingWind}
             currentRoundNumber={currentRoundIndex + 1}
             dealerIndex={dealerIndex}
-            wallRemaining={wall.length}
+            wallRemaining={table!.wall.length}
             selectedTile={selectedTile}
             onSelectTile={setSelectedTile}
             onConfirmDiscard={handleHumanConfirmDiscard}
-            canChi={userCanChi}
-            chiCombinations={userChiCombinations}
-            canPeng={userCanPeng}
-            canGang={userCanGang}
-            gangCandidates={userGangCandidates}
-            canHu={userCanHu}
-            isSelfDraw={isSelfDrawHu}
+            canChi={!!humanClaim && humanClaim.chi.length > 0}
+            chiCombinations={humanClaim?.chi ?? []}
+            canPeng={!!humanClaim?.pung}
+            canGang={gangCandidates.length > 0}
+            gangCandidates={gangCandidates}
+            canHu={!!(humanClaim?.canHu || humanTurn?.canHu)}
+            isSelfDraw={!!humanTurn?.canHu}
             onChi={handleHumanChi}
             onPeng={handleHumanPeng}
             onGang={handleHumanGang}
@@ -1400,7 +631,7 @@ export default function App() {
             tenpaiWaits={tenpaiWaits}
             discardRecommendations={discardRecommendations}
             players={players}
-            activePlayerIndex={activePlayerIndex}
+            activePlayerIndex={table!.active}
             prevailingWind={prevailingWind}
             humanSeatWind={human.seatWind}
             onTileSelect={(t) => setSelectedTile(t)}
@@ -1513,6 +744,11 @@ export default function App() {
                         第 {rank + 1} 名
                       </span>
                       <span className="font-bold text-stone-100">{p.name}</span>
+                      {!p.isHuman && (
+                        <span className="text-[10px] text-stone-400">
+                          {styleLabel(players.indexOf(p))}
+                        </span>
+                      )}
                     </div>
                     <span className="font-mono font-bold text-amber-400 text-base">
                       {p.score > 0 ? `+${p.score}` : p.score} 点
@@ -1577,4 +813,20 @@ export default function App() {
       )}
     </div>
   );
+}
+
+function emptyStats(): GameStats {
+  return {
+    totalGames: 0,
+    totalRounds: 0,
+    humanWins: 0,
+    humanSelfDraws: 0,
+    humanDealIns: 0,
+    humanTenpaiCount: 0,
+    highestFan: 0,
+    highestFanNames: [],
+    totalPointsEarned: 0,
+    fansAchievedCounts: {},
+    historicalRounds: [],
+  };
 }
