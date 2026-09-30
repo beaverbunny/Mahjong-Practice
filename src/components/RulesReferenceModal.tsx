@@ -171,8 +171,22 @@ export const RulesReferenceModal: React.FC<RulesReferenceModalProps> = ({ onClos
               <span>整雀赛制：4 风圈 × 4 局 = 16 局完整大局</span>
             </div>
             <p className="text-stone-400 text-[11px] leading-relaxed">
-              比赛按东、南、西、北 4 个风圈循环进行，每圈含 4 局 (东局、南局、西局、北局)，共计 16 局。圈风与门风重合时可同时计入门风刻与圈风刻各 1 番。16 局结束后汇总最终总分决出雀圣排名。
+              比赛按东、南、西、北 4 个风圈循环进行，每圈含 4 局 (东局、南局、西局、北局)，共计 16 局。无论和牌或流局，每局结束后都轮庄，庄家不连庄。圈风与门风重合时可同时计入门风刻与圈风刻各 1 番。16 局结束后汇总最终总分。
             </p>
+          </div>
+
+          {/* Play procedure enforced by the game */}
+          <div className="p-3.5 bg-stone-950/60 rounded-xl border border-stone-800 space-y-1.5">
+            <div className="font-bold text-stone-200">行牌规则（本练习严格执行）</div>
+            <ul className="text-stone-400 text-[11px] leading-relaxed list-disc pl-4 space-y-1">
+              <li>最少 1 番起和：不在指定番种列表内的牌型不予承认。无番牌只能自摸（自摸本身 1 番）。</li>
+              <li>抢牌优先次序：和牌 &gt; 杠 / 碰 &gt; 吃。多人同时可和时，由打牌者下家起按顺序最先者和牌。只有下家可以吃。</li>
+              <li>吃、碰后必须打出一张牌，当巡不能自摸或开杠。</li>
+              <li>牌墙摸完后的最后一张打出牌只能用来和牌（计海底捞月），不能吃、碰、杠。</li>
+              <li>开杠需从牌尾补牌，牌墙已空时不能开杠。补牌自摸计杠上开花。</li>
+              <li>抢杠：对手加杠（碰后补杠）时，可以和那张牌，由加杠者单独支付。</li>
+              <li>严格和牌模式下，无番或不成和而宣告和牌即为诈胡：罚付每家 50 点，本局不得再和牌。</li>
+            </ul>
           </div>
         </div>
 

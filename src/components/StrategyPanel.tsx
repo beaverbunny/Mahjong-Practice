@@ -323,35 +323,41 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 <div className="p-3 bg-stone-950/50 rounded-xl border border-stone-800 space-y-2">
                   <div className="font-bold text-stone-200 flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    <span>对手听牌与鸣牌警戒</span>
+                    <span>对手副露警戒（仅凭明牌判断）</span>
                   </div>
                   {players
                     .filter((p) => !p.isHuman)
-                    .map((bot, idx) => (
-                      <div
-                        key={bot.id}
-                        className="flex items-center justify-between py-1.5 border-b border-stone-800/60 last:border-0"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-stone-300">{bot.name}</span>
-                          <span className="text-stone-500 font-mono text-[10px]">
-                            ({bot.seatWind}风)
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-stone-400 text-[11px]">
-                            副露: {bot.melds.length} 组
-                          </span>
-                          {bot.isTenpai ? (
-                            <span className="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 font-bold text-[10px] border border-rose-700 animate-pulse">
-                              已听牌
+                    .map((bot) => {
+                      const read = readVisibleThreat(bot, prevailingWind);
+                      return (
+                        <div
+                          key={bot.id}
+                          className="flex items-center justify-between py-1.5 border-b border-stone-800/60 last:border-0"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-stone-300">{bot.name}</span>
+                            <span className="text-stone-500 font-mono text-[10px]">({bot.seatWind}风)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-stone-400 text-[11px]">副露: {bot.melds.length} 组</span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded font-bold text-[10px] border ${
+                                read.level === 'high'
+                                  ? 'bg-rose-900/80 text-rose-300 border-rose-700'
+                                  : read.level === 'medium'
+                                  ? 'bg-amber-900/60 text-amber-300 border-amber-700'
+                                  : 'text-stone-500 border-transparent'
+                              }`}
+                            >
+                              {read.label}
                             </span>
-                          ) : (
-                            <span className="text-stone-500 text-[10px]">未听</span>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
+                  <p className="text-[10px] text-stone-500 leading-relaxed">
+                    实战中看不到对手是否听牌。此处只根据副露推测：三副露以上或明显做一色/对对胡/番牌刻时需警惕。
+                  </p>
                 </div>
 
                 {/* Defense Safety Guide */}
@@ -432,3 +438,26 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
     </aside>
   );
 };
+
+// What a real player can infer from an opponent's exposed melds (no hidden information)
+function readVisibleThreat(
+  pl: { melds: { type: string; tiles: { suit?: string; wind?: string; dragon?: string }[] }[]; seatWind: string },
+  prevailingWind: string
+): { level: 'low' | 'medium' | 'high'; label: string } {
+  const melds = pl.melds;
+  if (melds.length === 0) return { level: 'low', label: '门清' };
+  const suits = new Set(melds.map((m) => m.tiles[0].suit).filter(Boolean));
+  const hasHonor = melds.some((m) => !m.tiles[0].suit);
+  const valuePungs = melds.filter((m) => {
+    const t = m.tiles[0];
+    return m.type !== 'chi' && (!!t.dragon || t.wind === pl.seatWind || t.wind === prevailingWind);
+  }).length;
+  const allPungs = melds.length >= 2 && melds.every((m) => m.type !== 'chi');
+  const signs: string[] = [];
+  if (melds.length >= 2 && suits.size === 1) signs.push(hasHonor ? '混一色?' : '清一色?');
+  if (allPungs) signs.push('对对胡?');
+  if (valuePungs > 0) signs.push(`番牌刻×${valuePungs}`);
+  const big = signs.length > 0 && (melds.length >= 2 || valuePungs >= 2);
+  const level = melds.length >= 3 || big ? 'high' : melds.length === 2 ? 'medium' : 'low';
+  return { level, label: signs.join(' ') || (level === 'high' ? '接近听牌' : '鸣牌中') };
+}

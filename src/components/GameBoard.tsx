@@ -105,9 +105,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           <span className="text-[10px] font-mono text-stone-400">
             ({topBot.score > 0 ? `+${topBot.score}` : topBot.score}点)
           </span>
-          {topBot.isTenpai && (
-            <span className="text-[9px] px-1 bg-rose-600 text-white rounded font-bold">听</span>
-          )}
         </div>
 
         {/* Top Hand Tiles & Melds */}
@@ -150,9 +147,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               <span className="text-amber-400 font-mono">{leftBot.seatWind}风</span>
               <span>{leftBot.score}点</span>
             </div>
-            {leftBot.isTenpai && (
-              <span className="text-[9px] px-1 bg-rose-600 text-white rounded font-bold mt-0.5">听</span>
-            )}
           </div>
 
           {/* Left Bot Hand Tiles (vertical stack) */}
@@ -422,9 +416,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               <span className="text-amber-400 font-mono">{rightBot.seatWind}风</span>
               <span>{rightBot.score}点</span>
             </div>
-            {rightBot.isTenpai && (
-              <span className="text-[9px] px-1 bg-rose-600 text-white rounded font-bold mt-0.5">听</span>
-            )}
           </div>
 
           {/* Right Bot Hand Tiles */}

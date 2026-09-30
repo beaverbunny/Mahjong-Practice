@@ -11,7 +11,7 @@ export type TileType =
   | `wind_${Wind}`     // 'wind_E', 'wind_S', 'wind_W', 'wind_N'
   | `dragon_${Dragon}`; // 'dragon_C', 'dragon_F', 'dragon_B'
 
-export type DifficultyLevel = 'beginner' | 'intermediate' | 'master';
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'master' | 'tournament';
 
 export interface Tile {
   id: string; // unique tile identifier (e.g. 'wan_1_0')
@@ -108,6 +108,8 @@ export interface PlayerState {
   startingScore: number;
   isTenpai: boolean;
   tenpaiWaits: TenpaiWait[];
+  // Declared a false win this hand (strict mode): can't win again until the next hand
+  isDead?: boolean;
 }
 
 export interface RoundResult {
