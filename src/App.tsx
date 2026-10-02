@@ -54,6 +54,7 @@ import {
   FileSearch,
   ShieldCheck,
   X,
+  Share2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -498,6 +499,32 @@ export default function App() {
     return `${STYLE_LABELS[p.style]} · ${tier}`;
   };
 
+  const handleShareApp = async () => {
+    const shareUrl = 'https://tinyurl.com/mahjong-pro-arena';
+    const shareTitle = '雀圣研习社 - 国标标准麻将实战与策略复盘';
+    const shareText = '邀你加入雀圣研习社，体验16局大局赛制与深度牌效复盘！';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showActionBanner('已复制分享链接：https://tinyurl.com/mahjong-pro-arena (可发给微信好友/社媒)', 0);
+    } catch {
+      showActionBanner('分享短链：https://tinyurl.com/mahjong-pro-arena', 0);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
       {/* ================= ZONE 1, 2, 3: TOP BAR CONTRACT ================= */}
@@ -604,6 +631,15 @@ export default function App() {
             title={soundEnabled ? '音效开启' : '音效静音'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+
+          {/* Share App Button */}
+          <button
+            onClick={handleShareApp}
+            className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-amber-400 text-xs transition-colors cursor-pointer"
+            title="分享专属短链给微信好友或社媒 (https://tinyurl.com/mahjong-pro-arena)"
+          >
+            <Share2 className="w-4 h-4" />
           </button>
 
           {/* Strategy Panel Toggle */}
