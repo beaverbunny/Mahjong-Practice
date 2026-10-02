@@ -11,6 +11,8 @@ import {
   Award,
   RefreshCw,
   FileSearch,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface StatisticsModalProps {
@@ -21,6 +23,8 @@ interface StatisticsModalProps {
   onClose: () => void;
   onResetStats: () => void;
   onOpenReviewRound?: (round: RoundResult) => void;
+  onDeleteRound?: (indexInHistorical: number) => void;
+  onClearAllRounds?: () => void;
 }
 
 export const StatisticsModal: React.FC<StatisticsModalProps> = ({
@@ -31,7 +35,16 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
   onClose,
   onResetStats,
   onOpenReviewRound,
+  onDeleteRound,
+  onClearAllRounds,
 }) => {
+  const [pendingDelete, setPendingDelete] = React.useState<
+    | { type: 'single'; index: number; round: RoundResult }
+    | { type: 'all' }
+    | { type: 'reset_all' }
+    | null
+  >(null);
+
   const totalRounds = Math.max(1, stats.totalRounds);
   const winRate = ((stats.humanWins / totalRounds) * 100).toFixed(1);
   const selfDrawRate = stats.humanWins > 0 ? ((stats.humanSelfDraws / stats.humanWins) * 100).toFixed(1) : '0.0';
@@ -52,7 +65,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-4xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200">
         {/* Header */}
         <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between">
@@ -200,29 +213,53 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
           )}
 
           {/* Historical Rounds Replay Section */}
-          {historicalRounds.length > 0 && (
+          {historicalRounds.length > 0 ? (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-stone-200 text-sm flex items-center gap-1.5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1.5">
                   <FileSearch className="w-4 h-4 text-amber-400" />
-                  <span>各局牌谱归档与实战复盘 (已完赛 {historicalRounds.length} 局)：</span>
-                </h3>
-                <span className="text-[11px] text-stone-400">点击“复盘此局”随时单步复盘</span>
+                  <h3 className="font-semibold text-stone-200 text-sm">
+                    各局牌谱归档与实战复盘 (已完赛 {historicalRounds.length} 局)：
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  {onClearAllRounds && (
+                    <button
+                      onClick={() => setPendingDelete({ type: 'all' })}
+                      className="px-2.5 py-1 rounded-lg bg-stone-800/80 hover:bg-rose-950/70 border border-stone-700/60 hover:border-rose-800 text-stone-400 hover:text-rose-300 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="清空历史归档中的全部复盘牌谱"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>清空复盘记录</span>
+                    </button>
+                  )}
+                  <span className="text-[11px] text-stone-400 hidden sm:inline">点击“复盘此局”随时单步复盘</span>
+                </div>
               </div>
 
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {historicalRounds.slice().reverse().map((round, rIdx) => {
+                  const originalIndex = historicalRounds.length - 1 - rIdx;
                   const isDraw = round.winnerIndex === null;
                   const isHumanWin = round.winnerIndex === 0;
-                  const blundersCount = round.actionLogs.filter((l) => l.isBlunder && l.playerIndex === 0).length;
+
+                  // Detailed Blunder Analysis for this round
+                  const humanDiscards = round.actionLogs.filter((l) => l.action === 'discard' && l.playerIndex === 0);
+                  const blunderLogs = round.actionLogs.filter((l) => l.isBlunder && l.playerIndex === 0);
+                  const criticalBlunders = blunderLogs.filter((l) => l.blunderSeverity === 'critical' || !l.blunderSeverity);
+                  const inaccuracyBlunders = blunderLogs.filter((l) => l.blunderSeverity === 'inaccuracy');
+                  const accuracyRate = humanDiscards.length > 0
+                    ? Math.max(0, Math.round(((humanDiscards.length - blunderLogs.length) / humanDiscards.length) * 100))
+                    : 100;
+                  const blunderTags = Array.from(new Set(blunderLogs.map((b) => b.blunderTypeName?.split(' ')[0]).filter(Boolean)));
 
                   return (
                     <div
                       key={round.roundIndex + '_' + rIdx}
                       className="p-3 rounded-xl bg-stone-950/70 border border-stone-800 hover:border-amber-500/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-stone-900 border border-stone-700 flex flex-col items-center justify-center shrink-0">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-stone-900 border border-stone-700 flex flex-col items-center justify-center shrink-0 mt-0.5">
                           <span className="text-[10px] text-stone-400 font-serif">第</span>
                           <span className="text-sm font-bold font-mono text-amber-400 leading-none">
                             {round.roundIndex + 1}
@@ -230,7 +267,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                           <span className="text-[9px] text-stone-500 leading-none">局</span>
                         </div>
 
-                        <div>
+                        <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-xs text-stone-100">
                               {round.prevailingWind}风圈 · {['东局', '南局', '西局', '北局'][round.roundIndex % 4]}
@@ -255,11 +292,8 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                                 {round.totalFan} 番
                               </span>
                             )}
-                          </div>
-
-                          <div className="text-[11px] text-stone-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                            <span>
-                              您得分:{' '}
+                            <span className="text-stone-400 text-[11px]">
+                              得分:{' '}
                               <strong
                                 className={
                                   round.pointsDelta[0] > 0
@@ -273,30 +307,78 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                               </strong>{' '}
                               点
                             </span>
-                            <span>总计 {round.actionLogs.length} 巡操作</span>
-                            {blundersCount > 0 ? (
-                              <span className="text-rose-400 font-medium">⚠️ {blundersCount} 处打法疑问</span>
-                            ) : (
-                              <span className="text-emerald-400">✨ 牌效发挥出色</span>
+                          </div>
+
+                          {/* Round Blunder Analysis & AI Evaluation */}
+                          <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                            <span className="text-stone-400">
+                              出牌 <strong className="text-stone-300 font-mono">{humanDiscards.length}</strong> 巡
+                            </span>
+                            <span className="text-stone-600">·</span>
+                            <span className="font-mono">
+                              牌效: <strong className={accuracyRate >= 85 ? 'text-emerald-400' : accuracyRate >= 70 ? 'text-amber-400' : 'text-rose-400'}>{accuracyRate}%</strong>
+                            </span>
+                            {criticalBlunders.length > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-950/80 border border-rose-800/60 text-rose-300 font-medium">
+                                🔴 {criticalBlunders.length} 严重恶手
+                              </span>
                             )}
+                            {inaccuracyBlunders.length > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-950/80 border border-amber-800/60 text-amber-300 font-medium">
+                                🟡 {inaccuracyBlunders.length} 缓手
+                              </span>
+                            )}
+                            {blunderLogs.length === 0 && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/50 border border-emerald-800/50 text-emerald-300 font-medium">
+                                ✨ 零恶手 / 牌效极佳
+                              </span>
+                            )}
+                            {blunderTags.slice(0, 2).map((tag, tIdx) => (
+                              <span key={tIdx} className="text-[10px] px-1.5 py-0.2 rounded bg-stone-900 border border-stone-800 text-stone-400">
+                                {tag}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          onClose();
-                          if (onOpenReviewRound) onOpenReviewRound(round);
-                        }}
-                        className="px-3.5 py-1.5 rounded-lg bg-stone-800 hover:bg-amber-600 hover:text-stone-950 text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow cursor-pointer shrink-0"
-                      >
-                        <FileSearch className="w-3.5 h-3.5" />
-                        <span>复盘此局</span>
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                        <button
+                          onClick={() => {
+                            onClose();
+                            if (onOpenReviewRound) onOpenReviewRound(round);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-amber-600 hover:text-stone-950 text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow cursor-pointer"
+                        >
+                          <FileSearch className="w-3.5 h-3.5" />
+                          <span>复盘此局</span>
+                        </button>
+
+                        {onDeleteRound && (
+                          <button
+                            onClick={() =>
+                              setPendingDelete({
+                                type: 'single',
+                                index: originalIndex,
+                                round,
+                              })
+                            }
+                            className="p-1.5 rounded-lg bg-stone-800/70 hover:bg-rose-950/80 border border-stone-700/60 hover:border-rose-700 text-stone-400 hover:text-rose-300 transition-colors cursor-pointer"
+                            title="删除此局复盘记录"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-stone-950/40 border border-stone-800 text-center text-xs text-stone-400 space-y-1">
+              <p>暂无已完赛的历史复盘记录。</p>
+              <p className="text-[11px] text-stone-500">每完成一局对战，系统将自动录制完整牌谱与恶手分析供您随时回溯。</p>
             </div>
           )}
 
@@ -340,11 +422,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs">
           <button
-            onClick={() => {
-              if (window.confirm('确定要重置所有生涯战绩与统计数据吗？')) {
-                onResetStats();
-              }
-            }}
+            onClick={() => setPendingDelete({ type: 'reset_all' })}
             className="text-stone-500 hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -359,6 +437,60 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Confirmation Dialog Overlay for Deleting Records / Resetting Stats */}
+      {pendingDelete && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md bg-stone-900 border border-stone-700 rounded-2xl shadow-2xl p-5 space-y-4 text-stone-200">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-700/80 text-rose-400 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-stone-100">
+                  {pendingDelete.type === 'single'
+                    ? `确认删除第 ${pendingDelete.round.roundIndex + 1} 局复盘记录？`
+                    : pendingDelete.type === 'all'
+                    ? '确认清空所有历史复盘记录？'
+                    : '确认重置所有生涯战绩数据？'}
+                </h3>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  {pendingDelete.type === 'single'
+                    ? `您即将删除【第 ${pendingDelete.round.roundIndex + 1} 局 (${pendingDelete.round.prevailingWind}风圈)】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与段位得分等全局统计将不受影响。`
+                    : pendingDelete.type === 'all'
+                    ? `您即将清空历史归档中的全部 ${historicalRounds.length} 局对局牌谱与恶手复盘记录。此操作不可撤销，您的累计胜率与雀士生涯总积分将予以保留。`
+                    : '重置后将清除包括总局数、胜率、和牌达成图谱及所有复盘牌谱在内的全部生涯数据，恢复初始状态。'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-stone-800">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-medium text-xs transition-colors cursor-pointer"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  if (pendingDelete.type === 'single') {
+                    if (onDeleteRound) onDeleteRound(pendingDelete.index);
+                  } else if (pendingDelete.type === 'all') {
+                    if (onClearAllRounds) onClearAllRounds();
+                  } else if (pendingDelete.type === 'reset_all') {
+                    onResetStats();
+                  }
+                  setPendingDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-950/50 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>确认删除</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

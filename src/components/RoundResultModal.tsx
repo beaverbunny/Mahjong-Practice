@@ -1,7 +1,8 @@
 import React from 'react';
 import { RoundResult, PlayerState } from '../types/mahjong';
+import { sortTiles } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
-import { Award, ArrowRight, RotateCcw, AlertCircle, FileSearch } from 'lucide-react';
+import { Award, ArrowRight, RotateCcw, AlertCircle, FileSearch, BarChart3 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface RoundResultModalProps {
@@ -11,6 +12,7 @@ interface RoundResultModalProps {
   onNextRound: () => void;
   onOpenReview: () => void;
   onRestartMatch?: () => void;
+  onOpenStats?: () => void;
 }
 
 export const RoundResultModal: React.FC<RoundResultModalProps> = ({
@@ -20,6 +22,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   onNextRound,
   onOpenReview,
   onRestartMatch,
+  onOpenStats,
 }) => {
   const isDraw = result.winnerIndex === null;
   const isHumanWinner = result.winnerIndex === 0;
@@ -105,6 +108,65 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             </div>
           )}
 
+          {/* Winner's Complete Hand (Melds + Concealed Hand + Winning Tile) */}
+          {!isDraw && winner && (
+            <div className="p-3.5 bg-stone-950/70 rounded-xl border border-stone-800 space-y-2">
+              <div className="font-semibold text-stone-200 text-xs flex items-center justify-between">
+                <span>{winner.name} 完整胡牌牌型姿态：</span>
+                <span className="text-[11px] text-amber-400">
+                  {result.isSelfDraw ? '自摸' : `荣和点炮 (放铳方: ${discarder?.name || '未知'})`}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                {/* Exposed Melds */}
+                {winner.melds.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {winner.melds.map((meld, mIdx) => (
+                      <div
+                        key={meld.id || mIdx}
+                        className="flex items-center gap-1 p-1 bg-stone-900 rounded-lg border border-stone-700"
+                      >
+                        <span
+                          className={`text-[9px] px-1 py-0.2 rounded font-bold ${
+                            meld.type === 'peng'
+                              ? 'bg-amber-950 text-amber-300'
+                              : meld.type === 'chi'
+                              ? 'bg-blue-950 text-blue-300'
+                              : 'bg-purple-950 text-purple-300'
+                          }`}
+                        >
+                          {meld.type === 'peng' ? '碰' : meld.type === 'chi' ? '吃' : '杠'}
+                        </span>
+                        <div className="flex items-center gap-0.5">
+                          {meld.tiles.map((t, idx) => (
+                            <MahjongTile key={t.id + idx} tile={t} size="sm" />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Hand Tiles */}
+                <div className="flex items-center gap-0.5 p-1 bg-stone-900/60 rounded-lg border border-stone-800">
+                  {sortTiles(winner.hand).map((t, idx) => (
+                    <MahjongTile key={t.id + idx} tile={t} size="sm" />
+                  ))}
+                </div>
+
+                {/* Winning Tile */}
+                {result.winningTile && (
+                  <div className="flex items-center gap-1.5 p-1 rounded-lg bg-amber-950/60 border border-amber-500/80 ring-1 ring-amber-400/40">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-stone-950 font-bold">
+                      {result.isSelfDraw ? '自摸' : '荣和'}
+                    </span>
+                    <MahjongTile tile={result.winningTile} size="sm" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Fan Details Breakdown (According to Appendix III) */}
           {!isDraw && result.fanDetails.length > 0 && (
             <div className="space-y-2">
@@ -179,6 +241,17 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               <FileSearch className="w-4 h-4 text-amber-400" />
               <span>实战复盘本局</span>
             </button>
+
+            {onOpenStats && (
+              <button
+                onClick={onOpenStats}
+                className="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="查看生涯战绩与本场积分"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
+                <span>生涯战绩</span>
+              </button>
+            )}
 
             {onRestartMatch && (
               <button

@@ -53,6 +53,7 @@ import {
   Bot,
   FileSearch,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -146,6 +147,46 @@ export default function App() {
       } catch {}
       return next;
     });
+  };
+
+  const handleDeleteHistoricalRound = (target: RoundResult | number) => {
+    updateStats((prev) => {
+      let targetIdx = -1;
+      if (typeof target === 'number') {
+        targetIdx = target;
+      } else {
+        targetIdx = prev.historicalRounds.findIndex(
+          (r) =>
+            r === target ||
+            (r.roundIndex === target.roundIndex &&
+              r.actionLogs.length === target.actionLogs.length &&
+              r.totalFan === target.totalFan)
+        );
+      }
+      if (targetIdx === -1) return prev;
+      return {
+        ...prev,
+        historicalRounds: prev.historicalRounds.filter((_, idx) => idx !== targetIdx),
+      };
+    });
+
+    if (reviewRoundResult) {
+      const match =
+        typeof target === 'number'
+          ? careerStats.historicalRounds[target] === reviewRoundResult
+          : reviewRoundResult === target;
+      if (match) {
+        setReviewRoundResult(null);
+      }
+    }
+  };
+
+  const handleClearAllHistoricalRounds = () => {
+    updateStats((prev) => ({
+      ...prev,
+      historicalRounds: [],
+    }));
+    setReviewRoundResult(null);
   };
 
   const toggleSound = () => {
@@ -650,6 +691,7 @@ export default function App() {
           currentRoundNumber={currentRoundIndex + 1}
           onNextRound={handleNextRound}
           onOpenReview={() => setReviewRoundResult(activeRoundResult)}
+          onOpenStats={() => setShowStatsModal(true)}
           onRestartMatch={() => setShowRestartConfirmModal(true)}
         />
       )}
@@ -661,6 +703,7 @@ export default function App() {
           roundNumber={reviewRoundResult.roundIndex + 1}
           allRounds={careerStats.historicalRounds}
           onSelectRound={(r) => setReviewRoundResult(r)}
+          onDeleteRound={handleDeleteHistoricalRound}
           onClose={() => setReviewRoundResult(null)}
         />
       )}
@@ -680,6 +723,8 @@ export default function App() {
             setShowStatsModal(false);
             setReviewRoundResult(round);
           }}
+          onDeleteRound={handleDeleteHistoricalRound}
+          onClearAllRounds={handleClearAllHistoricalRounds}
           onResetStats={() => {
             const empty: GameStats = {
               totalGames: 0,
@@ -715,7 +760,15 @@ export default function App() {
       {/* 7. Final 16-Round Match Championship Ceremony Modal */}
       {isGameOver16 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in zoom-in-95">
-          <div className="w-full max-w-lg bg-stone-900 border border-amber-500/60 rounded-2xl shadow-2xl p-6 text-center space-y-5">
+          <div className="w-full max-w-lg bg-stone-900 border border-amber-500/60 rounded-2xl shadow-2xl p-6 text-center space-y-5 relative">
+            <button
+              onClick={() => setIsGameOver16(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
+              title="关闭结算面板"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <Trophy className="w-16 h-16 text-amber-400 mx-auto animate-bounce" />
             <div>
               <h2 className="text-2xl font-bold font-serif text-amber-300">
@@ -757,16 +810,29 @@ export default function App() {
                 ))}
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
               <button
                 onClick={() => setShowStatsModal(true)}
-                className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
               >
-                查看生涯总战绩
+                <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
+                <span>查看生涯总战绩</span>
               </button>
+              {careerStats.historicalRounds.length > 0 && (
+                <button
+                  onClick={() => {
+                    setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
+                  title="回溯复盘第16局牌谱与恶手诊断"
+                >
+                  <FileSearch className="w-3.5 h-3.5 text-amber-400" />
+                  <span>复盘终局牌谱</span>
+                </button>
+              )}
               <button
                 onClick={startNew16RoundMatch}
-                className="px-6 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs font-bold shadow-lg transition-transform active:scale-95 cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 text-xs font-bold shadow-lg transition-transform active:scale-95 cursor-pointer ml-auto"
               >
                 再开一整雀 (16局)
               </button>
@@ -777,7 +843,7 @@ export default function App() {
 
       {/* 8. Restart 16-round match confirmation modal */}
       {showRestartConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-stone-900 border border-stone-700/90 rounded-2xl shadow-2xl p-6 text-center space-y-4">
             <div className="w-12 h-12 rounded-full bg-amber-500/15 border border-amber-500/40 flex items-center justify-center mx-auto text-amber-400">
               <RotateCcw className="w-6 h-6" />
