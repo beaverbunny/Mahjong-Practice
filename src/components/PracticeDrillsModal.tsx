@@ -182,7 +182,8 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
                             切 {rec.tile.displayName}
                           </div>
                           <div className="text-[10px] text-stone-400">
-                            {rec.shantenAfter === 0 ? '听牌' : `${rec.shantenAfter}向听`} ·{' '}
+                            {rec.shantenAfter === 0 ? '听牌' : `${rec.shantenAfter}向听`}
+                            {rec.noFanRoute ? ' (无番·只能自摸)' : ''} ·{' '}
                             {rec.recommendationReason}
                           </div>
                         </div>

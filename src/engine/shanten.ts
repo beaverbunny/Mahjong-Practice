@@ -111,7 +111,8 @@ export function standardShantenFromCounts(counts: number[], meldCount: number): 
         for (const d of g3) {
           const pair = a[2] + b[2] + c[2] + d[2];
           if (pair > 1) continue;
-          const sets = meldCount + a[0] + b[0] + c[0] + d[0];
+          // A hand holds at most 4 sets (matters when a caller forces an extra set, e.g. a value triplet)
+          const sets = Math.min(4, meldCount + a[0] + b[0] + c[0] + d[0]);
           const taatsu = a[1] + b[1] + c[1] + d[1];
           const s = 8 - 2 * sets - Math.min(taatsu, 4 - sets) - pair;
           if (s < best) best = s;

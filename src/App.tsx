@@ -10,7 +10,7 @@ import {
   TurnActionLog,
 } from './types/mahjong';
 import {
-  calculateShanten,
+  analyzeShanten,
   generateDiscardRecommendations,
   calculateTenpaiWaits,
   analyzeTurnBlunder,
@@ -396,11 +396,17 @@ export default function App() {
       visibleThreats(table, 0)
     );
     const blunder = analyzeTurnBlunder(tile, recs);
-    const shantenBefore = calculateShanten(pl.hand, pl.melds);
-    const shantenAfter = calculateShanten(
+    const visible = visibleTilesFor(table, 0);
+    const before = analyzeShanten(pl.hand, pl.melds, table.prevailingWind, pl.seatWind, visible);
+    const afterInfo = analyzeShanten(
       pl.hand.filter((t) => t.id !== tile.id),
-      pl.melds
+      pl.melds,
+      table.prevailingWind,
+      pl.seatWind,
+      visible
     );
+    const shantenBefore = before.display;
+    const shantenAfter = afterInfo.display;
     setSelectedTile(null);
     setTable(
       discard(table, 0, tile.id, {
@@ -415,8 +421,10 @@ export default function App() {
         bestRec: blunder.bestRec,
         chosenRec: blunder.chosenRec,
         aiComment:
-          shantenAfter === 0
-            ? '成功进入听牌！'
+          afterInfo.noFanRoute
+            ? `已无番种路线，只能自摸（${shantenAfter === 0 ? '听牌' : `${shantenAfter}向听`}）`
+            : shantenAfter === 0
+            ? '成功进入有番听牌！'
             : blunder.isBlunder
             ? undefined
             : `打出【${tile.displayName}】，保持${shantenAfter}向听`,
@@ -466,10 +474,13 @@ export default function App() {
   const currentRoundIndex = table?.handIndex ?? 0;
   const dealerIndex = table?.dealer ?? 0;
   const allVisibleTiles = table ? visibleTilesFor(table, 0) : [];
-  const humanShanten = human ? calculateShanten(human.hand, human.melds) : 8;
+  const humanShantenInfo = human
+    ? analyzeShanten(human.hand, human.melds, prevailingWind, human.seatWind, allVisibleTiles)
+    : { display: 8, shape: 8, noFanRoute: false };
+  const humanShanten = humanShantenInfo.display;
 
   const tenpaiWaits: TenpaiWait[] =
-    table && human && human.hand.length % 3 === 1 && humanShanten === 0
+    table && human && human.hand.length % 3 === 1 && humanShantenInfo.shape === 0
       ? calculateTenpaiWaits(human.hand, human.melds, allVisibleTiles, prevailingWind, human.seatWind)
       : [];
 
@@ -705,6 +716,8 @@ export default function App() {
             hand={human.hand}
             melds={human.melds}
             currentShanten={humanShanten}
+            shapeShanten={humanShantenInfo.shape}
+            noFanRoute={humanShantenInfo.noFanRoute}
             tenpaiWaits={tenpaiWaits}
             discardRecommendations={discardRecommendations}
             players={players}

@@ -14,7 +14,12 @@ import { Sparkles, ShieldAlert, Award, Compass, Eye, Info } from 'lucide-react';
 interface StrategyPanelProps {
   hand: Tile[];
   melds: Meld[];
+  // Fan-aware shanten: toward a hand with at least 1 fan on a discard
   currentShanten: number;
+  // Plain shape shanten (may be lower when the fastest shape has no fan)
+  shapeShanten?: number;
+  // No route to a fan remains: the hand can only win by self-draw
+  noFanRoute?: boolean;
   tenpaiWaits: TenpaiWait[];
   discardRecommendations: DiscardRecommendation[];
   players: PlayerState[];
@@ -30,6 +35,8 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
   hand,
   melds,
   currentShanten,
+  shapeShanten = currentShanten,
+  noFanRoute = false,
   tenpaiWaits,
   discardRecommendations,
   players,
@@ -43,7 +50,8 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
   const [activeTab, setActiveTab] = React.useState<'efficiency' | 'defense' | 'yaku'>('efficiency');
 
   const shantenLabel = () => {
-    if (currentShanten === 0) return '听牌 (Tenpai)';
+    if (noFanRoute) return `${shapeShanten === 0 ? '听牌' : `${shapeShanten} 向听`} · 无番只能自摸`;
+    if (currentShanten === 0) return '有番听牌 (Tenpai)';
     if (currentShanten === 1) return '一向听 (1-Shanten)';
     if (currentShanten === 2) return '二向听 (2-Shanten)';
     if (currentShanten === 3) return '三向听 (3-Shanten)';
@@ -167,6 +175,12 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
               {shantenLabel()}
             </div>
           </div>
+          {!noFanRoute && shapeShanten < currentShanten && (
+            <div className="px-4 py-2 text-[11px] leading-relaxed bg-amber-950/40 border-b border-amber-900/60 text-amber-200">
+              牌型已是{shapeShanten === 0 ? '听牌' : `${shapeShanten}向听`}，但那样和出无番，只能自摸。按至少 1 番计算为
+              {currentShanten === 0 ? '听牌' : `${currentShanten}向听`}。
+            </div>
+          )}
 
           {/* Tab Navigation */}
           <div className="flex items-center border-b border-stone-800 bg-stone-950/40 p-1">
@@ -208,12 +222,26 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
             {activeTab === 'efficiency' && (
               <div className="space-y-4">
                 {/* Tenpai Status Section */}
-                {currentShanten === 0 && (
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-950/60 to-stone-900 border border-emerald-700/60 shadow-inner">
+                {tenpaiWaits.length > 0 && (
+                  <div
+                    className={`p-3 rounded-xl bg-gradient-to-br to-stone-900 border shadow-inner ${
+                      tenpaiWaits.every((w) => w.selfDrawOnly)
+                        ? 'from-amber-950/60 border-amber-700/60'
+                        : 'from-emerald-950/60 border-emerald-700/60'
+                    }`}
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5 text-emerald-300 font-bold">
-                        <Award className="w-4 h-4 text-emerald-400" />
-                        <span>已听牌！等待和牌张：</span>
+                      <div
+                        className={`flex items-center gap-1.5 font-bold ${
+                          tenpaiWaits.every((w) => w.selfDrawOnly) ? 'text-amber-300' : 'text-emerald-300'
+                        }`}
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>
+                          {tenpaiWaits.every((w) => w.selfDrawOnly)
+                            ? '听牌但无番：别人打出不能和，只能自摸'
+                            : '已听牌！等待和牌张：'}
+                        </span>
                       </div>
                       <span className="text-[11px] text-stone-400">
                         共 {tenpaiWaits.reduce((acc, w) => acc + w.remainingCount, 0)} 张余牌
@@ -229,9 +257,16 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                           <div className="flex items-center gap-2">
                             <MahjongTile tile={{ type: wait.tileType }} size="xs" />
                             <div>
-                              <div className="font-semibold text-stone-100">{wait.displayName}</div>
+                              <div className="font-semibold text-stone-100 flex items-center gap-1.5">
+                                {wait.displayName}
+                                {wait.selfDrawOnly && (
+                                  <span className="text-[9px] px-1 rounded bg-amber-900/80 text-amber-200 border border-amber-700">
+                                    仅自摸
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[10px] text-amber-400/90">
-                                {wait.possibleFans.join(' + ') || '基本和牌'}
+                                {wait.possibleFans.join(' + ')}
                               </div>
                             </div>
                           </div>

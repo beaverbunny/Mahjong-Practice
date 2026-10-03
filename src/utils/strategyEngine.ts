@@ -9,7 +9,8 @@ import {
 } from '../types/mahjong';
 import { evaluateWin, checkThirteenOrphans } from './rulesEngine';
 import { getTileNameByType, CHINESE_NUMS } from './mahjongTiles';
-import { shanten as fastShanten } from '../engine/shanten';
+import { shanten as fastShanten, toCounts, tileIndex } from '../engine/shanten';
+import { fanShantenFromCounts, MeldShape } from '../engine/fanShanten';
 
 const ALL_34_TYPES: TileType[] = [
   '1wan', '2wan', '3wan', '4wan', '5wan', '6wan', '7wan', '8wan', '9wan',
@@ -60,6 +61,58 @@ export function calculateShanten(hand: Tile[], melds: Meld[] = []): number {
   return Math.max(0, fastShanten(hand, melds.length));
 }
 
+const WIND_INDEX: Record<Wind, number> = { E: 27, S: 28, W: 29, N: 30 };
+
+// Honor tiles worth a fan as a triplet for this player: dragons, seat wind, prevailing wind
+export function valueTileIndices(prevailingWind: Wind, seatWind: Wind): number[] {
+  return [...new Set([31, 32, 33, WIND_INDEX[seatWind], WIND_INDEX[prevailingWind]])];
+}
+
+export function meldShapes(melds: Meld[]): MeldShape[] {
+  return melds.map((m) => ({ kind: m.type === 'chi' ? 'chi' : 'pung', index: tileIndex(m.tiles[0].type) }));
+}
+
+// Copies of each tile type still obtainable, given every tile this player can see (own hand included)
+function obtainableFrom(visibleTiles: Tile[]): number[] {
+  const seen = toCounts(visibleTiles);
+  return seen.map((n) => Math.max(0, 4 - n));
+}
+
+export interface ShantenInfo {
+  // Shanten toward a hand guaranteed at least 1 fan on a discard (what the guide shows)
+  display: number;
+  // Plain shape shanten (any 4 sets + pair)
+  shape: number;
+  // No fan route remains: the hand can only ever win by self-draw
+  noFanRoute: boolean;
+}
+
+/**
+ * Fan-aware shanten (向听) under the TVB minimum-1-fan rule. A hand only counts as closer to winning
+ * along routes that guarantee a fan on a discard (Common Hand, value triplet, flush, All Triplets,
+ * Thirteen Orphans). When no such route remains, the plain shape shanten is shown with noFanRoute.
+ */
+export function analyzeShanten(
+  hand: Tile[],
+  melds: Meld[],
+  prevailingWind: Wind,
+  seatWind: Wind,
+  visibleTiles?: Tile[]
+): ShantenInfo {
+  const res = fanShantenFromCounts(
+    toCounts(hand),
+    meldShapes(melds),
+    valueTileIndices(prevailingWind, seatWind),
+    visibleTiles ? obtainableFrom(visibleTiles) : undefined
+  );
+  const noFanRoute = !Number.isFinite(res.fan);
+  return {
+    display: Math.max(0, noFanRoute ? res.shape : res.fan),
+    shape: Math.max(0, res.shape),
+    noFanRoute,
+  };
+}
+
 // Calculate Tenpai Waits (听牌张数 & 预估番数)
 export function calculateTenpaiWaits(
   hand: Tile[],
@@ -88,6 +141,7 @@ export function calculateTenpaiWaits(
       prevailingWind,
       seatWind,
     });
+    const selfDrawOnly = !evaluation.isWin;
     // A 0 Fan hand can't win on a discard but still wins by self-draw (A2)
     if (!evaluation.isWin) {
       evaluation = evaluateWin(testHand, melds, hypoTile, {
@@ -107,6 +161,7 @@ export function calculateTenpaiWaits(
         remainingCount: remaining,
         estimatedFan: evaluation.totalFan,
         possibleFans: evaluation.fanDetails.map((f) => f.name.split(' ')[0]),
+        selfDrawOnly,
       });
     }
   }
@@ -250,29 +305,51 @@ export function generateDiscardRecommendations(
   }
 
   const recommendations: DiscardRecommendation[] = [];
+  const rankKey = new Map<string, number>();
+
+  const counts = toCounts(hand);
+  const shapes = meldShapes(melds);
+  const valueTiles = valueTileIndices(prevailingWind, seatWind);
+  const obtainable = obtainableFrom(allVisibleTiles);
+  const fanShantenOf = () => fanShantenFromCounts(counts, shapes, valueTiles, obtainable);
 
   for (const tileToDiscard of uniqueHandTiles) {
-    // Remaining hand after discarding this tile
-    const remainingHand = hand.filter((t) => t.id !== tileToDiscard.id);
-    const shantenAfter = calculateShanten(remainingHand, melds);
+    // Shanten after discarding this tile: fan-aware, plus the plain shape for comparison
+    const di = tileIndex(tileToDiscard.type);
+    counts[di]--;
+    const after = fanShantenOf();
+    const noFanRoute = !Number.isFinite(after.fan);
+    const shantenAfter = Math.max(0, noFanRoute ? after.shape : after.fan);
 
-    // Calculate effective incoming tiles (进张面 & 张数)
+    // Effective incoming tiles (进张): draws that move the hand closer to a win with a fan.
+    // Draws that only improve a 0-fan shape (self-draw only) are listed separately.
     let effectiveTilesCount = 0;
     const effectiveTileTypes: TileType[] = [];
+    let selfDrawOnlyTilesCount = 0;
+    const selfDrawOnlyTileTypes: TileType[] = [];
 
-    for (const testType of ALL_34_TYPES) {
-      const hypo = createHypotheticalTile(testType);
-      const testHand = [...remainingHand, hypo];
-      const newShanten = calculateShanten(testHand, melds);
-
-      if (newShanten < shantenAfter) {
-        // This tile improves shanten!
-        const seen = visibleCounts[testType] || 0;
-        const remaining = Math.max(0, 4 - seen);
+    ALL_34_TYPES.forEach((testType, ti) => {
+      if (counts[ti] >= 4) return;
+      counts[ti]++;
+      const next = fanShantenOf();
+      counts[ti]--;
+      const seen = visibleCounts[testType] || 0;
+      const remaining = Math.max(0, 4 - seen);
+      const improvesFan = !noFanRoute && next.fan < after.fan;
+      const improvesShape = next.shape < after.shape;
+      if (improvesFan || (noFanRoute && improvesShape)) {
         effectiveTilesCount += remaining;
         effectiveTileTypes.push(testType);
       }
-    }
+      if ((improvesShape && !improvesFan) || (noFanRoute && improvesShape)) {
+        selfDrawOnlyTilesCount += remaining;
+        selfDrawOnlyTileTypes.push(testType);
+      }
+    });
+    counts[di]++;
+
+    // Rank fan routes first; a hand that can only ever win by self-draw ranks as two steps further
+    rankKey.set(tileToDiscard.id, noFanRoute ? after.shape + 2 : after.fan);
 
     // Evaluate safety
     const safety = evaluateTileSafety(
@@ -289,10 +366,17 @@ export function generateDiscardRecommendations(
     const score = (5 - shantenAfter) * 1000 + effectiveTilesCount * 10 + safety.score * 0.5;
 
     let recommendationReason = '';
-    if (shantenAfter === 0) {
-      recommendationReason = `听牌！可听${effectiveTileTypes.length}种牌共${effectiveTilesCount}张进张`;
+    const names = (types: TileType[]) =>
+      `${types.slice(0, 3).map(getTileNameByType).join('、')}${types.length > 3 ? '等' : ''}`;
+    if (noFanRoute) {
+      recommendationReason = `已无番种路线，只能自摸和：${after.shape <= 0 ? '听牌' : `${shantenAfter}向听`}，进张${effectiveTilesCount}张`;
+    } else if (shantenAfter === 0) {
+      recommendationReason = `有番听牌！可和${effectiveTileTypes.length}种牌共${effectiveTilesCount}张`;
     } else {
-      recommendationReason = `向听优化：进张面广达${effectiveTilesCount}张 (${effectiveTileTypes.slice(0, 3).map(getTileNameByType).join('、')}${effectiveTileTypes.length > 3 ? '等' : ''})`;
+      recommendationReason = `有番向听：进张${effectiveTilesCount}张 (${names(effectiveTileTypes)})`;
+    }
+    if (!noFanRoute && selfDrawOnlyTilesCount > 0) {
+      recommendationReason += `；另有${selfDrawOnlyTilesCount}张 (${names(selfDrawOnlyTileTypes)}) 只成无番牌型，仅能自摸`;
     }
 
     recommendations.push({
@@ -306,13 +390,19 @@ export function generateDiscardRecommendations(
       safetyReason: safety.reason,
       scoreRank: 0,
       recommendationReason,
+      shapeShantenAfter: Math.max(0, after.shape),
+      noFanRoute,
+      selfDrawOnlyTilesCount,
+      selfDrawOnlyTileTypes,
     });
   }
 
-  // Sort by shanten (lowest first), then effectiveTilesCount (highest first), then safety
+  // Sort by fan-aware shanten (lowest first), then effectiveTilesCount (highest first), then safety
   recommendations.sort((a, b) => {
-    if (a.shantenAfter !== b.shantenAfter) {
-      return a.shantenAfter - b.shantenAfter;
+    const ka = rankKey.get(a.tileId)!;
+    const kb = rankKey.get(b.tileId)!;
+    if (ka !== kb) {
+      return ka - kb;
     }
     if (b.effectiveTilesCount !== a.effectiveTilesCount) {
       return b.effectiveTilesCount - a.effectiveTilesCount;

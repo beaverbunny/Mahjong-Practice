@@ -66,6 +66,14 @@ export interface DiscardRecommendation {
   safetyReason: string;
   scoreRank: number; // 1 = best
   recommendationReason: string;
+  // Plain shape shanten after the discard (may be lower than shantenAfter when the fastest
+  // shape has no fan and could only win by self-draw)
+  shapeShantenAfter?: number;
+  // No route to a hand with at least 1 fan on a discard remains (only self-draw can win)
+  noFanRoute?: boolean;
+  // Draws that improve the plain shape but not any fan route (lead to self-draw-only hands)
+  selfDrawOnlyTilesCount?: number;
+  selfDrawOnlyTileTypes?: TileType[];
 }
 
 export interface TenpaiWait {
@@ -74,6 +82,8 @@ export interface TenpaiWait {
   remainingCount: number; // tiles remaining in unseen wall
   estimatedFan: number;
   possibleFans: string[];
+  // This wait has no fan on a discard: it can only win by self-draw
+  selfDrawOnly?: boolean;
 }
 
 export interface TurnActionLog {
