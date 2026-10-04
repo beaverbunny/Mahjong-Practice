@@ -1,0 +1,36 @@
+# Checks the game engine on GitHub after each push. Runs only on GitHub's servers:
+# it does not affect AI Studio editing, previews, builds or deployment, and a failure
+# only marks the commit red (it never blocks anything).
+name: Engine tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      # Not --frozen-lockfile: AI Studio edits package.json without updating bun.lock
+      - name: Install dependencies
+        run: bun install
+
+      - name: Rule tests (scripts/engine.test.ts)
+        run: bun test scripts/
+
+      - name: Typecheck
+        run: bun run lint
