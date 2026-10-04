@@ -9,7 +9,7 @@ import {
   PlayerState,
 } from '../types/mahjong';
 import { MahjongTile } from './MahjongTile';
-import { Sparkles, ShieldAlert, Award, Compass, Eye, Info } from 'lucide-react';
+import { Sparkles, ShieldAlert, Award, Compass, Eye, Info, X } from 'lucide-react';
 
 interface StrategyPanelProps {
   hand: Tile[];
@@ -149,30 +149,41 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
 
   return (
     <aside
-      className={`fixed top-16 right-4 bottom-4 z-30 transition-all duration-300 flex flex-col ${
-        isOpen ? 'w-88 sm:w-96' : 'w-12 pointer-events-none'
+      className={`fixed top-16 right-2 sm:right-4 z-30 transition-all duration-300 flex flex-col max-h-[calc(100vh-230px)] sm:max-h-[calc(100vh-250px)] ${
+        isOpen ? 'w-84 sm:w-92 shadow-2xl' : 'w-auto pointer-events-none'
       }`}
     >
-      {/* Toggle Tab Button */}
-      <button
-        onClick={onToggle}
-        className={`pointer-events-auto self-start mb-2 px-3 py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-400 border border-amber-500/30 shadow-lg text-xs font-medium flex items-center gap-1.5 backdrop-blur cursor-pointer transition-transform hover:scale-105`}
-      >
-        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-        <span>{isOpen ? '收起策略助手' : '策略助手'}</span>
-      </button>
+      {/* Toggle Tab Button when collapsed */}
+      {!isOpen && (
+        <button
+          onClick={onToggle}
+          className="pointer-events-auto self-end mb-2 px-3 py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-400 border border-amber-500/30 shadow-lg text-xs font-medium flex items-center gap-1.5 backdrop-blur cursor-pointer transition-transform hover:scale-105"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>策略助手</span>
+        </button>
+      )}
 
       {/* Main Container */}
       {isOpen && (
         <div className="flex-1 bg-stone-900/95 backdrop-blur-md border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-stone-200">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-stone-800 bg-stone-950/60 flex items-center justify-between">
+          <div className="px-3.5 py-2.5 border-b border-stone-800 bg-stone-950/70 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-semibold text-stone-100">实战策略与牌效研习</h3>
+              <h3 className="text-xs sm:text-sm font-semibold text-stone-100">实战策略与牌效</h3>
             </div>
-            <div className="text-xs px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 font-mono">
-              {shantenLabel()}
+            <div className="flex items-center gap-2">
+              <div className="text-[11px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 font-mono">
+                {shantenLabel()}
+              </div>
+              <button
+                onClick={onToggle}
+                className="p-1 rounded-md text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors cursor-pointer"
+                title="收起策略助手"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
           {!noFanRoute && shapeShanten < currentShanten && (

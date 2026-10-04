@@ -1,10 +1,90 @@
 /**
  * Synthesized Web Audio Sound Effects for authentic Mahjong tactile feedback
+ * + Web Speech API voice announcements for discards, Chi, Peng, Gang, and Hu
  */
+
+import { Tile } from '../types/mahjong';
+
+export function getTileSpokenName(tile: Tile | { type: string; displayName?: string }): string {
+  if (!tile) return '';
+  const type = tile.type;
+  const numMap: Record<string, string> = {
+    '1': '一', '2': '二', '3': '三', '4': '四', '5': '五',
+    '6': '六', '7': '七', '8': '八', '9': '九',
+  };
+
+  if (type.endsWith('wan')) {
+    const val = type[0];
+    return `${numMap[val] || val}万`;
+  }
+  if (type.endsWith('tiao')) {
+    const val = type[0];
+    return `${val === '1' ? '一条' : (numMap[val] || val) + '条'}`;
+  }
+  if (type.endsWith('tong')) {
+    const val = type[0];
+    return `${numMap[val] || val}筒`;
+  }
+  if (type === 'wind_E') return '东风';
+  if (type === 'wind_S') return '南风';
+  if (type === 'wind_W') return '西风';
+  if (type === 'wind_N') return '北风';
+  if (type === 'dragon_C') return '红中';
+  if (type === 'dragon_F') return '发财';
+  if (type === 'dragon_B') return '白板';
+
+  return tile.displayName || '';
+}
 
 class SoundController {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
+  private cachedVoices: SpeechSynthesisVoice[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const updateVoices = () => {
+        try {
+          this.cachedVoices = window.speechSynthesis.getVoices();
+        } catch {
+          // Ignore
+        }
+      };
+      updateVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = updateVoices;
+      }
+    }
+  }
+
+  // Speak mahjong tile or action announcement (default crisp mature female / 御姐 voice, brisk rate 1.28)
+  public speak(text: string) {
+    if (!this.enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.volume = 1.0;
+      utterance.pitch = 1.0;
+      utterance.rate = 1.28; // 稍微快一点，干练利落
+
+      if (this.cachedVoices.length === 0) {
+        this.cachedVoices = window.speechSynthesis.getVoices();
+      }
+
+      const zhVoices = this.cachedVoices.filter(
+        (v) => v.lang.startsWith('zh') || v.lang.includes('cmn')
+      );
+
+      if (zhVoices.length > 0) {
+        utterance.voice = zhVoices[0]; // 默认标准御姐音
+      }
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // Graceful fallback if speech synthesis is disabled or blocked
+    }
+  }
 
   private initCtx() {
     if (!this.ctx && typeof window !== 'undefined') {

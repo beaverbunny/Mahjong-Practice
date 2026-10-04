@@ -94,3 +94,27 @@ export function samplePersona(difficulty: DifficultyLevel, rng: () => number = M
 export function samplePersonas(difficulty: DifficultyLevel, rng: () => number = Math.random): Persona[] {
   return [0, 1, 2].map(() => samplePersona(difficulty, rng));
 }
+
+export function getBotPlayerName(
+  seat: number,
+  style: PlayStyle,
+  skill: number,
+  difficulty: DifficultyLevel
+): string {
+  const seatPrefix = seat === 1 ? '下家' : seat === 2 ? '对家' : '上家';
+  const styleStr = STYLE_LABELS[style] || '稳健型';
+
+  let tier = '进阶';
+  if (difficulty === 'beginner') {
+    tier = '入门';
+  } else if (difficulty === 'master') {
+    tier = skill >= 0.9 ? '宗师' : '大师';
+  } else if (difficulty === 'intermediate') {
+    tier = skill >= 0.65 ? '进阶' : '中级';
+  } else {
+    // tournament field
+    tier = skill >= 0.85 ? '宗师' : skill >= 0.65 ? '大师' : skill >= 0.45 ? '进阶' : '入门';
+  }
+
+  return `${seatPrefix} · ${styleStr} (${tier})`;
+}

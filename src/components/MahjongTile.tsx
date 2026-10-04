@@ -17,6 +17,8 @@ interface MahjongTileProps {
   showHints?: boolean; // If false, hide safety and recommendation badges
   isPengTarget?: boolean; // Highlight pair when Peng is available
   isChiTarget?: boolean;  // Highlight sequence when Chi is available
+  isHorizontal?: boolean; // Authentic Asian Mahjong horizontal tile orientation for melds
+  isCalled?: boolean;     // Highlight the called tile in Chi melds
 }
 
 /* ================= SVG SUB-COMPONENTS FOR AUTHENTIC MAHJONG TILES ================= */
@@ -201,22 +203,27 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
   showHints = true, // Default true, but when Strategy Assistant is closed, passed as false!
   isPengTarget = false,
   isChiTarget = false,
+  isHorizontal = false,
+  isCalled = false,
 }) => {
   const type = tile.type;
 
   // Sizes in pixels
   const dim = {
-    xs: { w: 26, h: 36, svgW: 22, svgH: 30 },
-    sm: { w: 34, h: 46, svgW: 30, svgH: 40 },
+    xs: { w: 28, h: 38, svgW: 24, svgH: 32 },
+    sm: { w: 36, h: 48, svgW: 31, svgH: 42 },
     md: { w: 42, h: 58, svgW: 36, svgH: 50 },
     lg: { w: 50, h: 68, svgW: 44, svgH: 60 },
   }[size];
+
+  const tileW = isHorizontal ? dim.h : dim.w;
+  const tileH = isHorizontal ? dim.w : dim.h;
 
   if (isFaceDown) {
     return (
       <div
         className={`relative select-none rounded-[5px] bg-gradient-to-br from-emerald-800 to-emerald-950 border border-emerald-900/80 shadow-md flex items-center justify-center cursor-default ${className}`}
-        style={{ width: `${dim.w}px`, height: `${dim.h}px` }}
+        style={{ width: `${tileW}px`, height: `${tileH}px` }}
       >
         <div className="w-4/5 h-4/5 rounded-[3px] border border-emerald-600/40 bg-emerald-900/30 flex items-center justify-center">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/30" />
@@ -562,9 +569,10 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
         border-t border-l border-white/95 border-r-2 border-b-[3px] border-stone-300
         shadow-[0_3px_5px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.15)]
         ${isSelected ? '-translate-y-2.5 shadow-xl ring-2 ring-amber-400 bg-amber-50' : ''}
+        ${isCalled ? 'ring-2 ring-amber-400 bg-amber-50/80 shadow-md' : ''}
         ${isPengTarget ? '-translate-y-1.5 shadow-lg ring-2 ring-blue-500 bg-blue-50/40' : ''}
         ${isChiTarget && !isPengTarget ? '-translate-y-1 ring-2 ring-emerald-500 bg-emerald-50/30' : ''}
-        ${shouldShowRec && !isPengTarget && !isChiTarget ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}
+        ${shouldShowRec && !isPengTarget && !isChiTarget && !isCalled ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}
         ${onClick && !disabled ? 'cursor-pointer hover:-translate-y-1 hover:brightness-105 active:translate-y-0' : 'cursor-default'}
         ${dimmed ? 'opacity-40 grayscale' : ''}
         ${disabled ? 'cursor-not-allowed opacity-60' : ''}
@@ -572,15 +580,22 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
         ${className}
       `}
       style={{
-        width: `${dim.w}px`,
-        height: `${dim.h}px`,
+        width: `${tileW}px`,
+        height: `${tileH}px`,
         boxShadow: isSelected
           ? '0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -2px rgba(0, 0, 0, 0.25)'
           : undefined,
       }}
     >
       {/* 3D Tile Layer depth (Mahjong bottom emerald/bone layer) */}
-      <div className="absolute inset-x-0 bottom-0 h-1 bg-stone-300/80 rounded-b-[4px]" />
+      <div className={`absolute inset-x-0 bottom-0 ${isHorizontal ? 'h-0.5' : 'h-1'} bg-stone-300/80 rounded-b-[4px]`} />
+
+      {/* Is Called Badge (吃牌突出标示) */}
+      {isCalled && (
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 font-black text-[9px] px-1 rounded-sm shadow z-20 whitespace-nowrap">
+          吃
+        </div>
+      )}
 
       {/* Peng Target Tag */}
       {isPengTarget && (
@@ -626,7 +641,9 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
       )}
 
       {/* Tile Graphics */}
-      <div className="relative z-0 flex items-center justify-center">{renderTileFace()}</div>
+      <div className={`relative z-0 flex items-center justify-center ${isHorizontal ? '-rotate-90 origin-center' : ''}`}>
+        {renderTileFace()}
+      </div>
     </div>
   );
 };

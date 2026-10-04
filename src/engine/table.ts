@@ -108,7 +108,7 @@ export type ClaimDecision =
 
 export type Rng = () => number;
 
-const PLAYER_NAMES = ['您 (玩家)', '下家 · 雀痴', '对家 · 雀皇', '上家 · 雀仙'];
+const PLAYER_NAMES = ['您 (玩家)', '下家 · 速攻型 (进阶)', '对家 · 稳健型 (大师)', '上家 · 防守型 (宗师)'];
 
 export function seatWindFor(player: number, dealer: number): Wind {
   return WINDS[(player - dealer + 4) % 4];

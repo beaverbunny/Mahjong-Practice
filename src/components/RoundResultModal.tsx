@@ -2,6 +2,7 @@ import React from 'react';
 import { RoundResult, PlayerState } from '../types/mahjong';
 import { sortTiles } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
+import { MeldDisplay } from './MeldDisplay';
 import { Award, ArrowRight, RotateCcw, AlertCircle, FileSearch, BarChart3 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -40,11 +41,11 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   }, [isHumanWinner]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[88vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto">
         {/* Header Banner */}
         <div
-          className={`px-6 py-4 flex items-center justify-between border-b ${
+          className={`px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b shrink-0 ${
             isDraw
               ? 'bg-stone-800 border-stone-700 text-stone-200'
               : isHumanWinner
@@ -59,12 +60,12 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               }`}
             />
             <div>
-              <h2 className="text-base font-bold font-serif">
+              <h2 className="text-sm sm:text-base font-bold font-serif">
                 {isDraw
                   ? '荒庄流局 (牌墙摸尽)'
                   : `${winner?.name} ${result.isSelfDraw ? '自摸和牌！' : '荣和点炮！'}`}
               </h2>
-              <div className="text-xs text-stone-400">
+              <div className="text-[11px] sm:text-xs text-stone-400">
                 第 {currentRoundNumber} 局 / 共 16 局 · {result.prevailingWind}风圈
               </div>
             </div>
@@ -72,18 +73,18 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
           {!isDraw && (
             <div className="text-right">
-              <span className="text-xl font-bold font-mono text-amber-400">
+              <span className="text-lg sm:text-xl font-bold font-mono text-amber-400">
                 {result.totalFan} 番
               </span>
-              <div className="text-[11px] text-stone-400">
+              <div className="text-[10px] sm:text-[11px] text-stone-400">
                 {result.isSelfDraw ? '自摸(+15每番)' : '点炮(+10每番)'}
               </div>
             </div>
           )}
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 space-y-5 text-stone-300 text-xs">
+        {/* Modal Body (Scrollable) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 text-stone-300 text-xs overscroll-contain">
           {/* Winning Tile & Type Display */}
           {!isDraw && result.winningTile && (
             <div className="flex items-center justify-between p-3.5 bg-stone-950/70 rounded-xl border border-stone-800">
@@ -121,28 +122,13 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                 {/* Exposed Melds */}
                 {winner.melds.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {winner.melds.map((meld, mIdx) => (
-                      <div
-                        key={meld.id || mIdx}
-                        className="flex items-center gap-1 p-1 bg-stone-900 rounded-lg border border-stone-700"
-                      >
-                        <span
-                          className={`text-[9px] px-1 py-0.2 rounded font-bold ${
-                            meld.type === 'peng'
-                              ? 'bg-amber-950 text-amber-300'
-                              : meld.type === 'chi'
-                              ? 'bg-blue-950 text-blue-300'
-                              : 'bg-purple-950 text-purple-300'
-                          }`}
-                        >
-                          {meld.type === 'peng' ? '碰' : meld.type === 'chi' ? '吃' : '杠'}
-                        </span>
-                        <div className="flex items-center gap-0.5">
-                          {meld.tiles.map((t, idx) => (
-                            <MahjongTile key={t.id + idx} tile={t} size="sm" />
-                          ))}
-                        </div>
-                      </div>
+                    {winner.melds.map((meld) => (
+                      <MeldDisplay
+                        key={meld.id}
+                        meld={meld}
+                        playerIndex={result.winnerIndex ?? 0}
+                        size="sm"
+                      />
                     ))}
                   </div>
                 )}
@@ -231,45 +217,45 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="px-6 py-4 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
+        {/* Sticky Footer Buttons */}
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 bg-stone-950 border-t border-stone-800 flex items-center justify-between gap-2 sm:gap-3 flex-wrap sm:flex-nowrap shrink-0 z-20 shadow-xl">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={onOpenReview}
-              className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <FileSearch className="w-4 h-4 text-amber-400" />
-              <span>实战复盘本局</span>
+              <FileSearch className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-400" />
+              <span>实战复盘</span>
             </button>
 
             {onOpenStats && (
               <button
                 onClick={onOpenStats}
-                className="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 title="查看生涯战绩与本场积分"
               >
                 <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-                <span>生涯战绩</span>
+                <span>战绩</span>
               </button>
             )}
 
             {onRestartMatch && (
               <button
                 onClick={onRestartMatch}
-                className="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 title="重新开始整场 16 局大局比赛"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                <span>重开大局</span>
+                <span>重开</span>
               </button>
             )}
           </div>
 
           <button
             onClick={onNextRound}
-            className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-950/40 transition-all active:scale-95 cursor-pointer ml-auto"
+            className="px-5 sm:px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-amber-950/60 transition-all active:scale-95 cursor-pointer ml-auto shrink-0 ring-2 ring-amber-300/40"
           >
-            <span>{currentRoundNumber >= 16 ? '进入最终大局结算' : '下一局'}</span>
+            <span>{currentRoundNumber >= 16 ? '进入最终结算' : '进入下一局'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

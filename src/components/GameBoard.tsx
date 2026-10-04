@@ -1,6 +1,7 @@
 import React from 'react';
 import { PlayerState, Tile, Meld, Wind, TurnActionLog, DiscardRecommendation } from '../types/mahjong';
 import { MahjongTile } from './MahjongTile';
+import { MeldDisplay } from './MeldDisplay';
 import { ActionControls } from './ActionControls';
 import { soundManager } from '../utils/audio';
 
@@ -110,9 +111,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         {/* Top Hand Tiles & Melds */}
         <div className="flex items-center gap-3">
           {/* Concealed Tiles */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
             {topBot.hand.map((_, idx) => (
-              <MahjongTile key={idx} tile={{ type: '1wan' }} size="xs" isFaceDown />
+              <MahjongTile key={idx} tile={{ type: '1wan' }} size="sm" isFaceDown />
             ))}
           </div>
 
@@ -120,11 +121,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {topBot.melds.length > 0 && (
             <div className="flex items-center gap-2 pl-2 border-l border-white/10">
               {topBot.melds.map((meld) => (
-                <div key={meld.id} className="flex items-center gap-0.5">
-                  {meld.tiles.map((t, idx) => (
-                    <MahjongTile key={t.id + idx} tile={t} size="xs" />
-                  ))}
-                </div>
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={2} size="sm" />
               ))}
             </div>
           )}
@@ -134,7 +131,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       {/* ================= MIDDLE ZONE (LEFT, CENTER, RIGHT) ================= */}
       <div className="relative z-10 flex-1 flex items-center justify-between px-1 sm:px-4 my-1 overflow-hidden">
         {/* LEFT PLAYER (上家) */}
-        <div className="flex flex-col items-center gap-1.5 w-20 sm:w-28 shrink-0">
+        <div className="flex flex-col items-center gap-1.5 w-28 sm:w-36 shrink-0">
           <div
             className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full ${
               activePlayerIndex === 3
@@ -142,32 +139,32 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 : 'bg-stone-900/60 text-stone-300 border border-stone-800'
             }`}
           >
-            <span className="font-bold truncate max-w-[70px] sm:max-w-[80px]">{leftBot.name}</span>
+            <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{leftBot.name}</span>
             <div className="flex items-center gap-1 text-[10px] text-stone-400">
               <span className="text-amber-400 font-mono">{leftBot.seatWind}风</span>
               <span>{leftBot.score}点</span>
             </div>
           </div>
 
-          {/* Left Bot Hand Tiles (vertical stack) */}
-          <div className="flex flex-col gap-0.5 max-h-40 overflow-hidden items-center">
+          {/* Left Bot Hand Tiles (vertical stack with authentic 3D Mahjong depth) */}
+          <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
             {leftBot.hand.slice(0, 13).map((_, idx) => (
               <div
                 key={idx}
-                className="w-6 sm:w-7 h-2.5 bg-emerald-900 border border-emerald-950/80 rounded-[2px] shadow-sm"
-              />
+                className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                title="上家手牌"
+              >
+                <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
+                <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
+              </div>
             ))}
           </div>
 
           {/* Left Melds */}
           {leftBot.melds.length > 0 && (
-            <div className="flex flex-col gap-1 items-center max-w-full overflow-hidden">
+            <div className="flex flex-col gap-1 items-center max-w-full overflow-hidden mt-1">
               {leftBot.melds.map((meld) => (
-                <div key={meld.id} className="flex gap-0.5">
-                  {meld.tiles.map((t, idx) => (
-                    <MahjongTile key={t.id + idx} tile={t} size="xs" />
-                  ))}
-                </div>
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={3} size="sm" />
               ))}
             </div>
           )}
@@ -403,7 +400,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         {/* RIGHT PLAYER (下家) */}
-        <div className="flex flex-col items-center gap-1.5 w-20 sm:w-28 shrink-0">
+        <div className="flex flex-col items-center gap-1.5 w-28 sm:w-36 shrink-0">
           <div
             className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full ${
               activePlayerIndex === 1
@@ -411,32 +408,32 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 : 'bg-stone-900/60 text-stone-300 border border-stone-800'
             }`}
           >
-            <span className="font-bold truncate max-w-[70px] sm:max-w-[80px]">{rightBot.name}</span>
+            <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{rightBot.name}</span>
             <div className="flex items-center gap-1 text-[10px] text-stone-400">
               <span className="text-amber-400 font-mono">{rightBot.seatWind}风</span>
               <span>{rightBot.score}点</span>
             </div>
           </div>
 
-          {/* Right Bot Hand Tiles */}
-          <div className="flex flex-col gap-0.5 max-h-40 overflow-hidden items-center">
+          {/* Right Bot Hand Tiles (vertical stack with authentic 3D Mahjong depth) */}
+          <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
             {rightBot.hand.slice(0, 13).map((_, idx) => (
               <div
                 key={idx}
-                className="w-6 sm:w-7 h-2.5 bg-emerald-900 border border-emerald-950/80 rounded-[2px] shadow-sm"
-              />
+                className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                title="下家手牌"
+              >
+                <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
+                <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
+              </div>
             ))}
           </div>
 
           {/* Right Melds */}
           {rightBot.melds.length > 0 && (
-            <div className="flex flex-col gap-1 items-center max-w-full overflow-hidden">
+            <div className="flex flex-col gap-1 items-center max-w-full overflow-hidden mt-1">
               {rightBot.melds.map((meld) => (
-                <div key={meld.id} className="flex gap-0.5">
-                  {meld.tiles.map((t, idx) => (
-                    <MahjongTile key={t.id + idx} tile={t} size="xs" />
-                  ))}
-                </div>
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={1} size="sm" />
               ))}
             </div>
           )}
@@ -444,7 +441,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* ================= BOTTOM HUMAN PLAYER (玩家) ================= */}
-      <div className="relative z-20 flex flex-col items-center gap-2">
+      <div className="relative z-40 flex flex-col items-center gap-2">
         {/* Action Controls Overlay (Chi, Peng, Gang, Hu) */}
         <ActionControls
           canChi={canChi}
@@ -530,14 +527,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {/* Exposed Melds (Right of hand) */}
           <div className="flex items-center gap-2">
             {human.melds.map((meld) => (
-              <div
-                key={meld.id}
-                className="flex items-center gap-0.5 p-1 bg-stone-950/60 rounded-lg border border-stone-800"
-              >
-                {meld.tiles.map((t, idx) => (
-                  <MahjongTile key={t.id + idx} tile={t} size="sm" />
-                ))}
-              </div>
+              <MeldDisplay key={meld.id} meld={meld} playerIndex={0} size="sm" />
             ))}
           </div>
         </div>

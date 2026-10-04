@@ -31,8 +31,8 @@ import {
   KongCandidate,
 } from './engine/table';
 import { decideTurn, decideClaim } from './ai/brain';
-import { Persona, samplePersonas, STYLE_LABELS } from './ai/personas';
-import { soundManager } from './utils/audio';
+import { Persona, samplePersonas, STYLE_LABELS, getBotPlayerName } from './ai/personas';
+import { soundManager, getTileSpokenName } from './utils/audio';
 import { GameBoard } from './components/GameBoard';
 import { StrategyPanel } from './components/StrategyPanel';
 import { RoundResultModal } from './components/RoundResultModal';
@@ -124,6 +124,7 @@ export default function App() {
 
   const handleSelectDifficulty = (newDiff: DifficultyLevel) => {
     setDifficulty(newDiff);
+    personasRef.current = { difficulty: newDiff, personas: samplePersonas(newDiff) };
     try {
       localStorage.setItem('mahjong_ai_difficulty_v2', newDiff);
     } catch {}
@@ -216,7 +217,16 @@ export default function App() {
     setSelectedTile(null);
     setActiveRoundResult(null);
     setActionBanner(null);
-    setTable(dealHand(handIndex, scores));
+    const p1 = personaFor(1);
+    const p2 = personaFor(2);
+    const p3 = personaFor(3);
+    const names = [
+      '您 (玩家)',
+      getBotPlayerName(1, p1.style, p1.skill, difficulty),
+      getBotPlayerName(2, p2.style, p2.skill, difficulty),
+      getBotPlayerName(3, p3.style, p3.skill, difficulty),
+    ];
+    setTable(dealHand(handIndex, scores, Math.random, names));
   };
 
   const startNew16RoundMatch = () => {
@@ -277,15 +287,18 @@ export default function App() {
     };
   }, [table, strictHu, dismissedTurnFor]);
 
-  // Drive bots and claim resolution
+  // Drive bots and claim resolution with realistic pacing (thinking pauses)
   React.useEffect(() => {
     if (!table || activeRoundResult) return;
     if (table.phase === 'turn' && table.active !== 0) {
-      const timer = setTimeout(() => setTable((prev) => (prev === table ? runBotTurn(prev) : prev)), 450);
+      // Natural thinking delay: 1000ms - 1350ms
+      const delay = 1000 + Math.floor(Math.random() * 350);
+      const timer = setTimeout(() => setTable((prev) => (prev === table ? runBotTurn(prev) : prev)), delay);
       return () => clearTimeout(timer);
     }
     if (table.phase === 'claim' && !humanClaim) {
-      const timer = setTimeout(() => setTable((prev) => (prev === table ? resolveWith(prev) : prev)), 300);
+      // Natural pause on discard claims: 750ms so discards and calls are clear
+      const timer = setTimeout(() => setTable((prev) => (prev === table ? resolveWith(prev) : prev)), 750);
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,22 +317,32 @@ export default function App() {
 
   const announce = (e: TurnActionLog) => {
     const who = e.playerIndex === 0 ? '' : `${e.playerName} `;
-    if (e.action === 'discard') soundManager.playTileDiscard();
-    else if (e.action === 'chi') {
+    if (e.action === 'discard') {
+      soundManager.playTileDiscard();
+      if (e.tile) {
+        soundManager.speak(getTileSpokenName(e.tile));
+      }
+    } else if (e.action === 'chi') {
       soundManager.playMeld();
       showActionBanner(`${who}吃！`, e.playerIndex);
+      soundManager.speak('吃');
     } else if (e.action === 'peng') {
       soundManager.playMeld();
       showActionBanner(`${who}碰！`, e.playerIndex);
+      soundManager.speak('碰');
     } else if (e.action === 'gang') {
       soundManager.playKong();
       showActionBanner(`${who}杠！`, e.playerIndex);
+      soundManager.speak('杠');
     } else if (e.action === 'hu') {
       if (e.aiComment?.includes('诈胡')) {
         showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
+        soundManager.speak('诈胡');
       } else {
         soundManager.playHu();
+        const isSelfDraw = e.aiComment?.includes('自摸');
         showActionBanner(`${who}${e.aiComment ?? '和牌！'}`, e.playerIndex);
+        soundManager.speak(isSelfDraw ? '自摸' : '胡了');
       }
     }
   };
