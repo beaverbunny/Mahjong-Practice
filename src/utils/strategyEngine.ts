@@ -136,13 +136,15 @@ export function calculateTenpaiWaits(
     const hypoTile = createHypotheticalTile(candidateType);
     const testHand = [...hand, hypoTile];
 
-    let evaluation = evaluateWin(testHand, melds, hypoTile, {
+    // Win on a discard: evaluateWin adds the discarded tile itself, so pass the 13-tile hand
+    let evaluation = evaluateWin(hand, melds, hypoTile, {
       isSelfDraw: false,
       prevailingWind,
       seatWind,
     });
     const selfDrawOnly = !evaluation.isWin;
-    // A 0 Fan hand can't win on a discard but still wins by self-draw (A2)
+    // A 0 Fan hand can't win on a discard but still wins by self-draw (A2);
+    // a self-draw is scored on the full hand including the drawn tile
     if (!evaluation.isWin) {
       evaluation = evaluateWin(testHand, melds, hypoTile, {
         isSelfDraw: true,

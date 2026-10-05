@@ -47,7 +47,12 @@ interface StyleStats {
   calls: number;
 }
 
-export function runMatches(matches: number, difficulty: DifficultyLevel, seed: number) {
+export function runMatches(
+  matches: number,
+  difficulty: DifficultyLevel,
+  seed: number,
+  opts: { quiet?: boolean } = {}
+) {
   const rng = mulberry32(seed);
   const styles: Record<string, StyleStats> = {};
   const fanHist: number[] = new Array(11).fill(0);
@@ -164,6 +169,9 @@ export function runMatches(matches: number, difficulty: DifficultyLevel, seed: n
     matchScores.push(...scores);
   }
 
+  // Tests only need the counts; rule violations are still printed above as they happen
+  if (opts.quiet) return { violations, hands, wins, draws };
+
   const secs = (Date.now() - t0) / 1000;
   const pct = (a: number, b: number) => (b ? ((100 * a) / b).toFixed(1) + '%' : '-');
   console.log(`\n${matches} matches (${difficulty}, seed ${seed}) in ${secs.toFixed(1)}s, ${violations} rule violations`);
@@ -189,7 +197,7 @@ export function runMatches(matches: number, difficulty: DifficultyLevel, seed: n
   }
   console.log('\nfan sources per style (count of winning hands containing each):');
   for (const [name, st] of Object.entries(styles)) console.log(name.padEnd(10), JSON.stringify((st as any).codes ?? {}));
-  return { violations };
+  return { violations, hands, wins, draws };
 }
 
 if (import.meta.main) {
