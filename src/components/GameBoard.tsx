@@ -233,10 +233,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
                     return (
                       <div
-                      key={t.id + idx}
-                      className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                      title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-                    >
+                        key={t.id + idx}
+                        className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
+                        title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
+                      >
                         <MahjongTile
                           tile={t}
                           size="xs"
@@ -358,10 +358,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
                     return (
                       <div
-                      key={t.id + idx}
-                      className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                      title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-                    >
+                        key={t.id + idx}
+                        className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
+                        title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
+                      >
                         <MahjongTile
                           tile={t}
                           size="xs"
