@@ -86,12 +86,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] max-h-[920px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
-      {/* Background table texture fallback + image overlay */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none bg-cover bg-center mix-blend-overlay"
-        style={{ backgroundImage: `url('/src/assets/images/mahjong_table_felt_1790702590720.jpg')` }}
-      />
-
       {/* Subtle table felt inner shadow ring */}
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
 
