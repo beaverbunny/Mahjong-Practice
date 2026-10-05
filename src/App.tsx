@@ -242,8 +242,12 @@ export default function App() {
     setTable(dealHand(handIndex, scores, Math.random, names));
   };
 
+  // Identifies the current 16-hand match in the saved hand history
+  const [matchId, setMatchId] = React.useState(() => Date.now().toString(36));
+
   const startNew16RoundMatch = () => {
     personasRef.current = { difficulty, personas: samplePersonas(difficulty) };
+    setMatchId(Date.now().toString(36));
     setIsGameOver16(false);
     setReviewRoundResult(null);
     startHand(0, [0, 0, 0, 0]);
@@ -392,6 +396,7 @@ export default function App() {
       pointsDelta: r.pointsDelta,
       actionLogs: table.log,
       handSnapshots: table.players.map((p) => ({ hand: [...p.hand], melds: [...p.melds] })),
+      matchId,
     };
     setActiveRoundResult(result);
     setSelectedTile(null);
@@ -570,6 +575,27 @@ export default function App() {
   const lastDiscardedTile =
     table?.phase === 'claim' && table.claim ? { tile: table.claim.tile, fromPlayer: table.claim.from } : null;
 
+  // Final ranking (rules D.4): score, then total fan won, then wins, then fewer deal-ins
+  const matchRounds = careerStats.historicalRounds.filter((r) => r.matchId === matchId);
+  const matchTally = (seat: number) => {
+    const won = matchRounds.filter((r) => r.winnerIndex === seat);
+    return {
+      fan: won.reduce((sum, r) => sum + r.totalFan, 0),
+      wins: won.length,
+      dealIns: matchRounds.filter((r) => r.winnerIndex !== null && r.discarderIndex === seat).length,
+    };
+  };
+  const compareStanding = (a: number, b: number) => {
+    const ta = matchTally(a);
+    const tb = matchTally(b);
+    return (
+      players[b].score - players[a].score ||
+      tb.fan - ta.fan ||
+      tb.wins - ta.wins ||
+      ta.dealIns - tb.dealIns
+    );
+  };
+
   const styleLabel = (seat: number) => {
     const p = personaFor(seat);
     const tier = p.skill >= 0.8 ? '高手' : p.skill >= 0.55 ? '中等' : '一般';
@@ -578,7 +604,7 @@ export default function App() {
 
   const handleShareApp = async () => {
     const shareUrl = 'https://tinyurl.com/mahjong-pro-arena';
-    const shareTitle = '雀圣研习社 - 国标标准麻将实战与策略复盘';
+    const shareTitle = '雀圣研习社 - TVB 麻将比赛实战与策略复盘';
     const shareText = '邀你加入雀圣研习社，体验16局大局赛制与深度牌效复盘！';
 
     if (navigator.share) {
@@ -835,6 +861,7 @@ export default function App() {
           currentPlayers={players}
           currentRoundIndex={currentRoundIndex}
           historicalRounds={careerStats.historicalRounds}
+          currentMatchId={matchId}
           onClose={() => setShowStatsModal(false)}
           onOpenReviewRound={(round) => {
             setShowStatsModal(false);
@@ -899,7 +926,7 @@ export default function App() {
             {/* Standings Ranking */}
             <div className="space-y-2">
               {[...players]
-                .sort((a, b) => b.score - a.score)
+                .sort((a, b) => compareStanding(players.indexOf(a), players.indexOf(b)))
                 .map((p, rank) => (
                   <div
                     key={p.id}
@@ -926,6 +953,10 @@ export default function App() {
                   </div>
                 ))}
             </div>
+
+            <p className="text-[10px] text-stone-500">
+              同分依次比较：总番数 → 和牌次数 → 放铳次数（少者胜）
+            </p>
 
             <div className="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
               <button

@@ -1,6 +1,6 @@
 import React from 'react';
 import { RoundResult, PlayerState } from '../types/mahjong';
-import { sortTiles } from '../utils/mahjongTiles';
+import { sortTiles, WIND_NAMES } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
 import { MeldDisplay } from './MeldDisplay';
 import { DangerReview } from './DangerReview';
@@ -67,7 +67,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                   : `${winner?.name} ${result.isSelfDraw ? '自摸和牌！' : '荣和点炮！'}`}
               </h2>
               <div className="text-[11px] sm:text-xs text-stone-400">
-                第 {currentRoundNumber} 局 / 共 16 局 · {result.prevailingWind}风圈
+                第 {currentRoundNumber} 局 / 共 16 局 · {WIND_NAMES[result.prevailingWind]}风圈
               </div>
             </div>
           </div>

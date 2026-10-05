@@ -19,6 +19,9 @@ export const DRAGONS: { id: Dragon; name: string; char: string; color: string }[
   { id: 'B', name: '白板', char: '白', color: '#2563EB' }, // Blue frame
 ];
 
+// Chinese name of each wind, for labels such as 东风圈 or 门风:南
+export const WIND_NAMES: Record<Wind, string> = { E: '东', S: '南', W: '西', N: '北' };
+
 export const CHINESE_NUMS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
 export function createFullDeck(): Tile[] {

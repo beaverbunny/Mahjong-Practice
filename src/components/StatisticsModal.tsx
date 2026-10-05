@@ -1,6 +1,7 @@
 import React from 'react';
 import { GameStats, PlayerState, RoundResult } from '../types/mahjong';
 import { DESIGNATED_HANDS } from '../utils/rulesEngine';
+import { WIND_NAMES } from '../utils/mahjongTiles';
 import {
   BarChart3,
   Trophy,
@@ -20,6 +21,8 @@ interface StatisticsModalProps {
   currentPlayers: PlayerState[];
   currentRoundIndex: number;
   historicalRounds: RoundResult[];
+  // Hands of the match in progress are the ones with this matchId
+  currentMatchId?: string;
   onClose: () => void;
   onResetStats: () => void;
   onOpenReviewRound?: (round: RoundResult) => void;
@@ -32,6 +35,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
   currentPlayers,
   currentRoundIndex,
   historicalRounds,
+  currentMatchId,
   onClose,
   onResetStats,
   onOpenReviewRound,
@@ -52,17 +56,19 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
   const tenpaiRate = ((stats.humanTenpaiCount / totalRounds) * 100).toFixed(1);
   const avgPoints = stats.humanWins > 0 ? (stats.totalPointsEarned / stats.humanWins).toFixed(1) : '0.0';
 
-  // Calculate round-by-round cumulative score for the current 16-round match
+  // Calculate round-by-round cumulative score for the current 16-round match only
   let cumulative = 0;
-  const matchProgression = historicalRounds.map((r, idx) => {
-    cumulative += r.pointsDelta[0];
-    return {
-      round: idx + 1,
-      delta: r.pointsDelta[0],
-      total: cumulative,
-      wind: r.prevailingWind,
-    };
-  });
+  const matchProgression = historicalRounds
+    .filter((r) => currentMatchId !== undefined && r.matchId === currentMatchId)
+    .map((r) => {
+      cumulative += r.pointsDelta[0];
+      return {
+        round: r.roundIndex + 1,
+        delta: r.pointsDelta[0],
+        total: cumulative,
+        wind: r.prevailingWind,
+      };
+    });
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
@@ -160,7 +166,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-stone-200">{p.name}</span>
                     <span className="text-stone-400 font-mono text-[10px]">
-                      门风: {p.seatWind}
+                      门风: {WIND_NAMES[p.seatWind]}
                     </span>
                   </div>
                   <div className="text-lg font-mono font-bold mt-1 text-amber-400">
@@ -270,7 +276,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-xs text-stone-100">
-                              {round.prevailingWind}风圈 · {['东局', '南局', '西局', '北局'][round.roundIndex % 4]}
+                              {WIND_NAMES[round.prevailingWind]}风圈 · {['东局', '南局', '西局', '北局'][round.roundIndex % 4]}
                             </span>
                             <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-mono" title={`历史归档第 ${originalIndex + 1} 局`}>
                               #{originalIndex + 1}
@@ -459,7 +465,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                 </h3>
                 <p className="text-xs text-stone-400 leading-relaxed">
                   {pendingDelete.type === 'single'
-                    ? `您即将删除【第 ${pendingDelete.round.roundIndex + 1} 局 (${pendingDelete.round.prevailingWind}风圈)】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与段位得分等全局统计将不受影响。`
+                    ? `您即将删除【第 ${pendingDelete.round.roundIndex + 1} 局 (${WIND_NAMES[pendingDelete.round.prevailingWind]}风圈)】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与段位得分等全局统计将不受影响。`
                     : pendingDelete.type === 'all'
                     ? `您即将清空历史归档中的全部 ${historicalRounds.length} 局对局牌谱与恶手复盘记录。此操作不可撤销，您的累计胜率与雀士生涯总积分将予以保留。`
                     : '重置后将清除包括总局数、胜率、和牌达成图谱及所有复盘牌谱在内的全部生涯数据，恢复初始状态。'}
