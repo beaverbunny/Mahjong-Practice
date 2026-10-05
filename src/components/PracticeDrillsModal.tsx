@@ -62,10 +62,10 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
   const isOptimal = userRec?.scoreRank === 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+      <div className="w-full max-w-3xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto">
         {/* Header */}
-        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <GraduationCap className="w-5 h-5 text-amber-400" />
             <div>
@@ -200,7 +200,7 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex justify-between items-center text-xs">
+        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex justify-between items-center text-xs shrink-0">
           <span className="text-stone-400">多做何切训练，可在实战对局中快人一步听牌。</span>
           <button
             onClick={generateNewProblem}

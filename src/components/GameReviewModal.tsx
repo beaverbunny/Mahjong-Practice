@@ -60,6 +60,22 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
   const logs = roundResult.actionLogs;
   const totalSteps = logs.length;
 
+  // Find current round's exact position in allRounds
+  const currentIndex = React.useMemo(() => {
+    if (!allRounds || allRounds.length === 0) return -1;
+    const exactIdx = allRounds.indexOf(roundResult);
+    if (exactIdx !== -1) return exactIdx;
+    return allRounds.findIndex(
+      (r) =>
+        r === roundResult ||
+        (r.roundIndex === roundResult.roundIndex &&
+          r.prevailingWind === roundResult.prevailingWind &&
+          r.dealerIndex === roundResult.dealerIndex &&
+          r.actionLogs.length === roundResult.actionLogs.length &&
+          r.totalFan === roundResult.totalFan)
+    );
+  }, [allRounds, roundResult]);
+
   // Auto-play timer
   React.useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -87,15 +103,20 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
     : 100;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-4xl max-h-[92vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+      <div className="w-full max-w-4xl max-h-[92vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto">
         {/* Top Bar */}
-        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <FileSearch className="w-5 h-5 text-amber-400" />
             <div>
-              <h2 className="text-base font-bold font-serif text-stone-100">
-                实战复盘与打法研析 · 第 {roundNumber} 局
+              <h2 className="text-base font-bold font-serif text-stone-100 flex items-center gap-2 flex-wrap">
+                <span>实战复盘与打法研析 · 第 {roundResult.roundIndex + 1} 局</span>
+                {allRounds && allRounds.length > 1 && currentIndex >= 0 && (
+                  <span className="text-xs font-normal text-stone-400 font-mono">
+                    (对局 #{currentIndex + 1} / 共 {allRounds.length} 局)
+                  </span>
+                )}
               </h2>
               <div className="text-xs text-stone-400">
                 {roundResult.prevailingWind}风圈 · 总计 {totalSteps} 步操作
@@ -139,19 +160,18 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
 
         {/* Round Switcher Sub-header (Allows jumping to and reviewing any round anytime) */}
         {allRounds && allRounds.length > 1 && (
-          <div className="px-6 py-2.5 bg-stone-950 border-b border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-stone-400 font-medium">回溯其他对局:</span>
+          <div className="px-6 py-2.5 bg-stone-950 border-b border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <span className="text-stone-400 font-medium shrink-0">回溯其他对局:</span>
               <select
-                value={roundResult.roundIndex}
+                value={currentIndex >= 0 ? currentIndex : ''}
                 onChange={(e) => {
                   const targetIdx = Number(e.target.value);
-                  const found = allRounds.find((r) => r.roundIndex === targetIdx);
-                  if (found && onSelectRound) {
-                    onSelectRound(found);
+                  if (allRounds && allRounds[targetIdx] && onSelectRound) {
+                    onSelectRound(allRounds[targetIdx]);
                   }
                 }}
-                className="bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg px-2.5 py-1 text-stone-200 text-xs font-mono cursor-pointer focus:ring-1 focus:ring-amber-400 focus:outline-none"
+                className="bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg px-2.5 py-1 text-stone-200 text-xs font-mono cursor-pointer focus:ring-1 focus:ring-amber-400 focus:outline-none max-w-[280px] sm:max-w-md truncate"
               >
                 {allRounds.map((r, idx) => {
                   const isDraw = r.winnerIndex === null;
@@ -161,40 +181,37 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     : `${winnerName}${r.isSelfDraw ? '自摸' : '荣和'} (${r.totalFan}番)`;
                   const deltaStr = r.pointsDelta[0] > 0 ? `+${r.pointsDelta[0]}` : `${r.pointsDelta[0]}`;
                   return (
-                    <option key={r.roundIndex + '_' + idx} value={r.roundIndex}>
-                      第 {r.roundIndex + 1} 局 ({r.prevailingWind}风圈) · {outcomeDesc} [您得分:{deltaStr}点]
+                    <option key={idx} value={idx}>
+                      [#{idx + 1}] 第 {r.roundIndex + 1} 局 ({r.prevailingWind}风圈) · {outcomeDesc} [得分:{deltaStr}点]
                     </option>
                   );
                 })}
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={() => {
-                  const currIdx = allRounds.findIndex((r) => r.roundIndex === roundResult.roundIndex);
-                  if (currIdx > 0 && onSelectRound) {
-                    onSelectRound(allRounds[currIdx - 1]);
+                  if (currentIndex > 0 && onSelectRound) {
+                    onSelectRound(allRounds[currentIndex - 1]);
                   }
                 }}
-                disabled={allRounds.findIndex((r) => r.roundIndex === roundResult.roundIndex) <= 0}
+                disabled={currentIndex <= 0}
                 className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed text-stone-300 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                title={currentIndex > 0 ? `切换至上一局 (#${currentIndex})` : '已是第一局'}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>上一局</span>
               </button>
               <button
                 onClick={() => {
-                  const currIdx = allRounds.findIndex((r) => r.roundIndex === roundResult.roundIndex);
-                  if (currIdx >= 0 && currIdx < allRounds.length - 1 && onSelectRound) {
-                    onSelectRound(allRounds[currIdx + 1]);
+                  if (currentIndex >= 0 && currentIndex < allRounds.length - 1 && onSelectRound) {
+                    onSelectRound(allRounds[currentIndex + 1]);
                   }
                 }}
-                disabled={
-                  allRounds.findIndex((r) => r.roundIndex === roundResult.roundIndex) >=
-                  allRounds.length - 1
-                }
+                disabled={currentIndex < 0 || currentIndex >= allRounds.length - 1}
                 className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed text-stone-300 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                title={currentIndex < allRounds.length - 1 ? `切换至下一局 (#${currentIndex + 2})` : '已是最后一局'}
               >
                 <span>下一局</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -879,7 +896,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs">
+        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs shrink-0">
           <span className="text-stone-400">
             按左右方向键或拖动滑块可逐步复盘，深入研习每一步牌效得失。
           </span>
@@ -902,10 +919,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-stone-100">
-                  确认删除第 {roundNumber} 局复盘记录？
+                  确认删除第 {roundResult.roundIndex + 1} 局{currentIndex >= 0 ? ` (对局 #${currentIndex + 1})` : ''}复盘记录？
                 </h3>
                 <p className="text-xs text-stone-400 leading-relaxed">
-                  您即将删除【第 {roundNumber} 局 ({roundResult.prevailingWind}风圈)】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与积分将保持不变。
+                  您即将删除【第 {roundResult.roundIndex + 1} 局 ({roundResult.prevailingWind}风圈){currentIndex >= 0 ? ` · 历史归档 #${currentIndex + 1}` : ''}】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与积分将保持不变。
                 </p>
               </div>
             </div>

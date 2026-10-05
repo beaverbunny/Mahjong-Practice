@@ -65,10 +65,10 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-4xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto">
         {/* Header */}
-        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <BarChart3 className="w-5 h-5 text-amber-400" />
             <div>
@@ -272,6 +272,9 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                             <span className="font-bold text-xs text-stone-100">
                               {round.prevailingWind}风圈 · {['东局', '南局', '西局', '北局'][round.roundIndex % 4]}
                             </span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-mono" title={`历史归档第 ${originalIndex + 1} 局`}>
+                              #{originalIndex + 1}
+                            </span>
                             <span
                               className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
                                 isDraw
@@ -420,7 +423,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs">
+        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs shrink-0">
           <button
             onClick={() => setPendingDelete({ type: 'reset_all' })}
             className="text-stone-500 hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors"

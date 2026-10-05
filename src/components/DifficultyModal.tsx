@@ -13,6 +13,13 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
   onSelectDifficulty,
   onClose,
 }) => {
+  const [selectedDifficulty, setSelectedDifficulty] = React.useState<DifficultyLevel>(currentDifficulty);
+
+  const handleConfirm = () => {
+    onSelectDifficulty(selectedDifficulty);
+    onClose();
+  };
+
   const options: {
     id: DifficultyLevel;
     title: string;
@@ -56,10 +63,18 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="w-full max-w-xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between">
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-stone-950/90 border-b border-stone-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <Bot className="w-5 h-5 text-amber-400" />
             <div>
@@ -67,13 +82,13 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
                 AI 对手难度配置
               </h2>
               <div className="text-xs text-stone-400">
-                当前难度：
+                当前所选：
                 <span className="text-amber-400 font-semibold ml-1">
-                  {currentDifficulty === 'tournament'
-                    ? '比赛实战'
-                    : currentDifficulty === 'beginner'
+                  {selectedDifficulty === 'tournament'
+                    ? '比赛实战 (推荐)'
+                    : selectedDifficulty === 'beginner'
                     ? '入门研习 (初级)'
-                    : currentDifficulty === 'intermediate'
+                    : selectedDifficulty === 'intermediate'
                     ? '进阶实战 (中级)'
                     : '雀圣宗师 (高级)'}
                 </span>
@@ -84,23 +99,29 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
+            title="关闭窗口"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Options Body */}
-        <div className="p-6 space-y-3.5 text-xs text-stone-300">
+        {/* Options Body (Scrollable) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 text-xs text-stone-300 overscroll-contain">
           {options.map((opt) => {
-            const isSelected = currentDifficulty === opt.id;
+            const isSelected = selectedDifficulty === opt.id;
             return (
               <div
                 key={opt.id}
-                onClick={() => onSelectDifficulty(opt.id)}
+                onClick={() => setSelectedDifficulty(opt.id)}
+                onDoubleClick={() => {
+                  setSelectedDifficulty(opt.id);
+                  onSelectDifficulty(opt.id);
+                  onClose();
+                }}
                 className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-2 ${
                   isSelected
-                    ? 'bg-amber-950/30 border-amber-500 shadow-md ring-1 ring-amber-500/50'
-                    : 'bg-stone-950/40 border-stone-800 hover:bg-stone-800/40'
+                    ? 'bg-amber-950/40 border-amber-500 shadow-md ring-1 ring-amber-500/50'
+                    : 'bg-stone-950/40 border-stone-800 hover:bg-stone-800/40 hover:border-stone-700'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -117,11 +138,15 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
                     </span>
                   </div>
 
-                  {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center font-bold">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                  )}
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center font-bold transition-all ${
+                      isSelected
+                        ? 'bg-amber-500 text-stone-950 shadow-sm'
+                        : 'border border-stone-700 text-transparent'
+                    }`}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </div>
                 </div>
 
                 <p className="text-stone-400 leading-relaxed text-[11px]">{opt.desc}</p>
@@ -142,15 +167,25 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
           })}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs">
-          <span className="text-stone-400">切换后从下一局开始生效，对手风格会重新抽取。</span>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold cursor-pointer transition-colors"
-          >
-            确定
-          </button>
+        {/* Footer (Fixed at bottom) */}
+        <div className="px-5 sm:px-6 py-3.5 bg-stone-950/95 border-t border-stone-800 flex items-center justify-between gap-3 text-xs shrink-0 shadow-lg">
+          <span className="text-stone-400 text-[11px] sm:text-xs">
+            切换后从下一局生效，对手风格会重新抽取。
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={onClose}
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-medium cursor-pointer transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="px-5 sm:px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold cursor-pointer transition-all shadow-md active:scale-95 ring-1 ring-amber-300/40"
+            >
+              确定
+            </button>
+          </div>
         </div>
       </div>
     </div>

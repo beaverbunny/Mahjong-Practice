@@ -166,13 +166,17 @@ export default function App() {
       if (typeof target === 'number') {
         targetIdx = target;
       } else {
-        targetIdx = prev.historicalRounds.findIndex(
-          (r) =>
-            r === target ||
-            (r.roundIndex === target.roundIndex &&
-              r.actionLogs.length === target.actionLogs.length &&
-              r.totalFan === target.totalFan)
-        );
+        targetIdx = prev.historicalRounds.indexOf(target);
+        if (targetIdx === -1) {
+          targetIdx = prev.historicalRounds.findIndex(
+            (r) =>
+              r === target ||
+              (r.roundIndex === target.roundIndex &&
+                r.prevailingWind === target.prevailingWind &&
+                r.actionLogs.length === target.actionLogs.length &&
+                r.totalFan === target.totalFan)
+          );
+        }
       }
       if (targetIdx === -1) return prev;
       return {
@@ -872,8 +876,8 @@ export default function App() {
 
       {/* 7. Final 16-Round Match Championship Ceremony Modal */}
       {isGameOver16 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in zoom-in-95">
-          <div className="w-full max-w-lg bg-stone-900 border border-amber-500/60 rounded-2xl shadow-2xl p-6 text-center space-y-5 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in zoom-in-95 overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-stone-900 border border-amber-500/60 rounded-2xl shadow-2xl p-5 sm:p-6 text-center space-y-5 relative my-auto">
             <button
               onClick={() => setIsGameOver16(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
