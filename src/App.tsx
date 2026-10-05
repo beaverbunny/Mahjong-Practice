@@ -62,6 +62,9 @@ import {
 import confetti from 'canvas-confetti';
 
 const STORAGE_KEY_STATS = 'mahjong_practice_career_stats_v1';
+// Keep the replay history to the most recent hands so browser storage (about 5 MB) never fills up.
+// Career totals are counters and are unaffected.
+const MAX_HISTORY_HANDS = 80;
 const DIFFICULTIES: DifficultyLevel[] = ['tournament', 'beginner', 'intermediate', 'master'];
 
 type GangOption = { type: 'ming_gang' | 'an_gang' | 'bu_gang'; tiles: Tile[]; meld?: Meld };
@@ -137,7 +140,10 @@ export default function App() {
   const [careerStats, setCareerStats] = React.useState<GameStats>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_STATS);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const stats: GameStats = JSON.parse(saved);
+        return { ...stats, historicalRounds: (stats.historicalRounds ?? []).slice(-MAX_HISTORY_HANDS) };
+      }
     } catch {
       // fallback
     }
@@ -400,7 +406,7 @@ export default function App() {
         highestFan: isHumanWin ? Math.max(prev.highestFan, r.totalFan) : prev.highestFan,
         totalPointsEarned: prev.totalPointsEarned + (isHumanWin ? r.pointsDelta[0] : 0),
         fansAchievedCounts: fanCounts,
-        historicalRounds: [...prev.historicalRounds, result],
+        historicalRounds: [...prev.historicalRounds, result].slice(-MAX_HISTORY_HANDS),
       };
     });
   }, [table]);
