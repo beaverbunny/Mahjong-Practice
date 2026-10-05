@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Raw output of scripts/style-study.ts
+style-study-runs/
