@@ -2,6 +2,8 @@ import React from 'react';
 import { RoundResult, TurnActionLog } from '../types/mahjong';
 import { sortTiles } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
+import { DangerReview } from './DangerReview';
+import { seatWindFor } from '../engine/table';
 import {
   FileSearch,
   ChevronLeft,
@@ -634,6 +636,14 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
           {/* End of Round Final Summary */}
           {roundResult.handSnapshots && roundResult.handSnapshots.length === 4 && (
             <div className="space-y-4 pt-2 border-t border-stone-800">
+              {/* Deal-in danger review (hands played with this feature only) */}
+              <DangerReview
+                result={roundResult}
+                playerNames={[0, 1, 2, 3].map(
+                  (i) => roundResult.actionLogs.find((e) => e.playerIndex === i)?.playerName ?? ''
+                )}
+                seatWinds={[0, 1, 2, 3].map((i) => seatWindFor(i, roundResult.dealerIndex))}
+              />
               {/* 1. Winner's Full Winning Hand Showcase (胡牌牌型大观) */}
               {roundResult.winnerIndex !== null && roundResult.handSnapshots[roundResult.winnerIndex] && (() => {
                 const winnerIdx = roundResult.winnerIndex;

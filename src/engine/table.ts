@@ -75,8 +75,8 @@ export interface TableState {
   active: number;
   phase: Phase;
   claim: PendingClaim | null;
-  // About the active player's current tile
-  turn: { kongDraw: boolean; justCalled: boolean };
+  // About the active player's current tile. drawnId: the tile just drawn (null after a call or at the deal)
+  turn: { kongDraw: boolean; justCalled: boolean; drawnId: string | null };
   // False-win penalties already applied this hand
   penaltyDelta: number[];
   result: HandResult | null;
@@ -167,7 +167,7 @@ export function dealHand(
     active: dealer,
     phase: 'turn',
     claim: null,
-    turn: { kongDraw: false, justCalled: false },
+    turn: { kongDraw: false, justCalled: false, drawnId: null },
     penaltyDelta: [0, 0, 0, 0],
     result: null,
     log: [],
@@ -308,8 +308,9 @@ export function discard(s: TableState, p: number, tileId: string, extraLog: Part
     players,
     phase: 'claim',
     claim: { tile, from: p },
-    turn: { kongDraw: false, justCalled: false },
-    log: [...s.log, logEntry(s, p, { action: 'discard', tile, ...extraLog })],
+    turn: { kongDraw: false, justCalled: false, drawnId: null },
+    // fromDraw is public: at the table everyone sees whether the tile just drawn was thrown
+    log: [...s.log, logEntry(s, p, { action: 'discard', tile, ...extraLog, fromDraw: tile.id === s.turn.drawnId })],
     turnNumber: s.turnNumber + 1,
   };
 }
@@ -351,7 +352,7 @@ export function declareKong(s: TableState, p: number, candidate: KongCandidate):
     players,
     phase: 'claim',
     claim: { tile, from: p, robbingKong: { meldId: candidate.meld.id } },
-    turn: { kongDraw: false, justCalled: false },
+    turn: { kongDraw: false, justCalled: false, drawnId: null },
   };
 }
 
@@ -368,7 +369,7 @@ function drawReplacement(s: TableState, p: number): TableState {
     active: p,
     phase: 'turn',
     claim: null,
-    turn: { kongDraw: true, justCalled: false },
+    turn: { kongDraw: true, justCalled: false, drawnId: tile.id },
   };
 }
 
@@ -383,7 +384,7 @@ function drawFromWall(s: TableState, p: number): TableState {
     active: p,
     phase: 'turn',
     claim: null,
-    turn: { kongDraw: false, justCalled: false },
+    turn: { kongDraw: false, justCalled: false, drawnId: tile.id },
   };
 }
 
@@ -493,7 +494,7 @@ function claimMeld(s: TableState, q: number, type: 'chi' | 'peng' | 'ming_gang',
     active: q,
     phase: 'turn',
     claim: null,
-    turn: { kongDraw: false, justCalled: true },
+    turn: { kongDraw: false, justCalled: true, drawnId: null },
     log: [...s.log, logEntry(s, q, { action, tile, meld })],
   };
   return type === 'ming_gang' ? drawReplacement(next, q) : next;

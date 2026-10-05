@@ -8,7 +8,10 @@ import {
   TenpaiWait,
   DifficultyLevel,
   TurnActionLog,
+  DiscardDangerRecord,
 } from './types/mahjong';
+import { publicView, readDanger, DangerRead } from './analysis/danger';
+import { getTileNameByType } from './utils/mahjongTiles';
 import {
   analyzeShanten,
   generateDiscardRecommendations,
@@ -63,7 +66,7 @@ const DIFFICULTIES: DifficultyLevel[] = ['tournament', 'beginner', 'intermediate
 
 type GangOption = { type: 'ming_gang' | 'an_gang' | 'bu_gang'; tiles: Tile[]; meld?: Meld };
 
-// Bots may only judge danger from what is visible: an opponent with 2+ exposed melds is a threat
+// Simple visible threat flag (2+ exposed melds), for the fallback tile labeler
 const visibleThreats = (t: TableState, viewer: number) =>
   t.players.map((p, i) => i !== viewer && p.melds.length >= 2);
 
@@ -287,6 +290,18 @@ export default function App() {
     };
   }, [table, strictHu, dismissedTurnFor]);
 
+  // Danger read for the human's tiles, from what the human can see (shown only with the strategy panel open)
+  const dangerRead: DangerRead | null = React.useMemo(() => {
+    if (!table || table.phase === 'ended') return null;
+    return readDanger(publicView(table, 0), table.players[0].hand.map((t) => t.type));
+  }, [table]);
+
+  // Discards that were the tile just drawn (摸切)
+  const drawnDiscardIds = React.useMemo(
+    () => new Set((table?.log ?? []).filter((e) => e.action === 'discard' && e.fromDraw && e.tile).map((e) => e.tile!.id)),
+    [table?.log]
+  );
+
   // Drive bots and claim resolution with realistic pacing (thinking pauses)
   React.useEffect(() => {
     if (!table || activeRoundResult) return;
@@ -409,6 +424,7 @@ export default function App() {
   const handleHumanConfirmDiscard = (tile: Tile) => {
     if (!table || !humanTurn) return;
     const pl = table.players[0];
+    const read = readDanger(publicView(table, 0), pl.hand.map((t) => t.type));
     const recs = generateDiscardRecommendations(
       pl.hand,
       pl.melds,
@@ -416,8 +432,23 @@ export default function App() {
       table.prevailingWind,
       pl.seatWind,
       table.players.map((p) => p.discards),
-      visibleThreats(table, 0)
+      visibleThreats(table, 0),
+      read.tiles
     );
+    // What the danger read said at this moment, for the post-hand review
+    const r3 = (x: number) => Math.round(x * 1000) / 1000;
+    const chosen = read.tiles[tile.type];
+    const safest = Object.values(read.tiles).reduce((a, b) => (b.pct < a.pct ? b : a));
+    const danger: DiscardDangerRecord = {
+      pct: r3(chosen.pct),
+      level: chosen.level,
+      expectedLoss: r3(chosen.expectedLoss),
+      reasons: chosen.reasons,
+      bySeat: chosen.bySeat.map((b) => ({ seat: b.seat, pct: r3(b.pct), fan: r3(b.fan) })),
+      safest: { type: safest.type, displayName: getTileNameByType(safest.type), pct: r3(safest.pct) },
+      opponents: read.opponents.map((o) => ({ seat: o.seat, pReady: r3(o.pReady), fan: r3(o.fan), reasons: o.reasons })),
+      hintsOn: isStrategyPanelOpen,
+    };
     const blunder = analyzeTurnBlunder(tile, recs);
     const visible = visibleTilesFor(table, 0);
     const before = analyzeShanten(pl.hand, pl.melds, table.prevailingWind, pl.seatWind, visible);
@@ -443,6 +474,7 @@ export default function App() {
         recommendedDiscard: blunder.bestChoice,
         bestRec: blunder.bestRec,
         chosenRec: blunder.chosenRec,
+        danger,
         aiComment:
           afterInfo.noFanRoute
             ? `已无番种路线，只能自摸（${shantenAfter === 0 ? '听牌' : `${shantenAfter}向听`}）`
@@ -516,7 +548,8 @@ export default function App() {
           prevailingWind,
           human.seatWind,
           players.map((p) => p.discards),
-          visibleThreats(table, 0)
+          visibleThreats(table, 0),
+          dangerRead?.tiles
         )
       : [];
 
@@ -730,6 +763,7 @@ export default function App() {
             lastDiscardedTile={lastDiscardedTile}
             showHints={isStrategyPanelOpen}
             actionBanner={actionBanner}
+            drawnDiscardIds={drawnDiscardIds}
           />
         )}
 
@@ -747,6 +781,7 @@ export default function App() {
             activePlayerIndex={table!.active}
             prevailingWind={prevailingWind}
             humanSeatWind={human.seatWind}
+            dangerRead={dangerRead}
             onTileSelect={(t) => setSelectedTile(t)}
             isOpen={isStrategyPanelOpen}
             onToggle={() => setIsStrategyPanelOpen(!isStrategyPanelOpen)}

@@ -9,6 +9,7 @@ import {
   PlayerState,
 } from '../types/mahjong';
 import { MahjongTile } from './MahjongTile';
+import { DangerRead, seatLabel } from '../analysis/danger';
 import { Sparkles, ShieldAlert, Award, Compass, Eye, Info, X } from 'lucide-react';
 
 interface StrategyPanelProps {
@@ -26,6 +27,8 @@ interface StrategyPanelProps {
   activePlayerIndex: number;
   prevailingWind: Wind;
   humanSeatWind: Wind;
+  // Deal-in danger read from public information (src/analysis/danger.ts)
+  dangerRead?: DangerRead | null;
   onTileSelect?: (tile: Tile) => void;
   isOpen: boolean;
   onToggle: () => void;
@@ -43,6 +46,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
   activePlayerIndex,
   prevailingWind,
   humanSeatWind,
+  dangerRead,
   onTileSelect,
   isOpen,
   onToggle,
@@ -353,6 +357,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                                 : rec.safetyLevel === 'medium'
                                 ? '较稳'
                                 : '危险'}
+                              {dangerRead?.tiles[rec.tile.type] && ` ${pctText(dangerRead.tiles[rec.tile.type].pct)}`}
                             </span>
                           </div>
                         </div>
@@ -369,46 +374,62 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 <div className="p-3 bg-stone-950/50 rounded-xl border border-stone-800 space-y-2">
                   <div className="font-bold text-stone-200 flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    <span>对手副露警戒（仅凭明牌判断）</span>
+                    <span>对手读牌（只用您能看到的信息）</span>
                   </div>
                   {players
                     .filter((p) => !p.isHuman)
                     .map((bot) => {
+                      const seat = players.indexOf(bot);
                       const read = readVisibleThreat(bot, prevailingWind);
+                      const op = dangerRead?.opponents.find((o) => o.seat === seat);
+                      const ready = op?.pReady ?? 0;
                       return (
-                        <div
-                          key={bot.id}
-                          className="flex items-center justify-between py-1.5 border-b border-stone-800/60 last:border-0"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-stone-300">{bot.name}</span>
-                            <span className="text-stone-500 font-mono text-[10px]">({bot.seatWind}风)</span>
+                        <div key={bot.id} className="py-1.5 border-b border-stone-800/60 last:border-0 space-y-0.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-semibold text-stone-300 shrink-0">{seatLabel(0, seat)}</span>
+                              <span className="text-stone-500 text-[10px] truncate">{bot.name}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {read.label !== '门清' && read.label !== '鸣牌中' && (
+                                <span className="text-[10px] text-stone-400">{read.label}</span>
+                              )}
+                              <span
+                                className={`px-1.5 py-0.5 rounded font-bold text-[10px] border ${
+                                  ready >= 0.5
+                                    ? 'bg-rose-900/80 text-rose-300 border-rose-700'
+                                    : ready >= 0.25
+                                    ? 'bg-amber-900/60 text-amber-300 border-amber-700'
+                                    : 'text-stone-400 border-stone-700'
+                                }`}
+                                title="此刻能和别人打出的牌的概率"
+                              >
+                                听牌 {Math.round(100 * ready)}%
+                              </span>
+                              {op && (
+                                <span
+                                  className={`text-[10px] font-mono ${op.fan >= 3 ? 'text-rose-300 font-bold' : 'text-stone-400'}`}
+                                  title="若放铳，预计番数（放铳每番 10 点）"
+                                >
+                                  ≈{op.fan.toFixed(1)}番
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-stone-400 text-[11px]">副露: {bot.melds.length} 组</span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded font-bold text-[10px] border ${
-                                read.level === 'high'
-                                  ? 'bg-rose-900/80 text-rose-300 border-rose-700'
-                                  : read.level === 'medium'
-                                  ? 'bg-amber-900/60 text-amber-300 border-amber-700'
-                                  : 'text-stone-500 border-transparent'
-                              }`}
-                            >
-                              {read.label}
-                            </span>
-                          </div>
+                          {op && op.reasons.length > 0 && (
+                            <div className="text-[10px] text-stone-500 leading-snug">{op.reasons.join(' · ')}</div>
+                          )}
                         </div>
                       );
                     })}
                   <p className="text-[10px] text-stone-500 leading-relaxed">
-                    实战中看不到对手是否听牌。此处只根据副露推测：三副露以上或明显做一色/对对胡/番牌刻时需警惕。
+                    根据每家的副露、舍牌顺序、摸切/手切和巡目推测，不看任何暗牌。数字来自模拟大师对局的校准。
                   </p>
                 </div>
 
                 {/* Defense Safety Guide */}
                 <div className="space-y-2">
-                  <div className="font-bold text-stone-200">当前手牌安全度速查：</div>
+                  <div className="font-bold text-stone-200">当前手牌放铳率（打出后被和的概率）：</div>
                   <div className="grid grid-cols-2 gap-2">
                     {discardRecommendations.map((rec) => (
                       <div
@@ -419,9 +440,12 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                         <div className="overflow-hidden">
                           <div className="text-[11px] font-semibold truncate text-stone-200">
                             {rec.tile.displayName}
+                            {dangerRead?.tiles[rec.tile.type] && (
+                              <span className="ml-1 font-mono text-stone-400">{pctText(dangerRead.tiles[rec.tile.type].pct)}</span>
+                            )}
                           </div>
-                          <div className="text-[9px] text-stone-400 truncate">
-                            {rec.safetyReason}
+                          <div className="text-[9px] text-stone-400 line-clamp-2" title={rec.safetyReason}>
+                            {(dangerRead?.tiles[rec.tile.type]?.reasons ?? [rec.safetyReason]).join('；')}
                           </div>
                         </div>
                       </div>
@@ -430,8 +454,8 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-[11px] text-amber-200/90 leading-relaxed">
-                  <span className="font-bold">防守铁律：</span>
-                  对手鸣牌3组或听牌时，优先切打“现物”（对手弃牌河中已出现的牌）或字牌绝张，切忌打生张中张（四五六）出冲点炮。
+                  <span className="font-bold">防守要点：</span>
+                  最安全的是对手手牌没变后已经有人打过、他却没和的牌（过张）。其次是现物、绝张字牌。本规则无振听，现物也并非绝对安全。对手若在做大牌（≈3番以上），宜更早弃和。
                 </div>
               </div>
             )}
@@ -484,6 +508,10 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
     </aside>
   );
 };
+
+function pctText(p: number): string {
+  return p < 0.1 ? `${(100 * p).toFixed(1)}%` : `${Math.round(100 * p)}%`;
+}
 
 // What a real player can infer from an opponent's exposed melds (no hidden information)
 function readVisibleThreat(
