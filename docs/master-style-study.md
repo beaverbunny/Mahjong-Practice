@@ -6,6 +6,12 @@ How the four Master-level bot styles (速攻 speed, 大牌 big-hand, 稳健 stea
 - **Size:** 7,200 simulated matches, 115,200 hands.
 - **Reproduce:** see [How to re-run](#how-to-re-run). Re-run after any change to `src/ai/` or `src/engine/`, since the numbers depend on the bot logic.
 
+## Terms
+
+- **Hand (局):** one deal, played until someone wins or the wall runs out.
+- **Match (一整场):** 16 hands, the tournament format: East, South, West and North rounds of 4 hands each, dealer passing every hand, everyone starting at 0.
+- **Points per match:** a player's **final score after all 16 hands**. Every result below is a 16-hand total.
+
 ## Summary
 
 **Ranking (strongest first): 稳健 steady ≈ 速攻 speed > 防守 defensive > 大牌 big-hand.**
@@ -28,6 +34,19 @@ The gaps are a few points per match. A single 16-hand match swings by about ±75
 ## Results
 
 ### 1. One of each style (1,200 matches; 10.2% of hands drawn)
+
+**Final results after 16 hands:**
+
+| Style | Avg final score | Median | 1st | 2nd | 3rd | 4th | Ended positive | Reached +50 | −50 or worse | Middle 80% of scores |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 稳健 steady | **+10.5** | +5 | **29.7%** | 25.4% | 23.0% | 21.9% | **50.6%** | **28.1%** | 21.8% | −70 to +100 |
+| 速攻 speed | +3.8 | 0 | 29.2% | 25.5% | 24.8% | 20.6% | 47.6% | 26.4% | 23.2% | −85 to +95 |
+| 防守 defensive | −4.9 | −10 | 20.2% | 25.2% | 26.1% | 28.4% | 41.4% | 20.7% | 25.4% | −85 to +80 |
+| 大牌 big-hand | −9.4 | −15 | 20.9% | 23.8% | 26.2% | 29.1% | 40.4% | 18.8% | **30.2%** | −90 to +80 |
+
+An even field would finish 1st 25% of the time. Every table's four final scores sum to zero.
+
+**Per-match play statistics:**
 
 | Rank | Style | Points/match | Wins | Deal-ins | Fan per win | Self-draw share | Calls |
 |---|---|---|---|---|---|---|---|
