@@ -3,7 +3,10 @@
  *
  * Bots only use information a real player at the table has: their own hand, every exposed meld,
  * every discard, the wall count and the winds. Decisions compare expected points:
- *  - hand value: fan the hand can reach (speed, flush, all-pungs routes) × chance to finish it
+ *  - hand value: fan the hand can reach (speed, flush, all-pungs routes) × chance to finish it.
+ *    The speed route counts the distance to a hand that can win on a discard (at least 1 fan:
+ *    Common Hand, a value triplet, ...); a shape with no fan can only win by self-draw and is
+ *    valued as such.
  *  - danger: chance a discard wins for an opponent × the fan their exposed melds suggest
  * Each bot's Persona scales these (value-chasing, caution, eagerness to call, skill noise).
  */
@@ -17,7 +20,8 @@ import {
   isWinningShape,
 } from '../engine/table';
 import { evaluateWin } from '../utils/rulesEngine';
-import { createHypotheticalTile } from '../utils/strategyEngine';
+import { createHypotheticalTile, meldShapes, valueTileIndices } from '../utils/strategyEngine';
+import { fanShantenFromCounts } from '../engine/fanShanten';
 import { ALL_TILE_TYPES, shantenFromCounts, tileIndex, toCounts } from '../engine/shanten';
 import { Persona } from './personas';
 
@@ -52,6 +56,7 @@ interface Ctx {
   unseenTotal: number;
   turnsLeft: number;
   valueWeight: number[]; // fan a triplet of each honor index is worth to me
+  valueTiles: number[]; // honor indices whose triplet gives me a fan
   threats: Threat[];
 }
 
@@ -88,6 +93,7 @@ function buildCtx(s: TableState, me: number, persona: Persona, rng: Rng): Ctx {
     unseenTotal: unseen.reduce((a, b) => a + b, 0),
     turnsLeft: s.wall.length / 4,
     valueWeight,
+    valueTiles: valueTileIndices(s.prevailingWind, pl.seatWind),
     threats,
   };
 }
@@ -229,11 +235,21 @@ function tenpaiValue(ctx: Ctx, tiles: Tile[], melds: Meld[]): number {
   const draws = Math.max(0.5, ctx.turnsLeft);
   const pTsumo = 1 - Math.pow(1 - share, draws);
   const pRon = ronWaits > 0 ? 1 - Math.pow(1 - share * 0.5 * (ronWaits / waits), draws * 3) : 0;
-  const survival = 0.72;
+  // Waits with no fan on a discard: the formula above overrates self-draw alone
+  const survival = 0.72 * (ronWaits === 0 ? TSUMO_ONLY_TENPAI : 1);
   const evTsumo = pTsumo * 15 * biasFan(ctx, fanTsumo / waits);
   const evRon = ronWaits > 0 ? (1 - pTsumo) * pRon * 10 * biasFan(ctx, fanRon / ronWaits) : 0;
   return survival * (evTsumo + evRon);
 }
+
+// Ready on waits with no fan on a discard (self-draw only): the tenpai formula overrates winning by
+// self-draw alone, so discount it. Tuned in head-to-head simulation (0.35 and 0.6 play about equally; no discount is weaker).
+const TSUMO_ONLY_TENPAI = 0.35;
+
+// A shape with no fan only finishes by self-draw: a fraction of the finishing chances of a hand
+// that can also win on discards, paid 1.5× (15 per fan instead of 10). Tuned in head-to-head
+// simulation: 0.2-0.35 play equally well, higher is weaker; 0.2 keeps bots on fan routes most.
+const SELF_DRAW_ONLY_SHARE = 0.2 * 1.5;
 
 // Fan the speed route is likely to carry: value pungs, value pairs, Common Hand chance
 function speedFan(ctx: Ctx, counts: number[], melds: Meld[]): number {
@@ -266,7 +282,14 @@ function handValue(ctx: Ctx, tiles: Tile[], melds: Meld[]): number {
   if (sh <= 0) return tenpaiValue(ctx, tiles, melds);
 
   const useful = usefulCount(ctx, counts, m, sh);
-  let best = biasFan(ctx, speedFan(ctx, counts, melds)) * pWin(ctx, sh, useful) * 11;
+  // Speed route. Under the 1-fan minimum a finished shape needs a fan to win on a discard:
+  // aim for the fastest shape that has one (Common Hand, a value triplet, ...). A shape with no
+  // fan can only win by self-draw: far fewer chances to finish, at 1 fan.
+  const routes = fanShantenFromCounts(counts, meldShapes(melds), ctx.valueTiles, ctx.unseen);
+  let best = Number.isFinite(routes.fan)
+    ? biasFan(ctx, speedFan(ctx, counts, melds)) * pWin(ctx, Math.max(0, routes.fan), useful) * 11
+    : 0;
+  if (routes.fan > sh) best = Math.max(best, SELF_DRAW_ONLY_SHARE * pWin(ctx, sh, useful) * 11);
 
   // Flush routes: only when melds allow it and the hand already leans that way
   const meldSuit = (mm: Meld) => {

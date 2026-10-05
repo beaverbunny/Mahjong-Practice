@@ -100,7 +100,7 @@ function checkField(difficulty: DifficultyLevel, games: number, seed: number) {
 describe('bots only use visible information', () => {
   for (const [difficulty, seed] of [['master', 101], ['tournament', 202], ['beginner', 303]] as const) {
     test(`${difficulty} bots decide the same whatever the hidden tiles are`, () => {
-      const r = checkField(difficulty, 4, seed);
+      const r = checkField(difficulty, 5, seed);
       expect(r.changed).toEqual([]);
       // The test must really have exercised many decisions with different hidden worlds
       expect(r.decisions).toBeGreaterThan(200);

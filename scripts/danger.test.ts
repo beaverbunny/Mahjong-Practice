@@ -4,7 +4,7 @@
  * - The model only reads public information: redrawing every hidden tile never changes its output.
  * - Its numbers stay honest: on simulated Master games it ranks dangerous tiles well and its
  *   percentages match how often tiles really deal in.
- * - Adding it changed nothing about how the bots play (same seeds, same games).
+ * - Bot play is pinned: the same seeds give the same games unless the bots are changed on purpose.
  *
  *   bun test scripts/
  */
@@ -130,11 +130,13 @@ describe('danger model is accurate on simulated Master games', () => {
   }, 120_000);
 });
 
-describe('the danger model leaves the bots alone', () => {
-  test('bots play exactly the same games as before it existed', () => {
-    // Fingerprints of every action in these seeded matches, recorded before the model was added
-    expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(1452604829);
-    expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(719698633);
+describe('bot play is pinned', () => {
+  test('bots play exactly the recorded games (UI, guide and danger-model changes must not move them)', () => {
+    // Fingerprints of every action in these seeded matches. Only an intentional change to the bots
+    // (src/ai/) may change them: then check it head-to-head in simulation and record the new values.
+    // Last recorded: fan-aware hand building (bots aim for hands that can win on a discard).
+    expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(1634243074);
+    expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(1175943090);
   }, 120_000);
 });
 
