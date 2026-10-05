@@ -286,7 +286,9 @@ export function generateDiscardRecommendations(
   prevailingWind: Wind,
   seatWind: Wind,
   opponentDiscards: Tile[][],
-  opponentTenpais: boolean[]
+  opponentTenpais: boolean[],
+  // Danger read from src/analysis/danger.ts; when given it replaces the simple tile labels
+  danger?: Record<string, { pct: number; level: 'safe' | 'medium' | 'danger'; reasons: string[] }>
 ): DiscardRecommendation[] {
   // Must have 14 tiles (3n+2) to discard
   if (hand.length % 3 !== 2) return [];
@@ -354,12 +356,14 @@ export function generateDiscardRecommendations(
     rankKey.set(tileToDiscard.id, noFanRoute ? after.shape + 2 : after.fan);
 
     // Evaluate safety
-    const safety = evaluateTileSafety(
-      tileToDiscard,
-      opponentDiscards,
-      opponentTenpais,
-      allVisibleTiles
-    );
+    const read = danger?.[tileToDiscard.type];
+    const safety = read
+      ? {
+          score: Math.round(100 * (1 - read.pct)),
+          level: read.level,
+          reason: `放铳率约 ${(100 * read.pct).toFixed(read.pct < 0.1 ? 1 : 0)}%${read.reasons.length ? '：' + read.reasons.join('；') : ''}`,
+        }
+      : evaluateTileSafety(tileToDiscard, opponentDiscards, opponentTenpais, allVisibleTiles);
 
     // Composite heuristic score
     // Lower shanten after discard is paramount
@@ -471,24 +475,8 @@ export function analyzeTurnBlunder(
     };
   }
 
-  // Blunder Condition 2: High danger tile discarded into tenpai opponent when safe cards exist (放铳高危恶手)
-  if (
-    chosenRec.safetyLevel === 'danger' &&
-    bestRec.safetyLevel === 'safe' &&
-    bestRec.safetyScore >= 80
-  ) {
-    return {
-      isBlunder: true,
-      severity: 'critical',
-      type: 'dangerous_discard',
-      typeName: '高危出冲点炮 (防守恶手)',
-      reason: `危险防守失误：对手已听牌，实战切出高危生张【${chosenRec.tile.displayName}】（放铳风险极高）。手牌中存在较安全的牌【${bestRec.tile.displayName}】可降低放铳风险。`,
-      bestChoice: bestRec.tile,
-      bestRec,
-      chosenRec,
-      effectiveTilesDiff: bestRec.effectiveTilesCount - chosenRec.effectiveTilesCount,
-    };
-  }
+  // Deal-in danger is reviewed after the hand (src/analysis/danger.ts): whether a risky push was
+  // worth it depends on the player's own hand value, so it isn't judged as a mistake here.
 
   // Blunder Condition 3: Significant effective tile difference (>= 4 tiles is critical, >= 2 is inaccuracy)
   const tileDiff = bestRec.effectiveTilesCount - chosenRec.effectiveTilesCount;

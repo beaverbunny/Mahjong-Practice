@@ -63,6 +63,11 @@ export function runMatches(
   let robbed = 0;
   let violations = 0;
   const matchScores: number[] = [];
+  // Hash of every action in every hand: identical bot play gives an identical fingerprint
+  let fingerprint = 2166136261;
+  const mix = (text: string) => {
+    for (let i = 0; i < text.length; i++) fingerprint = Math.imul(fingerprint ^ text.charCodeAt(i), 16777619) >>> 0;
+  };
   const diag = { tenpaiAtDraw: 0, tsumoOnlyAtDraw: 0, meldsAtEnd: 0 };
   const t0 = Date.now();
 
@@ -105,6 +110,8 @@ export function runMatches(
         }
       }
 
+      for (const e of s.log) mix(`${e.playerIndex}${e.action}${e.tile?.type ?? ''}|`);
+      mix(s.players.map((p) => p.score).join(',') + ';');
       diag.meldsAtEnd += s.players.reduce((a, p) => a + p.melds.length, 0);
       // Calls that actually happened
       for (const e of s.log) {
@@ -170,7 +177,7 @@ export function runMatches(
   }
 
   // Tests only need the counts; rule violations are still printed above as they happen
-  if (opts.quiet) return { violations, hands, wins, draws };
+  if (opts.quiet) return { violations, hands, wins, draws, fingerprint };
 
   const secs = (Date.now() - t0) / 1000;
   const pct = (a: number, b: number) => (b ? ((100 * a) / b).toFixed(1) + '%' : '-');
@@ -197,7 +204,7 @@ export function runMatches(
   }
   console.log('\nfan sources per style (count of winning hands containing each):');
   for (const [name, st] of Object.entries(styles)) console.log(name.padEnd(10), JSON.stringify((st as any).codes ?? {}));
-  return { violations, hands, wins, draws };
+  return { violations, hands, wins, draws, fingerprint };
 }
 
 if (import.meta.main) {

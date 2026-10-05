@@ -3,6 +3,7 @@ import { RoundResult, PlayerState } from '../types/mahjong';
 import { sortTiles } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
 import { MeldDisplay } from './MeldDisplay';
+import { DangerReview } from './DangerReview';
 import { Award, ArrowRight, RotateCcw, AlertCircle, FileSearch, BarChart3 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -152,6 +153,13 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Deal-in danger review of the human's discards */}
+          <DangerReview
+            result={result}
+            playerNames={players.map((p) => p.name)}
+            seatWinds={players.map((p) => p.seatWind)}
+          />
 
           {/* Fan Details Breakdown (According to Appendix III) */}
           {!isDraw && result.fanDetails.length > 0 && (

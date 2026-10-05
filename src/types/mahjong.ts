@@ -104,6 +104,24 @@ export interface TurnActionLog {
   recommendedDiscard?: Tile;
   bestRec?: DiscardRecommendation;
   chosenRec?: DiscardRecommendation;
+  // Discards only: the thrown tile was the one just drawn (摸切). Visible to everyone at the table.
+  fromDraw?: boolean;
+  // The human's discards only: the danger read at that moment, for the post-hand review
+  danger?: DiscardDangerRecord;
+}
+
+// What the danger model (src/analysis/danger.ts) said when the human discarded
+export interface DiscardDangerRecord {
+  pct: number; // chance the thrown tile wins for someone, 0-1
+  level: 'safe' | 'medium' | 'danger';
+  expectedLoss: number; // expected points lost by throwing it
+  reasons: string[];
+  bySeat: { seat: number; pct: number; fan: number }[];
+  // Safest tile in hand at that moment
+  safest: { type: TileType; displayName: string; pct: number };
+  // Opponent reads at that moment
+  opponents: { seat: number; pReady: number; fan: number; reasons: string[] }[];
+  hintsOn: boolean;
 }
 
 export interface PlayerState {
