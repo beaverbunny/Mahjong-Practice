@@ -24,17 +24,17 @@ A tile's danger is the chance it wins for at least one opponent. Tags: **安** u
 
 ## How it was fitted and checked
 
-The weights in `src/analysis/dangerModel.ts` were fitted on 300 simulated Master matches (bots playing normally), where the hidden hands are known, then checked on 100 different matches:
+The weights in `src/analysis/dangerModel.ts` were fitted on 300 simulated Master matches (bots playing normally; re-fitted after the bots learned fan-aware hand building), where the hidden hands are known, then checked on 100 different matches:
 
 | Check | Result |
 |---|---|
-| Ranking dangerous tiles (AUC; 0.5 = coin flip) | **0.877** (the old tile-only labels: 0.591) |
-| Ranking ready opponents (AUC) | 0.836 |
-| Tiles tagged 安 | 80% of tiles; 0.5% dealt in |
+| Ranking dangerous tiles (AUC; 0.5 = coin flip) | **0.871** (the old tile-only labels: 0.585) |
+| Ranking ready opponents (AUC) | 0.845 |
+| Tiles tagged 安 | 79% of tiles; 0.5% dealt in |
 | Tiles tagged 中 | 16% of tiles; 5% dealt in |
-| Tiles tagged 危 | 4.5% of tiles; 13% dealt in |
+| Tiles tagged 危 | 5% of tiles; 12% dealt in |
 
-The percentages are calibrated: tiles rated about 4% dealt in about 3.7% of the time, and opponents read as about 15% ready were ready about 14% of the time.
+The percentages are calibrated: tiles rated about 4% dealt in about 3.8% of the time, and opponents read as about 15% ready were ready about 15% of the time.
 
 What the fit found, for these bots:
 
