@@ -382,7 +382,7 @@ export function generateDiscardRecommendations(
       recommendationReason = `有番向听：进张${effectiveTilesCount}张 (${names(effectiveTileTypes)})`;
     }
     if (!noFanRoute && selfDrawOnlyTilesCount > 0) {
-      recommendationReason += `；另有${selfDrawOnlyTilesCount}张 (${names(selfDrawOnlyTileTypes)}) 只成无番牌型，仅能自摸`;
+      recommendationReason += `；另有${selfDrawOnlyTilesCount}张 (${names(selfDrawOnlyTileTypes)}) 可改善牌型，但暂未带番`;
     }
 
     recommendations.push({
@@ -411,7 +411,7 @@ export function generateDiscardRecommendations(
   const levelOrder = { safe: 0, medium: 1, danger: 2 };
 
   // Sort by fan-aware shanten (lowest first), then effectiveTilesCount (highest first), then
-  // safety level, then throw the tile worth less fan first (a plain wind before a double wind),
+  // all shape-improving draws, then safety level, then throw the tile worth less fan first (a plain wind before a double wind),
   // then exact safety
   recommendations.sort((a, b) => {
     const ka = rankKey.get(a.tileId)!;
@@ -421,6 +421,13 @@ export function generateDiscardRecommendations(
     }
     if (b.effectiveTilesCount !== a.effectiveTilesCount) {
       return b.effectiveTilesCount - a.effectiveTilesCount;
+    }
+    // Then all draws that improve the shape, including those that carry no fan yet: a lone 4wan
+    // can still grow into a run, a lone plain wind only into a pair
+    const ta = a.effectiveTilesCount + (a.noFanRoute ? 0 : a.selfDrawOnlyTilesCount ?? 0);
+    const tb = b.effectiveTilesCount + (b.noFanRoute ? 0 : b.selfDrawOnlyTilesCount ?? 0);
+    if (ta !== tb) {
+      return tb - ta;
     }
     if (a.safetyLevel !== b.safetyLevel) {
       return levelOrder[a.safetyLevel] - levelOrder[b.safetyLevel];
