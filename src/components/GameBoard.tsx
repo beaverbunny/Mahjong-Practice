@@ -1,6 +1,7 @@
 import React from 'react';
 import { PlayerState, Tile, Meld, Wind, TurnActionLog, DiscardRecommendation } from '../types/mahjong';
 import { MahjongTile } from './MahjongTile';
+import { WIND_NAMES } from '../utils/mahjongTiles';
 import { MeldDisplay } from './MeldDisplay';
 import { ActionControls } from './ActionControls';
 import { soundManager } from '../utils/audio';
@@ -85,12 +86,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] max-h-[920px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
-      {/* Background table texture fallback + image overlay */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none bg-cover bg-center mix-blend-overlay"
-        style={{ backgroundImage: `url('/src/assets/images/mahjong_table_felt_1790702590720.jpg')` }}
-      />
-
       {/* Subtle table felt inner shadow ring */}
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
 
@@ -105,7 +100,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           }`}
         >
           <span className="font-bold">{topBot.name}</span>
-          <span className="text-[10px] text-amber-400 font-mono">门风:{topBot.seatWind}</span>
+          <span className="text-[10px] text-amber-400 font-mono">门风:{WIND_NAMES[topBot.seatWind]}</span>
           <span className="text-[10px] font-mono text-stone-400">
             ({topBot.score > 0 ? `+${topBot.score}` : topBot.score}点)
           </span>
@@ -144,7 +139,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           >
             <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{leftBot.name}</span>
             <div className="flex items-center gap-1 text-[10px] text-stone-400">
-              <span className="text-amber-400 font-mono">{leftBot.seatWind}风</span>
+              <span className="text-amber-400 font-mono">{WIND_NAMES[leftBot.seatWind]}风</span>
               <span>{leftBot.score}点</span>
             </div>
           </div>
@@ -274,7 +269,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     activePlayerIndex === 2 ? 'text-amber-400 scale-110' : 'text-stone-500'
                   }`}
                 >
-                  北 · {topBot.seatWind}
+                  对家 · {WIND_NAMES[topBot.seatWind]}
                 </div>
 
                 {/* Middle row: Left, Center info, Right */}
@@ -284,7 +279,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       activePlayerIndex === 3 ? 'text-amber-400 scale-110' : 'text-stone-500'
                     }`}
                   >
-                    西 · {leftBot.seatWind}
+                    <div className="flex flex-col items-center leading-tight whitespace-nowrap">
+                      <span>上家</span>
+                      <span>{WIND_NAMES[leftBot.seatWind]}</span>
+                    </div>
                   </div>
 
                   {/* Core Dial info */}
@@ -320,7 +318,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       activePlayerIndex === 1 ? 'text-amber-400 scale-110' : 'text-stone-500'
                     }`}
                   >
-                    南 · {rightBot.seatWind}
+                    <div className="flex flex-col items-center leading-tight whitespace-nowrap">
+                      <span>下家</span>
+                      <span>{WIND_NAMES[rightBot.seatWind]}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -330,7 +331,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     activePlayerIndex === 0 ? 'text-amber-400 scale-110' : 'text-stone-500'
                   }`}
                 >
-                  东 · {human.seatWind} (您)
+                  您 · {WIND_NAMES[human.seatWind]}
                 </div>
               </div>
 
@@ -432,7 +433,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           >
             <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{rightBot.name}</span>
             <div className="flex items-center gap-1 text-[10px] text-stone-400">
-              <span className="text-amber-400 font-mono">{rightBot.seatWind}风</span>
+              <span className="text-amber-400 font-mono">{WIND_NAMES[rightBot.seatWind]}风</span>
               <span>{rightBot.score}点</span>
             </div>
           </div>
@@ -496,7 +497,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               <div className="text-xs font-bold flex items-center gap-1.5">
                 <span>{human.name} (您)</span>
                 <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
-                  门风:{human.seatWind}
+                  门风:{WIND_NAMES[human.seatWind]}
                 </span>
               </div>
               <div className="text-[11px] font-mono text-stone-400 mt-0.5">

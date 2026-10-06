@@ -9,6 +9,7 @@ import {
   PlayerState,
 } from '../types/mahjong';
 import { MahjongTile } from './MahjongTile';
+import { WIND_NAMES } from '../utils/mahjongTiles';
 import { DangerRead, seatLabel } from '../analysis/danger';
 import { Sparkles, ShieldAlert, Award, Compass, Eye, Info, X } from 'lucide-react';
 
@@ -495,9 +496,9 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 <div className="p-3 rounded-xl bg-stone-950/60 border border-stone-800 text-[11px] text-stone-400 space-y-1">
                   <div className="font-semibold text-stone-300">本局风圈增益：</div>
                   <p>
-                    圈风：<span className="text-amber-400 font-bold">{prevailingWind}风</span>{' '}
+                    圈风：<span className="text-amber-400 font-bold">{WIND_NAMES[prevailingWind]}风</span>{' '}
                     (圈风刻1番) · 门风：
-                    <span className="text-amber-400 font-bold">{humanSeatWind}风</span> (门风刻1番)
+                    <span className="text-amber-400 font-bold">{WIND_NAMES[humanSeatWind]}风</span> (门风刻1番)
                   </p>
                 </div>
               </div>

@@ -157,6 +157,8 @@ export interface RoundResult {
     hand: Tile[];
     melds: Meld[];
   }[];
+  // Which 16-hand match this hand belongs to (missing on hands saved before it was added)
+  matchId?: string;
 }
 
 export interface GameStats {

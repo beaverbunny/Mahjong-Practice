@@ -1,6 +1,6 @@
 import React from 'react';
 import { RoundResult, TurnActionLog } from '../types/mahjong';
-import { sortTiles } from '../utils/mahjongTiles';
+import { sortTiles, WIND_NAMES } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
 import { DangerReview } from './DangerReview';
 import { seatWindFor } from '../engine/table';
@@ -56,6 +56,11 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
     setShowBlunderDrawer(false);
     setShowDeleteConfirm(false);
   }, [roundResult]);
+
+  // Seat labels with each seat's wind in this hand (seat winds move with the dealer)
+  const seatNames = ['玩家 (您)', '下家', '对家', '上家'].map(
+    (role, i) => `${role} · ${WIND_NAMES[seatWindFor(i, roundResult.dealerIndex)]}风`
+  );
 
   const logs = roundResult.actionLogs;
   const totalSteps = logs.length;
@@ -119,7 +124,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                 )}
               </h2>
               <div className="text-xs text-stone-400">
-                {roundResult.prevailingWind}风圈 · 总计 {totalSteps} 步操作
+                {WIND_NAMES[roundResult.prevailingWind]}风圈 · 总计 {totalSteps} 步操作
                 {blunderLogs.length > 0 && (
                   <span className="text-rose-400 ml-2 font-medium">
                     · 检测到 {blunderLogs.length} 处疑问手/恶手
@@ -182,7 +187,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   const deltaStr = r.pointsDelta[0] > 0 ? `+${r.pointsDelta[0]}` : `${r.pointsDelta[0]}`;
                   return (
                     <option key={idx} value={idx}>
-                      [#{idx + 1}] 第 {r.roundIndex + 1} 局 ({r.prevailingWind}风圈) · {outcomeDesc} [得分:{deltaStr}点]
+                      [#{idx + 1}] 第 {r.roundIndex + 1} 局 ({WIND_NAMES[r.prevailingWind]}风圈) · {outcomeDesc} [得分:{deltaStr}点]
                     </option>
                   );
                 })}
@@ -665,7 +670,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
               {roundResult.winnerIndex !== null && roundResult.handSnapshots[roundResult.winnerIndex] && (() => {
                 const winnerIdx = roundResult.winnerIndex;
                 const winnerSnap = roundResult.handSnapshots[winnerIdx];
-                const playerNames = ['玩家 (您)', '下家 (西风)', '对家 (北风)', '上家 (东风)'];
+                const playerNames = seatNames;
                 const winnerName = playerNames[winnerIdx];
                 const sortedHand = sortTiles(winnerSnap.hand);
 
@@ -784,7 +789,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   {roundResult.handSnapshots.map((snap, pIdx) => {
-                    const names = ['玩家 (您)', '下家 (西风)', '对家 (北风)', '上家 (东风)'];
+                    const names = seatNames;
                     const isWinner = pIdx === roundResult.winnerIndex;
                     const isDiscarder = pIdx === roundResult.discarderIndex;
                     const sortedHand = sortTiles(snap.hand);
@@ -922,7 +927,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   确认删除第 {roundResult.roundIndex + 1} 局{currentIndex >= 0 ? ` (对局 #${currentIndex + 1})` : ''}复盘记录？
                 </h3>
                 <p className="text-xs text-stone-400 leading-relaxed">
-                  您即将删除【第 {roundResult.roundIndex + 1} 局 ({roundResult.prevailingWind}风圈){currentIndex >= 0 ? ` · 历史归档 #${currentIndex + 1}` : ''}】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与积分将保持不变。
+                  您即将删除【第 {roundResult.roundIndex + 1} 局 ({WIND_NAMES[roundResult.prevailingWind]}风圈){currentIndex >= 0 ? ` · 历史归档 #${currentIndex + 1}` : ''}】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与积分将保持不变。
                 </p>
               </div>
             </div>
