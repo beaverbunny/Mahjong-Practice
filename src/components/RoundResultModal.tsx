@@ -4,7 +4,7 @@ import { sortTiles, WIND_NAMES } from '../utils/mahjongTiles';
 import { MahjongTile } from './MahjongTile';
 import { MeldDisplay } from './MeldDisplay';
 import { DangerReview } from './DangerReview';
-import { Award, ArrowRight, RotateCcw, AlertCircle, FileSearch, BarChart3 } from 'lucide-react';
+import { Award, ArrowRight, RotateCcw, AlertCircle, FileSearch, BarChart3, Eye, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface RoundResultModalProps {
@@ -15,6 +15,7 @@ interface RoundResultModalProps {
   onOpenReview: () => void;
   onRestartMatch?: () => void;
   onOpenStats?: () => void;
+  onInspectBoard?: () => void;
 }
 
 export const RoundResultModal: React.FC<RoundResultModalProps> = ({
@@ -25,6 +26,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   onOpenReview,
   onRestartMatch,
   onOpenStats,
+  onInspectBoard,
 }) => {
   const isDraw = result.winnerIndex === null;
   const isHumanWinner = result.winnerIndex === 0;
@@ -42,8 +44,8 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   }, [isHumanWinner]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[88vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+      <div className="relative w-full max-w-xl max-h-[calc(100vh-2rem)] sm:max-h-[88vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto">
         {/* Header Banner */}
         <div
           className={`px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b shrink-0 ${
@@ -72,20 +74,31 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             </div>
           </div>
 
-          {!isDraw && (
-            <div className="text-right">
-              <span className="text-lg sm:text-xl font-bold font-mono text-amber-400">
-                {result.totalFan} 番
-              </span>
-              <div className="text-[10px] sm:text-[11px] text-stone-400">
-                {result.isSelfDraw ? '自摸(+15每番)' : '点炮(+10每番)'}
+          <div className="flex items-center gap-2.5">
+            {!isDraw && (
+              <div className="text-right">
+                <span className="text-lg sm:text-xl font-bold font-mono text-amber-400">
+                  {result.totalFan} 番
+                </span>
+                <div className="text-[10px] sm:text-[11px] text-stone-400">
+                  {result.isSelfDraw ? '自摸(+15每番)' : '点炮(+10每番)'}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {onInspectBoard && (
+              <button
+                onClick={onInspectBoard}
+                className="p-1.5 rounded-lg bg-stone-800/80 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
+                title="关闭弹窗，回到牌桌查看所有玩家亮明手牌及弃牌河"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Modal Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 text-stone-300 text-xs overscroll-contain">
+        {/* Modal Body (Scrollable with min-h-0) */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 text-stone-300 text-xs overscroll-contain">
           {/* Winning Tile & Type Display */}
           {!isDraw && result.winningTile && (
             <div className="flex items-center justify-between p-3.5 bg-stone-950/70 rounded-xl border border-stone-800">
@@ -228,6 +241,17 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
         {/* Sticky Footer Buttons */}
         <div className="px-4 sm:px-6 py-3 sm:py-3.5 bg-stone-950 border-t border-stone-800 flex items-center justify-between gap-2 sm:gap-3 flex-wrap sm:flex-nowrap shrink-0 z-20 shadow-xl">
           <div className="flex items-center gap-2 flex-wrap">
+            {onInspectBoard && (
+              <button
+                onClick={onInspectBoard}
+                className="px-3 sm:px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer ring-1 ring-amber-300/50"
+                title="回到牌桌查看胡牌后所有玩家亮明手牌及弃牌河"
+              >
+                <Eye className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-stone-950" />
+                <span>查看牌桌</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenReview}
               className="px-3 sm:px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"

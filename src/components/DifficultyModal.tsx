@@ -64,13 +64,13 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="w-full max-w-xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto"
+        className="w-full max-w-xl max-h-[calc(100vh-2rem)] sm:max-h-[88vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -105,8 +105,8 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
           </button>
         </div>
 
-        {/* Options Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 text-xs text-stone-300 overscroll-contain">
+        {/* Options Body (Scrollable with min-h-0) */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-5 space-y-3 text-xs text-stone-300 overscroll-contain">
           {options.map((opt) => {
             const isSelected = selectedDifficulty === opt.id;
             return (

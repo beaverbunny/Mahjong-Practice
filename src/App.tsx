@@ -58,8 +58,17 @@ import {
   ShieldCheck,
   X,
   Share2,
+  Eye,
+  Award,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Minimize2,
+  Maximize2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+export const APP_VERSION = 'v2.5.0';
 
 const STORAGE_KEY_STATS = 'mahjong_practice_career_stats_v1';
 // Keep the replay history to the most recent hands so browser storage (about 5 MB) never fills up.
@@ -90,6 +99,11 @@ export default function App() {
   const [isStrategyPanelOpen, setIsStrategyPanelOpen] = React.useState(true);
   const [activeRoundResult, setActiveRoundResult] = React.useState<RoundResult | null>(null);
   const [reviewRoundResult, setReviewRoundResult] = React.useState<RoundResult | null>(null);
+  const [reviewRoundIndex, setReviewRoundIndex] = React.useState<number | null>(null);
+  const [showRoundResultModal, setShowRoundResultModal] = React.useState(true);
+  const [isInspectingFinalBoard, setIsInspectingFinalBoard] = React.useState(false);
+  const [isInspectionBarCollapsed, setIsInspectionBarCollapsed] = React.useState(false);
+  const [inspectionDockPosition, setInspectionDockPosition] = React.useState<'top' | 'bottom'>('top');
   const [showRulesModal, setShowRulesModal] = React.useState(false);
   const [showStatsModal, setShowStatsModal] = React.useState(false);
   const [showPracticeModal, setShowPracticeModal] = React.useState(false);
@@ -142,7 +156,12 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY_STATS);
       if (saved) {
         const stats: GameStats = JSON.parse(saved);
-        return { ...stats, historicalRounds: (stats.historicalRounds ?? []).slice(-MAX_HISTORY_HANDS) };
+        const fixedRounds = (stats.historicalRounds ?? []).map((r, idx) => ({
+          ...r,
+          id: r.id || `round_legacy_${idx}_${r.roundIndex}_${r.actionLogs?.length ?? 0}`,
+          timestamp: r.timestamp || Date.now() - (stats.historicalRounds.length - idx) * 60000,
+        }));
+        return { ...stats, historicalRounds: fixedRounds.slice(-MAX_HISTORY_HANDS) };
       }
     } catch {
       // fallback
@@ -229,6 +248,8 @@ export default function App() {
     }
     setSelectedTile(null);
     setActiveRoundResult(null);
+    setShowRoundResultModal(true);
+    setIsInspectingFinalBoard(false);
     setActionBanner(null);
     const p1 = personaFor(1);
     const p2 = personaFor(2);
@@ -250,6 +271,9 @@ export default function App() {
     setMatchId(Date.now().toString(36));
     setIsGameOver16(false);
     setReviewRoundResult(null);
+    setReviewRoundIndex(null);
+    setShowRoundResultModal(true);
+    setIsInspectingFinalBoard(false);
     startHand(0, [0, 0, 0, 0]);
   };
 
@@ -382,7 +406,10 @@ export default function App() {
     if (!table || table.phase !== 'ended' || !table.result || recordedHandRef.current === table) return;
     recordedHandRef.current = table;
     const r = table.result;
+    const roundId = `round_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${table.handIndex}`;
     const result: RoundResult = {
+      id: roundId,
+      timestamp: Date.now(),
       roundIndex: table.handIndex,
       prevailingWind: table.prevailingWind,
       roundInWind: (table.handIndex % 4) + 1,
@@ -399,6 +426,8 @@ export default function App() {
       matchId,
     };
     setActiveRoundResult(result);
+    setShowRoundResultModal(true);
+    setIsInspectingFinalBoard(false);
     setSelectedTile(null);
 
     updateStats((prev) => {
@@ -423,6 +452,8 @@ export default function App() {
   const handleNextRound = () => {
     if (!table) return;
     setActiveRoundResult(null);
+    setShowRoundResultModal(true);
+    setIsInspectingFinalBoard(false);
     if (table.handIndex >= HANDS_PER_MATCH - 1) {
       setIsGameOver16(true);
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
@@ -649,9 +680,9 @@ export default function App() {
               if (careerStats.historicalRounds.length === 0) {
                 showActionBanner('暂无已完局记录，完成一局后可随时复盘', 0);
               } else {
-                setReviewRoundResult(
-                  careerStats.historicalRounds[careerStats.historicalRounds.length - 1]
-                );
+                const lastIdx = careerStats.historicalRounds.length - 1;
+                setReviewRoundResult(careerStats.historicalRounds[lastIdx]);
+                setReviewRoundIndex(lastIdx);
               }
             }}
             className="flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
@@ -800,6 +831,8 @@ export default function App() {
             showHints={isStrategyPanelOpen}
             actionBanner={actionBanner}
             drawnDiscardIds={drawnDiscardIds}
+            revealAllHands={table!.phase === 'ended' || !!activeRoundResult || isInspectingFinalBoard}
+            roundResult={activeRoundResult}
           />
         )}
 
@@ -825,17 +858,160 @@ export default function App() {
         )}
       </main>
 
+      {/* ================= BOTTOM FOOTER WITH CURRENT APP VERSION ================= */}
+      <footer className="py-1 px-4 text-center shrink-0 z-10 select-none bg-stone-950/90 border-t border-stone-850">
+        <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] font-mono text-stone-400 flex-wrap">
+          <span>雀圣研习社</span>
+          <span className="text-stone-700 hidden sm:inline">|</span>
+          <span className="hidden sm:inline">TVB 广东麻将比赛实战研习</span>
+          <span className="text-stone-700">|</span>
+          <span className="text-stone-300">
+            Current App Version: <span className="text-amber-400 font-semibold font-mono">{APP_VERSION}</span>
+          </span>
+        </div>
+      </footer>
+
+      {/* Floating Inspection Bar when user returned to table board to view all revealed hands and discards */}
+      {activeRoundResult && !showRoundResultModal && (
+        isInspectionBarCollapsed ? (
+          <div
+            className={`fixed ${
+              inspectionDockPosition === 'top' ? 'top-16' : 'bottom-3'
+            } right-4 sm:right-8 z-50 animate-in fade-in zoom-in-95 duration-200`}
+          >
+            <button
+              onClick={() => setIsInspectionBarCollapsed(false)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-stone-900/95 hover:bg-stone-850 text-amber-400 border border-amber-500/80 shadow-2xl backdrop-blur-md text-xs font-bold cursor-pointer transition-all hover:scale-105 ring-2 ring-black/40"
+              title="展开终局牌桌控制栏"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Eye className="w-3.5 h-3.5" />
+              <span>终局牌桌 · 展开控制栏</span>
+              <Maximize2 className="w-3 h-3 text-stone-400" />
+            </button>
+          </div>
+        ) : (
+          <div
+            className={`fixed ${
+              inspectionDockPosition === 'top' ? 'top-16' : 'bottom-3'
+            } left-1/2 -translate-x-1/2 z-50 max-w-[96vw] bg-stone-900/95 backdrop-blur-md border border-amber-500/80 rounded-2xl shadow-2xl px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3 flex-wrap justify-center text-xs animate-in ${
+              inspectionDockPosition === 'top' ? 'slide-in-from-top' : 'slide-in-from-bottom'
+            } duration-200 ring-2 ring-black/60`}
+          >
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-bold text-stone-100 flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-amber-400" />
+                <span>终局牌桌 · 全员亮明手牌</span>
+              </span>
+              <span className="text-[11px] text-stone-400 hidden xl:inline">
+                (各家手牌及牌河已明示，点击任意手牌可高亮对局同色牌)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
+              <button
+                onClick={() => {
+                  setShowRoundResultModal(true);
+                  setIsInspectingFinalBoard(false);
+                }}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95 ring-1 ring-amber-300/40"
+                title="重新打开本局得分及番种详细结算面板"
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>查看结算面板</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const lastIdx = careerStats.historicalRounds.length - 1;
+                  setReviewRoundResult(activeRoundResult);
+                  setReviewRoundIndex(lastIdx >= 0 ? lastIdx : 0);
+                }}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-stone-700/80"
+                title="逐巡回溯单步牌谱与恶手诊断"
+              >
+                <FileSearch className="w-3.5 h-3.5 text-amber-400" />
+                <span>实战复盘</span>
+              </button>
+
+              {currentRoundIndex >= 15 ? (
+                <button
+                  onClick={() => {
+                    handleNextRound();
+                  }}
+                  className="px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  <span>进入最终结算</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsInspectingFinalBoard(false);
+                    handleNextRound();
+                  }}
+                  className="px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
+                >
+                  <span>进入下一局</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowRestartConfirmModal(true)}
+                className="px-2.5 py-1.5 rounded-xl bg-stone-800/80 hover:bg-stone-700 text-stone-300 text-xs flex items-center gap-1 transition-colors cursor-pointer border border-stone-700/80"
+                title="重新开始整场 16 局比赛"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">重开大局</span>
+              </button>
+
+              {/* Toggle Dock Position: Top or Bottom */}
+              <button
+                onClick={() => setInspectionDockPosition(inspectionDockPosition === 'top' ? 'bottom' : 'top')}
+                className="p-1.5 rounded-xl bg-stone-800/70 hover:bg-stone-700 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer border border-stone-700/60"
+                title={inspectionDockPosition === 'top' ? '移至屏幕底部' : '移至屏幕顶部（避免遮挡手牌）'}
+              >
+                {inspectionDockPosition === 'top' ? (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                )}
+              </button>
+
+              {/* Minimize button */}
+              <button
+                onClick={() => setIsInspectionBarCollapsed(true)}
+                className="p-1.5 rounded-xl bg-stone-800/70 hover:bg-stone-700 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer border border-stone-700/60"
+                title="收起控制栏，全屏纯净看牌"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
       {/* ================= MODALS ================= */}
       {/* 1. Round Result Settlement Modal */}
-      {activeRoundResult && (
+      {activeRoundResult && showRoundResultModal && (
         <RoundResultModal
           result={activeRoundResult}
           players={players}
           currentRoundNumber={currentRoundIndex + 1}
           onNextRound={handleNextRound}
-          onOpenReview={() => setReviewRoundResult(activeRoundResult)}
+          onOpenReview={() => {
+            const lastIdx = careerStats.historicalRounds.length - 1;
+            setReviewRoundResult(activeRoundResult);
+            setReviewRoundIndex(lastIdx >= 0 ? lastIdx : 0);
+          }}
           onOpenStats={() => setShowStatsModal(true)}
           onRestartMatch={() => setShowRestartConfirmModal(true)}
+          onInspectBoard={() => {
+            setShowRoundResultModal(false);
+            setIsInspectingFinalBoard(true);
+          }}
         />
       )}
 
@@ -845,9 +1021,14 @@ export default function App() {
           roundResult={reviewRoundResult}
           roundNumber={reviewRoundResult.roundIndex + 1}
           allRounds={careerStats.historicalRounds}
-          onSelectRound={(r) => setReviewRoundResult(r)}
+          onSelectRound={(r: RoundResult) => {
+            setReviewRoundResult(r);
+          }}
           onDeleteRound={handleDeleteHistoricalRound}
-          onClose={() => setReviewRoundResult(null)}
+          onClose={() => {
+            setReviewRoundResult(null);
+            setReviewRoundIndex(null);
+          }}
         />
       )}
 
@@ -863,9 +1044,10 @@ export default function App() {
           historicalRounds={careerStats.historicalRounds}
           currentMatchId={matchId}
           onClose={() => setShowStatsModal(false)}
-          onOpenReviewRound={(round) => {
+          onOpenReviewRound={(round, index) => {
             setShowStatsModal(false);
             setReviewRoundResult(round);
+            setReviewRoundIndex(index ?? null);
           }}
           onDeleteRound={handleDeleteHistoricalRound}
           onClearAllRounds={handleClearAllHistoricalRounds}
@@ -960,6 +1142,22 @@ export default function App() {
 
             <div className="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
               <button
+                onClick={() => {
+                  const lastRound = careerStats.historicalRounds[careerStats.historicalRounds.length - 1];
+                  if (lastRound && !activeRoundResult) {
+                    setActiveRoundResult(lastRound);
+                  }
+                  setIsGameOver16(false);
+                  setShowRoundResultModal(false);
+                  setIsInspectingFinalBoard(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
+                title="回到牌桌查看第16局胡牌后所有玩家亮明手牌及弃牌河"
+              >
+                <Eye className="w-3.5 h-3.5 text-amber-400" />
+                <span>返回牌桌查看</span>
+              </button>
+              <button
                 onClick={() => setShowStatsModal(true)}
                 className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
               >
@@ -969,7 +1167,9 @@ export default function App() {
               {careerStats.historicalRounds.length > 0 && (
                 <button
                   onClick={() => {
-                    setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
+                    const lastIdx = careerStats.historicalRounds.length - 1;
+                    setReviewRoundResult(careerStats.historicalRounds[lastIdx]);
+                    setReviewRoundIndex(lastIdx);
                   }}
                   className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
                   title="回溯复盘第16局牌谱与恶手诊断"

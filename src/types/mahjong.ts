@@ -141,6 +141,8 @@ export interface PlayerState {
 }
 
 export interface RoundResult {
+  id?: string; // Unique identifier for each hand/round (prevent duplicate jump issues across matches)
+  timestamp?: number;
   roundIndex: number; // 0 to 15 (Round 1 to 16)
   prevailingWind: Wind; // 圈风 (东, 南, 西, 北)
   roundInWind: number; // 1 to 4

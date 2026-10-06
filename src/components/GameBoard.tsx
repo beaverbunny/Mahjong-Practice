@@ -1,7 +1,7 @@
 import React from 'react';
-import { PlayerState, Tile, Meld, Wind, TurnActionLog, DiscardRecommendation } from '../types/mahjong';
+import { PlayerState, Tile, Meld, Wind, TurnActionLog, DiscardRecommendation, RoundResult } from '../types/mahjong';
 import { MahjongTile } from './MahjongTile';
-import { WIND_NAMES } from '../utils/mahjongTiles';
+import { WIND_NAMES, sortTiles } from '../utils/mahjongTiles';
 import { MeldDisplay } from './MeldDisplay';
 import { ActionControls } from './ActionControls';
 import { soundManager } from '../utils/audio';
@@ -35,6 +35,9 @@ interface GameBoardProps {
   actionBanner?: { text: string; playerIdx: number } | null;
   // Discards that were the tile just drawn (摸切), shown faded in the rivers
   drawnDiscardIds?: Set<string>;
+  // When round finishes: reveal all players' concealed hands face up
+  revealAllHands?: boolean;
+  roundResult?: RoundResult | null;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({
@@ -64,6 +67,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   showHints = true,
   actionBanner = null,
   drawnDiscardIds = new Set<string>(),
+  revealAllHands = false,
+  roundResult = null,
 }) => {
   const human = players[0];
   const rightBot = players[1]; // 下家
@@ -85,7 +90,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-4rem)] max-h-[920px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
+    <div className="relative w-full h-[calc(100vh-5.5rem)] max-h-[900px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
       {/* Subtle table felt inner shadow ring */}
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
 
@@ -108,11 +113,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
         {/* Top Hand Tiles & Melds */}
         <div className="flex items-center gap-3">
-          {/* Concealed Tiles */}
+          {/* Concealed or Revealed Tiles */}
           <div className="flex items-center gap-1">
-            {topBot.hand.map((_, idx) => (
-              <MahjongTile key={idx} tile={{ type: '1wan' }} size="sm" isFaceDown />
-            ))}
+            {revealAllHands ? (
+              sortTiles(topBot.hand).map((tile) => {
+                const isWinTile = roundResult?.winnerIndex === 2 && roundResult?.winningTile?.type === tile.type;
+                const isSelected = selectedTile?.type === tile.type;
+                return (
+                  <div key={tile.id} className="relative">
+                    <MahjongTile
+                      tile={tile}
+                      size="sm"
+                      isSelected={isSelected}
+                      onClick={() => onSelectTile(tile)}
+                    />
+                    {isWinTile && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-1 py-0.2 bg-amber-500 text-stone-950 font-black text-[9px] rounded shadow ring-1 ring-amber-300">
+                        和牌
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              topBot.hand.map((_, idx) => (
+                <MahjongTile key={idx} tile={{ type: '1wan' }} size="sm" isFaceDown />
+              ))
+            )}
           </div>
 
           {/* Melds */}
@@ -144,19 +171,43 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           </div>
 
-          {/* Left Bot Hand Tiles (vertical stack with authentic 3D Mahjong depth) */}
-          <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
-            {leftBot.hand.slice(0, 13).map((_, idx) => (
-              <div
-                key={idx}
-                className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
-                title="上家手牌"
-              >
-                <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
-                <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
-              </div>
-            ))}
-          </div>
+          {/* Left Bot Hand Tiles */}
+          {revealAllHands ? (
+            <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-48 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
+              {sortTiles(leftBot.hand).map((tile) => {
+                const isWinTile = roundResult?.winnerIndex === 3 && roundResult?.winningTile?.type === tile.type;
+                const isSelected = selectedTile?.type === tile.type;
+                return (
+                  <div key={tile.id} className="relative">
+                    <MahjongTile
+                      tile={tile}
+                      size="xs"
+                      isSelected={isSelected}
+                      onClick={() => onSelectTile(tile)}
+                    />
+                    {isWinTile && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1 py-0.2 bg-amber-500 text-stone-950 font-black text-[8px] rounded shadow ring-1 ring-amber-300">
+                        和牌
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
+              {leftBot.hand.slice(0, 13).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                  title="上家手牌"
+                >
+                  <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
+                  <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Left Melds */}
           {leftBot.melds.length > 0 && (
@@ -305,7 +356,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     </div>
 
                     <div className="text-[9px] text-stone-500 mt-0.5">
-                      {isHumanTurn ? (
+                      {revealAllHands ? (
+                        <span className="text-amber-300 font-bold">对局结束 · 终局亮牌</span>
+                      ) : isHumanTurn ? (
                         <span className="text-amber-400 font-semibold animate-pulse">轮到您出牌</span>
                       ) : (
                         <span>{players[activePlayerIndex]?.name}思考中...</span>
@@ -438,19 +491,43 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           </div>
 
-          {/* Right Bot Hand Tiles (vertical stack with authentic 3D Mahjong depth) */}
-          <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
-            {rightBot.hand.slice(0, 13).map((_, idx) => (
-              <div
-                key={idx}
-                className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
-                title="下家手牌"
-              >
-                <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
-                <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
-              </div>
-            ))}
-          </div>
+          {/* Right Bot Hand Tiles */}
+          {revealAllHands ? (
+            <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-48 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
+              {sortTiles(rightBot.hand).map((tile) => {
+                const isWinTile = roundResult?.winnerIndex === 1 && roundResult?.winningTile?.type === tile.type;
+                const isSelected = selectedTile?.type === tile.type;
+                return (
+                  <div key={tile.id} className="relative">
+                    <MahjongTile
+                      tile={tile}
+                      size="xs"
+                      isSelected={isSelected}
+                      onClick={() => onSelectTile(tile)}
+                    />
+                    {isWinTile && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1 py-0.2 bg-amber-500 text-stone-950 font-black text-[8px] rounded shadow ring-1 ring-amber-300">
+                        和牌
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
+              {rightBot.hand.slice(0, 13).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                  title="下家手牌"
+                >
+                  <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
+                  <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Right Melds */}
           {rightBot.melds.length > 0 && (
@@ -490,9 +567,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         />
 
         {/* Hand Area Container */}
-        <div className="w-full flex items-end justify-between px-2 sm:px-6">
+        <div className="w-full flex items-end justify-between px-1.5 sm:px-4 gap-1.5 sm:gap-3">
           {/* Player Info Badge (Left of hand) */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-950/80 backdrop-blur border border-stone-800 text-stone-200">
+          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:py-1.5 rounded-xl bg-stone-950/80 backdrop-blur border border-stone-800 text-stone-200">
             <div>
               <div className="text-xs font-bold flex items-center gap-1.5">
                 <span>{human.name} (您)</span>
@@ -511,7 +588,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </div>
 
           {/* Interactive Hand Tiles */}
-          <div className="flex items-end justify-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 max-w-[85vw]">
+          <div className="flex-1 min-w-0 flex items-end justify-center gap-0.5 sm:gap-1 overflow-x-auto pb-1 max-w-full">
             {human.hand.map((tile, idx) => {
               const isNewlyDrawn =
                 isHumanTurn && human.hand.length % 3 === 2 && idx === human.hand.length - 1;
@@ -520,35 +597,43 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               const isPengTarget = canPeng && lastDiscardedTile?.tile.type === tile.type;
               const isChiTarget = canChi && chiCombinations.some((comb) => comb.some((t) => t.id === tile.id));
 
+              const isWinTile = roundResult?.winnerIndex === 0 && roundResult?.winningTile?.type === tile.type;
+
               return (
-                <MahjongTile
-                  key={tile.id}
-                  tile={tile}
-                  size="lg"
-                  isSelected={selectedTile?.id === tile.id}
-                  isRecommended={isRecommended}
-                  safetyLevel={rec?.safetyLevel}
-                  isDrawn={isNewlyDrawn}
-                  showHints={showHints}
-                  isPengTarget={isPengTarget}
-                  isChiTarget={isChiTarget}
-                  onClick={() => {
-                    soundManager.playTileClick();
-                    if (selectedTile?.id === tile.id && isHumanTurn && human.hand.length % 3 === 2) {
-                      // Double click to discard
-                      soundManager.playTileDiscard();
-                      onConfirmDiscard(tile);
-                    } else {
-                      onSelectTile(tile);
-                    }
-                  }}
-                />
+                <div key={tile.id} className="relative">
+                  <MahjongTile
+                    tile={tile}
+                    size="lg"
+                    isSelected={selectedTile?.id === tile.id || (revealAllHands && selectedTile?.type === tile.type)}
+                    isRecommended={isRecommended}
+                    safetyLevel={rec?.safetyLevel}
+                    isDrawn={isNewlyDrawn}
+                    showHints={showHints}
+                    isPengTarget={isPengTarget}
+                    isChiTarget={isChiTarget}
+                    onClick={() => {
+                      soundManager.playTileClick();
+                      if (selectedTile?.id === tile.id && isHumanTurn && human.hand.length % 3 === 2 && !roundResult) {
+                        // Double click to discard
+                        soundManager.playTileDiscard();
+                        onConfirmDiscard(tile);
+                      } else {
+                        onSelectTile(tile);
+                      }
+                    }}
+                  />
+                  {isWinTile && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-1.5 py-0.2 bg-gradient-to-r from-amber-500 to-amber-400 text-stone-950 font-black text-[10px] rounded shadow ring-1 ring-amber-200">
+                      和牌
+                    </span>
+                  )}
+                </div>
               );
             })}
           </div>
 
           {/* Exposed Melds (Right of hand) */}
-          <div className="flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
             {human.melds.map((meld) => (
               <MeldDisplay key={meld.id} meld={meld} playerIndex={0} size="sm" />
             ))}

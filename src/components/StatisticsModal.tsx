@@ -25,7 +25,7 @@ interface StatisticsModalProps {
   currentMatchId?: string;
   onClose: () => void;
   onResetStats: () => void;
-  onOpenReviewRound?: (round: RoundResult) => void;
+  onOpenReviewRound?: (round: RoundResult, indexInHistorical?: number) => void;
   onDeleteRound?: (indexInHistorical: number) => void;
   onClearAllRounds?: () => void;
 }
@@ -71,8 +71,8 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
     });
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-      <div className="w-full max-w-4xl max-h-[90vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+      <div className="w-full max-w-4xl max-h-[calc(100vh-2rem)] sm:max-h-[88vh] bg-stone-900 border border-stone-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-stone-200 my-auto">
         {/* Header */}
         <div className="px-6 py-4 bg-stone-950/80 border-b border-stone-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -96,7 +96,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-stone-300">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 text-xs text-stone-300">
           {/* Key Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl bg-stone-950/60 border border-stone-800 flex flex-col">
@@ -355,7 +355,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
                         <button
                           onClick={() => {
                             onClose();
-                            if (onOpenReviewRound) onOpenReviewRound(round);
+                            if (onOpenReviewRound) onOpenReviewRound(round, originalIndex);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-amber-600 hover:text-stone-950 text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow cursor-pointer"
                         >

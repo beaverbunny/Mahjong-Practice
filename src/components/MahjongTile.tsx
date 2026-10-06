@@ -208,12 +208,12 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
 }) => {
   const type = tile.type;
 
-  // Sizes in pixels
+  // Sizes in pixels (tuned so all 14 tiles fit comfortably on screen at once)
   const dim = {
-    xs: { w: 28, h: 38, svgW: 24, svgH: 32 },
-    sm: { w: 36, h: 48, svgW: 31, svgH: 42 },
-    md: { w: 42, h: 58, svgW: 36, svgH: 50 },
-    lg: { w: 50, h: 68, svgW: 44, svgH: 60 },
+    xs: { w: 26, h: 36, svgW: 22, svgH: 30 },
+    sm: { w: 32, h: 44, svgW: 27, svgH: 38 },
+    md: { w: 36, h: 50, svgW: 31, svgH: 43 },
+    lg: { w: 41, h: 57, svgW: 35, svgH: 49 },
   }[size];
 
   const tileW = isHorizontal ? dim.h : dim.w;
@@ -479,8 +479,8 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
     if (type.endsWith('wan')) {
       const num = parseInt(type[0], 10);
       const chineseNums = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
-      const fontSizeNum = size === 'lg' ? '1.3rem' : size === 'md' ? '1.05rem' : size === 'sm' ? '0.85rem' : '0.65rem';
-      const fontSizeWan = size === 'lg' ? '1.2rem' : size === 'md' ? '0.95rem' : size === 'sm' ? '0.75rem' : '0.6rem';
+      const fontSizeNum = size === 'lg' ? '1.12rem' : size === 'md' ? '0.95rem' : size === 'sm' ? '0.8rem' : '0.65rem';
+      const fontSizeWan = size === 'lg' ? '1.02rem' : size === 'md' ? '0.85rem' : size === 'sm' ? '0.7rem' : '0.55rem';
 
       return (
         <div className="flex flex-col items-center justify-center leading-none select-none font-serif">
@@ -506,7 +506,7 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
       };
       const windChar = windCharMap[type] || '風';
       const isEast = type === 'wind_E';
-      const fontSize = size === 'lg' ? '1.65rem' : size === 'md' ? '1.3rem' : size === 'sm' ? '1.05rem' : '0.8rem';
+      const fontSize = size === 'lg' ? '1.45rem' : size === 'md' ? '1.2rem' : size === 'sm' ? '0.98rem' : '0.78rem';
 
       return (
         <span
@@ -522,7 +522,7 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
     // 5. DRAGONS (中, 發, 白)
     // ----------------------------------------------------
     if (type === 'dragon_C') {
-      const fontSize = size === 'lg' ? '1.75rem' : size === 'md' ? '1.4rem' : size === 'sm' ? '1.1rem' : '0.85rem';
+      const fontSize = size === 'lg' ? '1.55rem' : size === 'md' ? '1.3rem' : size === 'sm' ? '1.05rem' : '0.82rem';
       return (
         <span className="font-serif font-black text-[#DC2626]" style={{ fontSize }}>
           中
@@ -531,7 +531,7 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
     }
 
     if (type === 'dragon_F') {
-      const fontSize = size === 'lg' ? '1.75rem' : size === 'md' ? '1.4rem' : size === 'sm' ? '1.1rem' : '0.85rem';
+      const fontSize = size === 'lg' ? '1.55rem' : size === 'md' ? '1.3rem' : size === 'sm' ? '1.05rem' : '0.82rem';
       return (
         <span className="font-serif font-black text-[#15803D]" style={{ fontSize }}>
           發
@@ -576,7 +576,7 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
         ${onClick && !disabled ? 'cursor-pointer hover:-translate-y-1 hover:brightness-105 active:translate-y-0' : 'cursor-default'}
         ${dimmed ? 'opacity-40 grayscale' : ''}
         ${disabled ? 'cursor-not-allowed opacity-60' : ''}
-        ${isDrawn ? 'ml-3' : ''}
+        ${isDrawn ? 'ml-2 sm:ml-2.5' : ''}
         ${className}
       `}
       style={{
