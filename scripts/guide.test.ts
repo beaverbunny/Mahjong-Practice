@@ -190,6 +190,17 @@ describe('guide regression positions', () => {
   const recommend = (h: Tile[], pw: Wind = 'E', sw: Wind = 'E') =>
     generateDiscardRecommendations(h, [], h, pw, sw, [[], [], [], []], [false, false, false, false]);
 
+  test('equal speed: keeps the double wind and throws the plain wind', () => {
+    // East round, East seat: a lone East is worth 2 fan as a triplet, a lone West nothing
+    const h = hand('wind_E', '1wan', '2wan', '3wan', '4tiao', '5tiao', '6tiao', '7tong', '8tong', '2wan', '5wan', '9tiao', '1tong', 'wind_W');
+    const recs = recommend(h);
+    const east = recs.find((r) => r.tile.type === 'wind_E')!;
+    const west = recs.find((r) => r.tile.type === 'wind_W')!;
+    expect(west.shantenAfter).toBe(east.shantenAfter);
+    expect(west.effectiveTilesCount).toBe(east.effectiveTilesCount);
+    expect(west.scoreRank).toBeLessThan(east.scoreRank);
+  });
+
   test('6-7-7 case: a draw that only makes a plain triplet is not a useful tile', () => {
     // Only fan available is Common Hand; drawing 7wan or 2tong makes a 0-fan triplet shape
     const h = hand('1wan', '2wan', '3wan', '4tiao', '5tiao', '6tiao', '7tong', '8tong', '6wan', '7wan', '7wan', '2tong', '2tong', '9tiao');

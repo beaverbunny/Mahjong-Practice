@@ -403,7 +403,16 @@ export function generateDiscardRecommendations(
     });
   }
 
-  // Sort by fan-aware shanten (lowest first), then effectiveTilesCount (highest first), then safety
+  // Fan a triplet of this tile would add: dragons 1, seat and prevailing wind 1 each (2 when they match)
+  const tripletFan = (type: TileType) =>
+    type.startsWith('dragon_')
+      ? 1
+      : (type === `wind_${seatWind}` ? 1 : 0) + (type === `wind_${prevailingWind}` ? 1 : 0);
+  const levelOrder = { safe: 0, medium: 1, danger: 2 };
+
+  // Sort by fan-aware shanten (lowest first), then effectiveTilesCount (highest first), then
+  // safety level, then throw the tile worth less fan first (a plain wind before a double wind),
+  // then exact safety
   recommendations.sort((a, b) => {
     const ka = rankKey.get(a.tileId)!;
     const kb = rankKey.get(b.tileId)!;
@@ -412,6 +421,14 @@ export function generateDiscardRecommendations(
     }
     if (b.effectiveTilesCount !== a.effectiveTilesCount) {
       return b.effectiveTilesCount - a.effectiveTilesCount;
+    }
+    if (a.safetyLevel !== b.safetyLevel) {
+      return levelOrder[a.safetyLevel] - levelOrder[b.safetyLevel];
+    }
+    const fa = tripletFan(a.tile.type);
+    const fb = tripletFan(b.tile.type);
+    if (fa !== fb) {
+      return fa - fb;
     }
     return b.safetyScore - a.safetyScore;
   });
