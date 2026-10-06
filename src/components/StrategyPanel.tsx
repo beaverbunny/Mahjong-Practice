@@ -271,7 +271,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                           className="flex items-center justify-between bg-stone-900/80 p-2 rounded-lg border border-stone-800"
                         >
                           <div className="flex items-center gap-2">
-                            <MahjongTile tile={{ type: wait.tileType }} size="xs" />
+                            <MahjongTile tile={{ type: wait.tileType }} size="xs" className="shrink-0" />
                             <div>
                               <div className="font-semibold text-stone-100 flex items-center gap-1.5">
                                 {wait.displayName}
@@ -322,7 +322,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <MahjongTile tile={rec.tile} size="sm" isRecommended={idx === 0} />
+                            <MahjongTile tile={rec.tile} size="sm" isRecommended={idx === 0} className="shrink-0" />
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-stone-100 text-xs">
@@ -437,7 +437,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                         key={rec.tileId}
                         className="p-2 rounded-lg bg-stone-950/40 border border-stone-800 flex items-center gap-2"
                       >
-                        <MahjongTile tile={rec.tile} size="xs" safetyLevel={rec.safetyLevel} />
+                        <MahjongTile tile={rec.tile} size="xs" safetyLevel={rec.safetyLevel} className="shrink-0" />
                         <div className="overflow-hidden">
                           <div className="text-[11px] font-semibold truncate text-stone-200">
                             {rec.tile.displayName}

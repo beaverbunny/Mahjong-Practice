@@ -593,7 +593,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               const isNewlyDrawn =
                 isHumanTurn && human.hand.length % 3 === 2 && idx === human.hand.length - 1;
               const isRecommended = tile.id === bestRecTileId;
-              const rec = discardRecommendations.find((r) => r.tile.id === tile.id);
+              // One recommendation per tile kind: every copy in hand shares its risk tag
+              const rec = discardRecommendations.find((r) => r.tile.type === tile.type);
               const isPengTarget = canPeng && lastDiscardedTile?.tile.type === tile.type;
               const isChiTarget = canChi && chiCombinations.some((comb) => comb.some((t) => t.id === tile.id));
 
