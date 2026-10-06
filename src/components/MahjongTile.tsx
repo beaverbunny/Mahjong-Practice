@@ -590,55 +590,62 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
       {/* 3D Tile Layer depth (Mahjong bottom emerald/bone layer) */}
       <div className={`absolute inset-x-0 bottom-0 ${isHorizontal ? 'h-0.5' : 'h-1'} bg-stone-300/80 rounded-b-[4px]`} />
 
-      {/* Is Called Badge (吃牌突出标示) */}
-      {isCalled && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 font-black text-[9px] px-1 rounded-sm shadow z-20 whitespace-nowrap">
-          吃
-        </div>
-      )}
+      {/* Top Floating Badges (Unified size & aligned on the same horizontal line) */}
+      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-0.5 z-20 pointer-events-none whitespace-nowrap">
+        {/* Is Called Badge (吃牌突出标示) */}
+        {isCalled && (
+          <span className="h-4 min-w-[16px] px-1 bg-amber-500 text-stone-950 font-black text-[9px] rounded-[3px] shadow flex items-center justify-center leading-none">
+            吃
+          </span>
+        )}
 
-      {/* Peng Target Tag */}
-      {isPengTarget && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] px-1 rounded-sm shadow font-sans font-bold whitespace-nowrap z-20 animate-bounce">
-          碰
-        </div>
-      )}
+        {/* Peng Target Tag */}
+        {isPengTarget && (
+          <span className="h-4 min-w-[16px] px-1 bg-blue-600 text-white text-[9px] font-sans font-bold rounded-[3px] shadow flex items-center justify-center leading-none animate-bounce">
+            碰
+          </span>
+        )}
 
-      {/* Chi Target Tag */}
-      {isChiTarget && !isPengTarget && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] px-1 rounded-sm shadow font-sans font-bold whitespace-nowrap z-20">
-          吃
-        </div>
-      )}
+        {/* Chi Target Tag */}
+        {isChiTarget && !isPengTarget && (
+          <span className="h-4 min-w-[16px] px-1 bg-emerald-600 text-white text-[9px] font-sans font-bold rounded-[3px] shadow flex items-center justify-center leading-none">
+            吃
+          </span>
+        )}
 
-      {/* Safety Badge: Only when showHints is true */}
-      {shouldShowSafety && !isPengTarget && (
-        <div
-          className={`absolute -top-1.5 -right-1 text-[9px] px-1 py-0.2 rounded font-sans font-bold shadow-sm z-10 ${
-            safetyLevel === 'safe'
-              ? 'bg-emerald-600 text-white'
-              : safetyLevel === 'medium'
-              ? 'bg-amber-500 text-stone-900'
-              : 'bg-rose-600 text-white animate-pulse'
-          }`}
-        >
-          {safetyLevel === 'safe' ? '安' : safetyLevel === 'medium' ? '中' : '危'}
-        </div>
-      )}
+        {/* Recommended Tag ("荐") */}
+        {shouldShowRec && !badgeText && !isPengTarget && !isChiTarget && (
+          <span
+            className="w-4 h-4 bg-emerald-600 text-white text-[9px] font-sans font-bold rounded-[3px] shadow flex items-center justify-center leading-none"
+            title="策略引擎推荐切牌"
+          >
+            荐
+          </span>
+        )}
 
-      {/* Recommended Tag: Only when showHints is true */}
-      {shouldShowRec && !badgeText && !isPengTarget && !isChiTarget && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] px-1 rounded-sm shadow font-sans font-bold whitespace-nowrap z-10">
-          荐
-        </div>
-      )}
+        {/* Safety Badge ("安" / "中" / "危") */}
+        {shouldShowSafety && !isPengTarget && (
+          <span
+            className={`w-4 h-4 text-[9px] font-sans font-bold rounded-[3px] shadow flex items-center justify-center leading-none ${
+              safetyLevel === 'safe'
+                ? 'bg-emerald-600 text-white'
+                : safetyLevel === 'medium'
+                ? 'bg-amber-500 text-stone-950'
+                : 'bg-rose-600 text-white animate-pulse'
+            }`}
+            title={`危险度评估：${safetyLevel === 'safe' ? '安全牌' : safetyLevel === 'medium' ? '中度危险' : '高危危险牌'}`}
+          >
+            {safetyLevel === 'safe' ? '安' : safetyLevel === 'medium' ? '中' : '危'}
+          </span>
+        )}
 
-      {/* Custom badge text */}
-      {badgeText && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-[9px] px-1 rounded-sm shadow font-sans font-bold whitespace-nowrap z-10">
-          {badgeText}
-        </div>
-      )}
+        {/* Custom badge text */}
+        {badgeText && (
+          <span className="h-4 min-w-[16px] px-1 bg-amber-600 text-white text-[9px] font-sans font-bold rounded-[3px] shadow flex items-center justify-center leading-none">
+            {badgeText}
+          </span>
+        )}
+      </div>
 
       {/* Tile Graphics */}
       <div className={`relative z-0 flex items-center justify-center ${isHorizontal ? '-rotate-90 origin-center' : ''}`}>
