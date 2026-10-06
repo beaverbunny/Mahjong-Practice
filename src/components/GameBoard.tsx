@@ -117,7 +117,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           <div className="flex items-center gap-1">
             {revealAllHands ? (
               sortTiles(topBot.hand).map((tile) => {
-                const isWinTile = roundResult?.winnerIndex === 2 && roundResult?.winningTile?.type === tile.type;
+                const isWinTile = roundResult?.winnerIndex === 2 && roundResult?.winningTile?.id === tile.id;
                 const isSelected = selectedTile?.type === tile.type;
                 return (
                   <div key={tile.id} className="relative">
@@ -175,7 +175,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {revealAllHands ? (
             <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-48 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
               {sortTiles(leftBot.hand).map((tile) => {
-                const isWinTile = roundResult?.winnerIndex === 3 && roundResult?.winningTile?.type === tile.type;
+                const isWinTile = roundResult?.winnerIndex === 3 && roundResult?.winningTile?.id === tile.id;
                 const isSelected = selectedTile?.type === tile.type;
                 return (
                   <div key={tile.id} className="relative">
@@ -495,7 +495,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {revealAllHands ? (
             <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-48 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
               {sortTiles(rightBot.hand).map((tile) => {
-                const isWinTile = roundResult?.winnerIndex === 1 && roundResult?.winningTile?.type === tile.type;
+                const isWinTile = roundResult?.winnerIndex === 1 && roundResult?.winningTile?.id === tile.id;
                 const isSelected = selectedTile?.type === tile.type;
                 return (
                   <div key={tile.id} className="relative">
@@ -597,7 +597,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               const isPengTarget = canPeng && lastDiscardedTile?.tile.type === tile.type;
               const isChiTarget = canChi && chiCombinations.some((comb) => comb.some((t) => t.id === tile.id));
 
-              const isWinTile = roundResult?.winnerIndex === 0 && roundResult?.winningTile?.type === tile.type;
+              const isWinTile = roundResult?.winnerIndex === 0 && roundResult?.winningTile?.id === tile.id;
 
               return (
                 <div key={tile.id} className="relative">
