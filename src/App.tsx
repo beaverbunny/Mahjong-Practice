@@ -343,8 +343,8 @@ export default function App() {
   React.useEffect(() => {
     if (!table || activeRoundResult) return;
     if (table.phase === 'turn' && table.active !== 0) {
-      // Natural thinking delay: 1000ms - 1350ms
-      const delay = 1000 + Math.floor(Math.random() * 350);
+      // Natural thinking delay: 1500ms - 1850ms
+      const delay = 1500 + Math.floor(Math.random() * 350);
       const timer = setTimeout(() => setTable((prev) => (prev === table ? runBotTurn(prev) : prev)), delay);
       return () => clearTimeout(timer);
     }
