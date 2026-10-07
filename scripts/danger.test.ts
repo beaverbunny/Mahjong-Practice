@@ -134,8 +134,8 @@ describe('bot play is pinned', () => {
   test('bots play exactly the recorded games (UI, guide and danger-model changes must not move them)', () => {
     // Fingerprints of every action in these seeded matches. Only an intentional change to the bots
     // (src/ai/) may change them: then check it head-to-head in simulation and record the new values.
-    // Last recorded: fan-aware hand building (bots aim for hands that can win on a discard).
-    expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(1634243074);
+    // Last recorded: Master field reweighted (balanced 5, defensive 1).
+    expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(2343956129);
     expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(1175943090);
   }, 120_000);
 });

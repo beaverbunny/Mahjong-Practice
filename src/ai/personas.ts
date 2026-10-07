@@ -56,7 +56,7 @@ const FIELDS: Record<DifficultyLevel, { styles: [PlayStyle, number][]; skill: Ra
     styles: [['casual', 2], ['speed', 3], ['balanced', 3], ['value', 2], ['defensive', 1]],
     skill: [0.4, 0.75],
   },
-  master: { styles: [['speed', 3], ['balanced', 4], ['value', 3], ['defensive', 2]], skill: [0.8, 1.0] },
+  master: { styles: [['speed', 3], ['balanced', 5], ['value', 3], ['defensive', 1]], skill: [0.8, 1.0] },
   tournament: {
     styles: [['casual', 3], ['speed', 3], ['balanced', 2.5], ['value', 1.5], ['defensive', 1]],
     skill: [0.35, 0.95],
