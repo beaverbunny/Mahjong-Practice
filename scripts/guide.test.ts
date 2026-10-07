@@ -228,6 +228,23 @@ describe('guide regression positions', () => {
     expect(south.scoreRank).toBeLessThan(wan.scoreRank);
   });
 
+  test('full tie: the lower exact deal-in chance goes first, even when both round to the same safety score', () => {
+    // South and North tie on everything else (West seat, East round: neither is a value wind)
+    const h = hand('4wan', '9wan', '9wan', '3tiao', '3tiao', '7tiao', '1tong', '2tong', '5tong', '5tong', '8tong', 'wind_S', 'wind_N', '5tong');
+    const read = (s: number, n: number) => {
+      const d: Record<string, { pct: number; level: 'safe'; reasons: string[] }> = {};
+      for (const t of h) d[t.type] = { pct: 0.002, level: 'safe', reasons: [] };
+      d.wind_S.pct = s;
+      d.wind_N.pct = n;
+      return d;
+    };
+    const top = (s: number, n: number) =>
+      generateDiscardRecommendations(h, [], h, 'E', 'W', [[], [], []], [false, false, false], read(s, n))[0];
+    expect(top(0.003, 0.001).tile.type).toBe('wind_N');
+    expect(top(0.001, 0.003).tile.type).toBe('wind_S');
+    expect(top(0.003, 0.001).safetyScore).toBe(top(0.001, 0.003).safetyScore);
+  });
+
   test('6-7-7 case: a draw that only makes a plain triplet is not a useful tile', () => {
     // Only fan available is Common Hand; drawing 7wan or 2tong makes a 0-fan triplet shape
     const h = hand('1wan', '2wan', '3wan', '4tiao', '5tiao', '6tiao', '7tong', '8tong', '6wan', '7wan', '7wan', '2tong', '2tong', '9tiao');
