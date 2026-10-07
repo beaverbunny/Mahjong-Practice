@@ -179,6 +179,21 @@ describe('wait list labels', () => {
   }, 120_000);
 });
 
+describe('discard recommendations', () => {
+  test('exactly one per tile kind in hand, ranked 1..n (the board looks risk tags up by kind)', () => {
+    const rng = mulberry32(4242);
+    for (let n = 0; n < 200; n++) {
+      const deck = createFullDeck();
+      const hand: Tile[] = [];
+      while (hand.length < 14) hand.push(deck.splice(Math.floor(rng() * deck.length), 1)[0]);
+      const [pw, sw] = SITUATIONS[n % SITUATIONS.length];
+      const recs = generateDiscardRecommendations(hand, [], hand, pw, sw, [[], [], []], [false, false, false]);
+      expect(recs.map((r) => r.tile.type).sort()).toEqual([...new Set(hand.map((t) => t.type))].sort());
+      expect(recs.map((r) => r.scoreRank)).toEqual(recs.map((_, i) => i + 1));
+    }
+  });
+});
+
 describe('guide regression positions', () => {
   function hand(...types: string[]) {
     const deck = createFullDeck();
