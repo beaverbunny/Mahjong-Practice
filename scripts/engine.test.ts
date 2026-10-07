@@ -101,6 +101,11 @@ describe('claim priority', () => {
     expect(s.phase).toBe('ended');
     expect(s.result!.winner).toBe(2);
     expect(s.result!.payer).toBe(1);
+    // A discard win leaves the winning tile in the discarder's river, not in the winner's hand
+    // (the end-of-hand board tags the winning tile by id)
+    const won = s.result!.winningTile!;
+    expect(s.players[1].discards.some((t) => t.id === won.id)).toBe(true);
+    expect(s.players[2].hand.some((t) => t.id === won.id)).toBe(false);
   });
 
   test('Pung/Kong outranks Chi across players', () => {
@@ -259,6 +264,8 @@ describe('kongs', () => {
     expect(t.win!.fanDetails.some((f) => f.code === 'A6')).toBe(true);
     s = declareSelfDraw(s, 0);
     expect(s.result!.winner).toBe(0);
+    // A self-draw win keeps the winning tile in the winner's hand
+    expect(s.players[0].hand.some((t) => t.id === s.result!.winningTile!.id)).toBe(true);
   });
 });
 
