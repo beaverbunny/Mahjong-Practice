@@ -286,12 +286,42 @@ export default function App() {
     if (import.meta.env.DEV) (window as any).__mahjongTest = { table, setTable };
   }, [table]);
 
+  // Pre-evaluate bot claims on the pending discard to enforce authentic Mahjong claim priorities:
+  // 1. Hu > Peng / Chi: if any bot claims Hu, player's Chi/Peng is overridden (no need for player to decide).
+  // 2. Peng > Chi: if any bot claims Peng or Kong, player's Chi is overridden (no need for player to decide).
+  const botClaimDecisions = React.useMemo(() => {
+    if (!table || table.phase !== 'claim') return null;
+    const decisions: Record<number, ClaimDecision> = {};
+    for (const q of [1, 2, 3]) {
+      const opts = getClaimOptions(table, q);
+      if (opts) {
+        decisions[q] = decideClaim(table, q, opts, personaFor(q));
+      }
+    }
+    return decisions;
+  }, [table]);
+
+  const anyBotHu = React.useMemo(() => {
+    if (!botClaimDecisions) return false;
+    return Object.values(botClaimDecisions).some((d) => d.type === 'hu');
+  }, [botClaimDecisions]);
+
+  const anyBotPengOrKong = React.useMemo(() => {
+    if (!botClaimDecisions) return false;
+    return Object.values(botClaimDecisions).some((d) => d.type === 'pung' || d.type === 'kong');
+  }, [botClaimDecisions]);
+
   // Resolve a pending claim with the human's decision (if they had options) and the bots'
   const resolveWith = (t: TableState, humanDecision?: ClaimDecision): TableState => {
     const decisions: (ClaimDecision | undefined)[] = [];
     for (const q of playersWithClaimOptions(t)) {
-      if (q === 0) decisions[0] = humanDecision ?? { type: 'pass' };
-      else decisions[q] = decideClaim(t, q, getClaimOptions(t, q)!, personaFor(q));
+      if (q === 0) {
+        decisions[0] = humanDecision ?? { type: 'pass' };
+      } else {
+        decisions[q] = (t === table && botClaimDecisions?.[q])
+          ? botClaimDecisions[q]
+          : decideClaim(t, q, getClaimOptions(t, q)!, personaFor(q));
+      }
     }
     return resolveClaims(t, decisions);
   };
@@ -310,9 +340,32 @@ export default function App() {
     const o = getClaimOptions(table, 0);
     if (!o) return null;
     const canHu = strictHu ? o.shapeComplete : !!o.win;
-    if (!canHu && !o.pung && !o.kong && o.chi.length === 0) return null;
-    return { ...o, canHu };
-  }, [table, strictHu]);
+
+    // 规则 1：胡优先于碰/吃
+    // 其他三家中的某一家如果胡牌的话，玩家如果吃/碰同一张牌，不需要玩家先决定吃或碰。
+    // 如果玩家不能胡牌，则直接不弹窗，由胡牌方优先结算；
+    // 如果玩家也能胡牌，则玩家仅保留胡牌选项，无需选择吃/碰。
+    if (anyBotHu) {
+      if (!canHu) return null;
+      return {
+        ...o,
+        canHu: true,
+        pung: null,
+        kong: null,
+        chi: [],
+      };
+    }
+
+    // 规则 2：碰优先于吃
+    // 其他三家任何一家要碰（或杠）的时候，吃牌无效，不需要玩家先决定自己要不要吃这张牌。
+    let chi = o.chi;
+    if (anyBotPengOrKong) {
+      chi = [];
+    }
+
+    if (!canHu && !o.pung && !o.kong && chi.length === 0) return null;
+    return { ...o, canHu, chi };
+  }, [table, strictHu, anyBotHu, anyBotPengOrKong]);
 
   // What the human may do on their own turn
   const humanTurn = React.useMemo(() => {

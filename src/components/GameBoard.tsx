@@ -588,7 +588,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </div>
 
           {/* Interactive Hand Tiles */}
-          <div className="flex-1 min-w-0 flex items-end justify-center gap-0.5 sm:gap-1 overflow-x-auto pt-4 pb-1 max-w-full">
+          <div className="flex-1 min-w-0 flex items-end justify-center gap-0.5 sm:gap-1 overflow-x-auto pt-6 sm:pt-7 pb-1 max-w-full">
             {human.hand.map((tile, idx) => {
               const isNewlyDrawn =
                 isHumanTurn && human.hand.length % 3 === 2 && idx === human.hand.length - 1;

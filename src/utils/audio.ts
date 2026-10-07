@@ -19,7 +19,7 @@ export function getTileSpokenName(tile: Tile | { type: string; displayName?: str
   }
   if (type.endsWith('tiao')) {
     const val = type[0];
-    return `${val === '1' ? '一条' : (numMap[val] || val) + '条'}`;
+    return `${val === '1' ? '幺鸡' : (numMap[val] || val) + '条'}`;
   }
   if (type.endsWith('tong')) {
     const val = type[0];
