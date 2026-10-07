@@ -2,10 +2,19 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import pkg from './package.json';
 
 export default defineConfig(() => {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const buildTime = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}.${pad(now.getHours())}${pad(now.getMinutes())}`;
+
   return {
     plugins: [react(), tailwindcss()],
+    define: {
+      __APP_VERSION__: JSON.stringify(`v${pkg.version}`),
+      __BUILD_TIME__: JSON.stringify(buildTime),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

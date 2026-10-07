@@ -67,8 +67,9 @@ import {
   Maximize2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { FULL_VERSION_STRING, APP_VERSION } from './version';
 
-export const APP_VERSION = 'v2.5.0';
+export { APP_VERSION };
 
 const STORAGE_KEY_STATS = 'mahjong_practice_career_stats_v1';
 // Keep the replay history to the most recent hands so browser storage (about 5 MB) never fills up.
@@ -862,7 +863,7 @@ export default function App() {
           <span className="hidden sm:inline">TVB 广东麻将比赛实战研习</span>
           <span className="text-stone-700">|</span>
           <span className="text-stone-300">
-            Current App Version: <span className="text-amber-400 font-semibold font-mono">{APP_VERSION}</span>
+            Current App Version: <span className="text-amber-400 font-semibold font-mono">{FULL_VERSION_STRING}</span>
           </span>
         </div>
       </footer>
