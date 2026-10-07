@@ -310,6 +310,8 @@ export function generateDiscardRecommendations(
 
   const recommendations: DiscardRecommendation[] = [];
   const rankKey = new Map<string, number>();
+  // Exact deal-in chance for the final tie-break (the 0-100 safety score rounds 0.1% and 0.3% together)
+  const exactRisk = new Map<string, number>();
 
   const counts = toCounts(hand);
   const shapes = meldShapes(melds);
@@ -364,6 +366,7 @@ export function generateDiscardRecommendations(
           reason: `放铳率约 ${(100 * read.pct).toFixed(read.pct < 0.1 ? 1 : 0)}%${read.reasons.length ? '：' + read.reasons.join('；') : ''}`,
         }
       : evaluateTileSafety(tileToDiscard, opponentDiscards, opponentTenpais, allVisibleTiles);
+    exactRisk.set(tileToDiscard.id, read ? read.pct : 1 - safety.score / 100);
 
     // Composite heuristic score
     // Lower shanten after discard is paramount
@@ -412,7 +415,7 @@ export function generateDiscardRecommendations(
 
   // Sort by fan-aware shanten (lowest first), then effectiveTilesCount (highest first), then
   // all shape-improving draws, then safety level, then throw the tile worth less fan first (a plain wind before a double wind),
-  // then exact safety
+  // then the exact deal-in chance
   recommendations.sort((a, b) => {
     const ka = rankKey.get(a.tileId)!;
     const kb = rankKey.get(b.tileId)!;
@@ -437,7 +440,7 @@ export function generateDiscardRecommendations(
     if (fa !== fb) {
       return fa - fb;
     }
-    return b.safetyScore - a.safetyScore;
+    return exactRisk.get(a.tileId)! - exactRisk.get(b.tileId)!;
   });
 
   // Assign ranks
