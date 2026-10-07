@@ -99,7 +99,6 @@ export default function App() {
   const [isStrategyPanelOpen, setIsStrategyPanelOpen] = React.useState(true);
   const [activeRoundResult, setActiveRoundResult] = React.useState<RoundResult | null>(null);
   const [reviewRoundResult, setReviewRoundResult] = React.useState<RoundResult | null>(null);
-  const [reviewRoundIndex, setReviewRoundIndex] = React.useState<number | null>(null);
   const [showRoundResultModal, setShowRoundResultModal] = React.useState(true);
   const [isInspectingFinalBoard, setIsInspectingFinalBoard] = React.useState(false);
   const [isInspectionBarCollapsed, setIsInspectionBarCollapsed] = React.useState(false);
@@ -271,7 +270,6 @@ export default function App() {
     setMatchId(Date.now().toString(36));
     setIsGameOver16(false);
     setReviewRoundResult(null);
-    setReviewRoundIndex(null);
     setShowRoundResultModal(true);
     setIsInspectingFinalBoard(false);
     startHand(0, [0, 0, 0, 0]);
@@ -680,9 +678,7 @@ export default function App() {
               if (careerStats.historicalRounds.length === 0) {
                 showActionBanner('暂无已完局记录，完成一局后可随时复盘', 0);
               } else {
-                const lastIdx = careerStats.historicalRounds.length - 1;
-                setReviewRoundResult(careerStats.historicalRounds[lastIdx]);
-                setReviewRoundIndex(lastIdx);
+                setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
               }
             }}
             className="flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
@@ -924,9 +920,7 @@ export default function App() {
 
               <button
                 onClick={() => {
-                  const lastIdx = careerStats.historicalRounds.length - 1;
                   setReviewRoundResult(activeRoundResult);
-                  setReviewRoundIndex(lastIdx >= 0 ? lastIdx : 0);
                 }}
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-stone-700/80"
                 title="逐巡回溯单步牌谱与恶手诊断"
@@ -1002,9 +996,7 @@ export default function App() {
           currentRoundNumber={currentRoundIndex + 1}
           onNextRound={handleNextRound}
           onOpenReview={() => {
-            const lastIdx = careerStats.historicalRounds.length - 1;
             setReviewRoundResult(activeRoundResult);
-            setReviewRoundIndex(lastIdx >= 0 ? lastIdx : 0);
           }}
           onOpenStats={() => setShowStatsModal(true)}
           onRestartMatch={() => setShowRestartConfirmModal(true)}
@@ -1027,7 +1019,6 @@ export default function App() {
           onDeleteRound={handleDeleteHistoricalRound}
           onClose={() => {
             setReviewRoundResult(null);
-            setReviewRoundIndex(null);
           }}
         />
       )}
@@ -1044,10 +1035,9 @@ export default function App() {
           historicalRounds={careerStats.historicalRounds}
           currentMatchId={matchId}
           onClose={() => setShowStatsModal(false)}
-          onOpenReviewRound={(round, index) => {
+          onOpenReviewRound={(round) => {
             setShowStatsModal(false);
             setReviewRoundResult(round);
-            setReviewRoundIndex(index ?? null);
           }}
           onDeleteRound={handleDeleteHistoricalRound}
           onClearAllRounds={handleClearAllHistoricalRounds}
@@ -1167,9 +1157,7 @@ export default function App() {
               {careerStats.historicalRounds.length > 0 && (
                 <button
                   onClick={() => {
-                    const lastIdx = careerStats.historicalRounds.length - 1;
-                    setReviewRoundResult(careerStats.historicalRounds[lastIdx]);
-                    setReviewRoundIndex(lastIdx);
+                    setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
                   }}
                   className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
                   title="回溯复盘第16局牌谱与恶手诊断"
