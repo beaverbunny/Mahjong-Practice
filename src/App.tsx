@@ -343,14 +343,16 @@ export default function App() {
   React.useEffect(() => {
     if (!table || activeRoundResult) return;
     if (table.phase === 'turn' && table.active !== 0) {
-      // Natural thinking delay: 1000ms - 1350ms
-      const delay = 1000 + Math.floor(Math.random() * 350);
+      // Natural thinking delay: 1700ms - 2300ms
+      const delay = 1700 + Math.floor(Math.random() * 600);
       const timer = setTimeout(() => setTable((prev) => (prev === table ? runBotTurn(prev) : prev)), delay);
       return () => clearTimeout(timer);
     }
     if (table.phase === 'claim' && !humanClaim) {
-      // Natural pause on discard claims: 750ms so discards and calls are clear
-      const timer = setTimeout(() => setTable((prev) => (prev === table ? resolveWith(prev) : prev)), 750);
+      // Pause on discard claims: 1200ms to read the discard, +500ms when a bot threw from hand (手切)
+      const last = table.log[table.log.length - 1];
+      const fromHand = last?.action === 'discard' && last.playerIndex !== 0 && !last.fromDraw;
+      const timer = setTimeout(() => setTable((prev) => (prev === table ? resolveWith(prev) : prev)), fromHand ? 1700 : 1200);
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
