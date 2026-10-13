@@ -840,7 +840,7 @@ export default function App() {
       </header>
 
       {/* ================= MAIN MAH JONG PLAY AREA ================= */}
-      <main className="flex-1 relative p-2 sm:p-4 overflow-hidden flex flex-col justify-center max-w-7xl mx-auto w-full">
+      <main className="flex-1 relative p-2 sm:p-4 overflow-y-auto flex flex-col justify-center max-w-7xl mx-auto w-full">
         {players.length === 4 && (
           <GameBoard
             players={players}

@@ -90,7 +90,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-5.5rem)] max-h-[900px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
+    <div className="relative w-full h-[calc(100vh-5.5rem)] min-h-[640px] max-h-[920px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
       {/* Subtle table felt inner shadow ring */}
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
 
@@ -98,17 +98,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <div className="relative z-10 flex flex-col items-center gap-1">
         {/* Opponent Info Badge */}
         <div
-          className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs transition-all ${
+          className={`flex flex-col items-center px-2.5 py-1 rounded-xl text-xs transition-all ${
             activePlayerIndex === 2
-              ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 shadow-md ring-2 ring-amber-400/30'
+              ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
               : 'bg-stone-900/60 text-stone-300 border border-stone-800'
           }`}
         >
-          <span className="font-bold">{topBot.name}</span>
-          <span className="text-[10px] text-amber-400 font-mono">门风:{WIND_NAMES[topBot.seatWind]}</span>
-          <span className="text-[10px] font-mono text-stone-400">
-            ({topBot.score > 0 ? `+${topBot.score}` : topBot.score}点)
-          </span>
+          <span className="font-bold truncate max-w-[140px] sm:max-w-[180px]">{topBot.name}</span>
+          <div className="flex items-center gap-1 text-[10px] text-stone-400">
+            <span className="text-amber-400 font-mono">{WIND_NAMES[topBot.seatWind]}风</span>
+            <span>{topBot.score}点</span>
+          </div>
         </div>
 
         {/* Top Hand Tiles & Melds */}
@@ -154,13 +154,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* ================= MIDDLE ZONE (LEFT, CENTER, RIGHT) ================= */}
-      <div className="relative z-10 flex-1 flex items-center justify-between px-1 sm:px-4 my-1 overflow-hidden">
+      <div className="relative z-10 flex-1 flex items-center justify-between px-1 sm:px-4 my-1">
         {/* LEFT PLAYER (上家) */}
-        <div className="flex flex-col items-center gap-1.5 w-28 sm:w-36 shrink-0">
+        <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-28 sm:w-36 shrink-0 py-0.5">
           <div
-            className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full ${
+            className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full shrink-0 ${
               activePlayerIndex === 3
-                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30'
+                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
                 : 'bg-stone-900/60 text-stone-300 border border-stone-800'
             }`}
           >
@@ -173,7 +173,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
           {/* Left Bot Hand Tiles */}
           {revealAllHands ? (
-            <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-48 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
+            <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-80 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
               {sortTiles(leftBot.hand).map((tile) => {
                 const isWinTile = roundResult?.winnerIndex === 3 && roundResult?.winningTile?.id === tile.id;
                 const isSelected = selectedTile?.type === tile.type;
@@ -195,11 +195,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               })}
             </div>
           ) : (
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
+            <div className="flex flex-col gap-0.5 sm:gap-1 items-center py-0.5">
               {leftBot.hand.map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1 shrink-0"
                   title="上家手牌"
                 >
                   <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
@@ -211,7 +211,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
           {/* Left Melds */}
           {leftBot.melds.length > 0 && (
-            <div className="flex flex-col gap-1 items-center max-w-full overflow-hidden mt-1">
+            <div className="flex flex-col gap-1 items-center max-w-full mt-1 shrink-0">
               {leftBot.melds.map((meld) => (
                 <MeldDisplay key={meld.id} meld={meld} playerIndex={3} size="sm" />
               ))}
@@ -463,11 +463,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         {/* RIGHT PLAYER (下家) */}
-        <div className="flex flex-col items-center gap-1.5 w-28 sm:w-36 shrink-0">
+        <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-28 sm:w-36 shrink-0 py-0.5">
           <div
-            className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full ${
+            className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full shrink-0 ${
               activePlayerIndex === 1
-                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30'
+                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
                 : 'bg-stone-900/60 text-stone-300 border border-stone-800'
             }`}
           >
@@ -480,7 +480,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
           {/* Right Bot Hand Tiles */}
           {revealAllHands ? (
-            <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-48 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
+            <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-80 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
               {sortTiles(rightBot.hand).map((tile) => {
                 const isWinTile = roundResult?.winnerIndex === 1 && roundResult?.winningTile?.id === tile.id;
                 const isSelected = selectedTile?.type === tile.type;
@@ -502,11 +502,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               })}
             </div>
           ) : (
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
+            <div className="flex flex-col gap-0.5 sm:gap-1 items-center py-0.5">
               {rightBot.hand.map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-950 via-emerald-700 to-emerald-800 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-950 via-emerald-700 to-emerald-800 border border-emerald-950 shadow-sm flex items-center justify-between px-1 shrink-0"
                   title="下家手牌"
                 >
                   <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
@@ -518,7 +518,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
           {/* Right Melds */}
           {rightBot.melds.length > 0 && (
-            <div className="flex flex-col gap-1 items-center max-w-full overflow-hidden mt-1">
+            <div className="flex flex-col gap-1 items-center max-w-full mt-1 shrink-0">
               {rightBot.melds.map((meld) => (
                 <MeldDisplay key={meld.id} meld={meld} playerIndex={1} size="sm" />
               ))}
@@ -556,21 +556,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         {/* Hand Area Container */}
         <div className="w-full flex items-end justify-between px-1.5 sm:px-4 gap-1.5 sm:gap-3">
           {/* Player Info Badge (Left of hand) */}
-          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:py-1.5 rounded-xl bg-stone-950/80 backdrop-blur border border-stone-800 text-stone-200">
-            <div>
-              <div className="text-xs font-bold flex items-center gap-1.5">
-                <span>{human.name} (您)</span>
-                <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
-                  门风:{WIND_NAMES[human.seatWind]}
-                </span>
-              </div>
-              <div className="text-[11px] font-mono text-stone-400 mt-0.5">
-                得分：
-                <span className={human.score >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                  {human.score > 0 ? `+${human.score}` : human.score}
-                </span>{' '}
-                点
-              </div>
+          <div
+            className={`shrink-0 flex flex-col items-center px-2.5 py-1 sm:py-1.5 rounded-xl text-xs transition-all ${
+              activePlayerIndex === 0
+                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
+                : 'bg-stone-900/60 text-stone-300 border border-stone-800'
+            }`}
+          >
+            <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{human.name}</span>
+            <div className="flex items-center gap-1 text-[10px] text-stone-400">
+              <span className="text-amber-400 font-mono">{WIND_NAMES[human.seatWind]}风</span>
+              <span>{human.score}点</span>
             </div>
           </div>
 
