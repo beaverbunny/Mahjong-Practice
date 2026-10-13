@@ -38,6 +38,7 @@ import { Persona, samplePersonas, STYLE_LABELS, getBotPlayerName } from './ai/pe
 import { soundManager, getTileSpokenName } from './utils/audio';
 import { GameBoard } from './components/GameBoard';
 import { StrategyPanel } from './components/StrategyPanel';
+import { TableFit } from './components/TableFit';
 import { RoundResultModal } from './components/RoundResultModal';
 import { GameReviewModal } from './components/GameReviewModal';
 import { RulesReferenceModal } from './components/RulesReferenceModal';
@@ -422,7 +423,6 @@ export default function App() {
   }, [table]);
 
   const announce = (e: TurnActionLog) => {
-    const who = e.playerIndex === 0 ? '' : `${e.playerName} `;
     if (e.action === 'discard') {
       soundManager.playTileDiscard();
       if (e.tile) {
@@ -430,24 +430,24 @@ export default function App() {
       }
     } else if (e.action === 'chi') {
       soundManager.playMeld();
-      showActionBanner(`${who}吃！`, e.playerIndex);
+      showActionBanner('吃！', e.playerIndex);
       soundManager.speak('吃');
     } else if (e.action === 'peng') {
       soundManager.playMeld();
-      showActionBanner(`${who}碰！`, e.playerIndex);
+      showActionBanner('碰！', e.playerIndex);
       soundManager.speak('碰');
     } else if (e.action === 'gang') {
       soundManager.playKong();
-      showActionBanner(`${who}杠！`, e.playerIndex);
+      showActionBanner('杠！', e.playerIndex);
       soundManager.speak('杠');
     } else if (e.action === 'hu') {
       if (e.aiComment?.includes('诈胡')) {
-        showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
+        showActionBanner(`诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
         soundManager.speak('诈胡');
       } else {
         soundManager.playHu();
         const isSelfDraw = e.aiComment?.includes('自摸');
-        showActionBanner(`${who}${e.aiComment ?? '和牌！'}`, e.playerIndex);
+        showActionBanner(e.aiComment ?? '和牌！', e.playerIndex);
         soundManager.speak(isSelfDraw ? '自摸' : '胡了');
       }
     }
@@ -713,21 +713,21 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
+    <div className="h-dvh overflow-hidden bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
       {/* ================= ZONE 1, 2, 3: TOP BAR CONTRACT ================= */}
       <header className="h-14 border-b border-stone-800 bg-stone-950/90 backdrop-blur px-4 sm:px-6 flex items-center justify-between z-40 shrink-0">
         {/* Zone 1: Single Wordmark */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <span className="text-base font-serif font-black tracking-wider text-amber-400">
             雀圣研习社
           </span>
-          <span className="text-[11px] text-stone-500 hidden sm:inline">
+          <span className="text-[11px] text-stone-500 hidden xl:inline">
             · TVB 香港麻将比赛规则 · 16 局实战研习
           </span>
         </div>
 
         {/* Zone 2: Navigation Links (Text Links with Hover Underlines) */}
-        <nav className="flex items-center gap-2.5 sm:gap-5 text-xs font-medium text-stone-400">
+        <nav className="flex items-center gap-2.5 sm:gap-5 text-xs font-medium text-stone-400 whitespace-nowrap">
           <button
             onClick={() => {
               if (careerStats.historicalRounds.length === 0) {
@@ -780,7 +780,7 @@ export default function App() {
             title="查看或调整 AI 难度"
           >
             <Bot className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden xs:inline">
+            <span className="hidden lg:inline">
               {difficulty === 'tournament'
                 ? 'AI: 比赛实战'
                 : difficulty === 'beginner'
@@ -806,7 +806,7 @@ export default function App() {
             }
           >
             <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">{strictHu ? '严格和牌' : '提示和牌'}</span>
+            <span className="hidden lg:inline whitespace-nowrap">{strictHu ? '严格和牌' : '提示和牌'}</span>
           </button>
 
           {/* Sound Toggle */}
@@ -834,45 +834,49 @@ export default function App() {
             title="重新开始整场 16 局比赛"
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-            <span>重开大局</span>
+            <span className="hidden lg:inline whitespace-nowrap">重开大局</span>
           </button>
         </div>
       </header>
 
       {/* ================= MAIN MAH JONG PLAY AREA ================= */}
-      <main className="flex-1 relative p-2 sm:p-4 overflow-y-auto flex flex-col justify-center max-w-7xl mx-auto w-full">
-        {players.length === 4 && (
-          <GameBoard
-            players={players}
-            activePlayerIndex={table!.active}
-            prevailingWind={prevailingWind}
-            currentRoundNumber={currentRoundIndex + 1}
-            dealerIndex={dealerIndex}
-            wallRemaining={table!.wall.length}
-            selectedTile={selectedTile}
-            onSelectTile={setSelectedTile}
-            onConfirmDiscard={handleHumanConfirmDiscard}
-            canChi={!!humanClaim && humanClaim.chi.length > 0}
-            chiCombinations={humanClaim?.chi ?? []}
-            canPeng={!!humanClaim?.pung}
-            canGang={gangCandidates.length > 0}
-            gangCandidates={gangCandidates}
-            canHu={!!(humanClaim?.canHu || humanTurn?.canHu)}
-            isSelfDraw={!!humanTurn?.canHu}
-            onChi={handleHumanChi}
-            onPeng={handleHumanPeng}
-            onGang={handleHumanGang}
-            onHu={handleHumanHu}
-            onPass={handleHumanPass}
-            discardRecommendations={discardRecommendations}
-            lastDiscardedTile={lastDiscardedTile}
-            showHints={isStrategyPanelOpen}
-            actionBanner={actionBanner}
-            drawnDiscardIds={drawnDiscardIds}
-            revealAllHands={table!.phase === 'ended' || !!activeRoundResult || isInspectingFinalBoard}
-            roundResult={activeRoundResult}
-          />
-        )}
+      <main className="flex-1 min-h-0 w-full p-2 sm:p-3 flex flex-col landscape:flex-row gap-2 sm:gap-3">
+        <div className="flex-1 min-w-0 min-h-0">
+          {players.length === 4 && (
+            <TableFit>
+              <GameBoard
+                players={players}
+                activePlayerIndex={table!.active}
+                prevailingWind={prevailingWind}
+                currentRoundNumber={currentRoundIndex + 1}
+                dealerIndex={dealerIndex}
+                wallRemaining={table!.wall.length}
+                selectedTile={selectedTile}
+                onSelectTile={setSelectedTile}
+                onConfirmDiscard={handleHumanConfirmDiscard}
+                canChi={!!humanClaim && humanClaim.chi.length > 0}
+                chiCombinations={humanClaim?.chi ?? []}
+                canPeng={!!humanClaim?.pung}
+                canGang={gangCandidates.length > 0}
+                gangCandidates={gangCandidates}
+                canHu={!!(humanClaim?.canHu || humanTurn?.canHu)}
+                isSelfDraw={!!humanTurn?.canHu}
+                onChi={handleHumanChi}
+                onPeng={handleHumanPeng}
+                onGang={handleHumanGang}
+                onHu={handleHumanHu}
+                onPass={handleHumanPass}
+                discardRecommendations={discardRecommendations}
+                lastDiscardedTile={lastDiscardedTile}
+                showHints={isStrategyPanelOpen}
+                actionBanner={actionBanner}
+                drawnDiscardIds={drawnDiscardIds}
+                revealAllHands={table!.phase === 'ended' || !!activeRoundResult || isInspectingFinalBoard}
+                roundResult={activeRoundResult}
+              />
+            </TableFit>
+          )}
+        </div>
 
         {/* Live Strategy Panel Sidebar / Drawer */}
         {human && (

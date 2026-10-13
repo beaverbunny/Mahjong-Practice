@@ -55,7 +55,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
   const hasAnyMeldAction = canChi || canPeng || canGang || canHu;
 
   return (
-    <div className="flex flex-col items-center gap-2 select-none">
+    <div className="flex flex-col items-end gap-2 select-none">
       {/* Chi Combination Selector Drawer */}
       {showChiPicker && chiCombinations.length > 0 && (
         <div className="bg-stone-900/95 backdrop-blur border border-amber-500/60 rounded-xl p-3 shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in zoom-in-95 z-30">
@@ -139,30 +139,22 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
       )}
 
       {/* Primary Action Buttons Bar */}
-      {(hasAnyMeldAction || isHumanTurnToDiscard) && (
+      {(hasAnyMeldAction || (isHumanTurnToDiscard && discardPendingTile)) && (
         <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-950/85 backdrop-blur border border-stone-800/80 shadow-2xl">
           {/* Discard prompt / confirmation button */}
-          {isHumanTurnToDiscard && !hasAnyMeldAction && (
+          {isHumanTurnToDiscard && discardPendingTile && !hasAnyMeldAction && (
             <div className="flex items-center gap-2">
-              {discardPendingTile ? (
-                <>
-                  <span className="text-xs text-stone-300 font-medium">确认打出：</span>
-                  <MahjongTile tile={discardPendingTile} size="xs" />
-                  <button
-                    onClick={() => {
-                      soundManager.playTileDiscard();
-                      if (onConfirmDiscard) onConfirmDiscard();
-                    }}
-                    className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-transform active:scale-95 cursor-pointer"
-                  >
-                    出牌
-                  </button>
-                </>
-              ) : (
-                <div className="text-xs text-amber-300/90 font-medium flex items-center gap-1 animate-pulse">
-                  <span>👉 请点击选择手牌打出一张完成本巡</span>
-                </div>
-              )}
+              <span className="text-xs text-stone-300 font-medium">确认打出：</span>
+              <MahjongTile tile={discardPendingTile} size="xs" />
+              <button
+                onClick={() => {
+                  soundManager.playTileDiscard();
+                  if (onConfirmDiscard) onConfirmDiscard();
+                }}
+                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-transform active:scale-95 cursor-pointer"
+              >
+                出牌
+              </button>
             </div>
           )}
 

@@ -153,9 +153,13 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
   const yakuGoals = analyzeYakuProgress();
 
   return (
+    // Open: docked beside the table (right in landscape, below in portrait) so it never covers a seat.
+    // Closed: only a small button over the table's top-right corner.
     <aside
-      className={`fixed top-16 right-2 sm:right-4 z-30 transition-all duration-300 flex flex-col max-h-[calc(100vh-230px)] sm:max-h-[calc(100vh-250px)] ${
-        isOpen ? 'w-84 sm:w-92 shadow-2xl' : 'w-auto pointer-events-none'
+      className={`flex flex-col ${
+        isOpen
+          ? 'shrink-0 min-h-0 landscape:w-72 xl:landscape:w-80 2xl:landscape:w-92 landscape:h-full portrait:w-full portrait:h-[40%]'
+          : 'fixed top-16 right-2 sm:right-4 z-30 pointer-events-none'
       }`}
     >
       {/* Toggle Tab Button when collapsed */}
@@ -171,15 +175,15 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
 
       {/* Main Container */}
       {isOpen && (
-        <div className="flex-1 bg-stone-900/95 backdrop-blur-md border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-stone-200">
+        <div className="flex-1 min-h-0 bg-stone-900/95 backdrop-blur-md border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-stone-200">
           {/* Header */}
           <div className="px-3.5 py-2.5 border-b border-stone-800 bg-stone-950/70 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-xs sm:text-sm font-semibold text-stone-100">实战策略与牌效</h3>
+              <h3 className="text-xs sm:text-sm font-semibold text-stone-100 whitespace-nowrap">策略助手</h3>
             </div>
             <div className="flex items-center gap-2">
-              <div className="text-[11px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 font-mono">
+              <div className="text-[11px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 font-mono whitespace-nowrap">
                 {shantenLabel()}
               </div>
               <button
@@ -321,9 +325,9 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                               : 'bg-stone-950/40 border-stone-800 hover:bg-stone-800/60'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             <MahjongTile tile={rec.tile} size="sm" isRecommended={idx === 0} className="shrink-0" />
-                            <div>
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-stone-100 text-xs">
                                   {rec.tile.displayName}
@@ -340,7 +344,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                             </div>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-right shrink-0 pl-2 whitespace-nowrap">
                             <span className="text-xs font-mono font-bold text-amber-400 block">
                               {rec.effectiveTilesCount} 张进张
                             </span>

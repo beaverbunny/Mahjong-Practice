@@ -80,37 +80,74 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   // Best recommendation tile ID
   const bestRecTileId = discardRecommendations[0]?.tileId;
 
-  // Compute round wind description
-  const windRoundName = () => {
-    const windMap: Record<Wind, string> = { E: '东风圈', S: '南风圈', W: '西风圈', N: '北风圈' };
-    const dealerMap = ['东局', '南局', '西局', '北局'];
-    const windIdx = Math.floor((currentRoundNumber - 1) / 4);
-    const subIdx = (currentRoundNumber - 1) % 4;
-    return `${windMap[prevailingWind]} · ${dealerMap[subIdx]} (${currentRoundNumber}/16)`;
+  const handName = ['东局', '南局', '西局', '北局'][(currentRoundNumber - 1) % 4];
+  // "下家 · 速攻型 (进阶)" -> "下家"
+  const seatOf = (idx: number) => players[idx]?.name.split(' · ')[0] ?? '';
+
+  // Name, seat wind and score; highlighted while it's that player's turn
+  const seatBadge = (idx: number) => {
+    const p = players[idx];
+    return (
+      <div
+        className={`flex flex-col items-center px-2.5 py-1 rounded-xl text-xs transition-all whitespace-nowrap ${
+          activePlayerIndex === idx
+            ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
+            : 'bg-stone-900/60 text-stone-300 border border-stone-800'
+        }`}
+      >
+        <span className="font-bold truncate max-w-[150px]">{p.name}</span>
+        <div className="flex items-center gap-1 text-[10px] text-stone-400">
+          <span className="text-amber-400 font-mono">{WIND_NAMES[p.seatWind]}风</span>
+          <span>{p.score}点</span>
+        </div>
+      </div>
+    );
+  };
+
+  // One player's discards, 6 per row. Tiles thrown straight from the draw (摸切) are faded.
+  const river = (idx: number) => {
+    const tiles = players[idx].discards;
+    return (
+      <div className="relative">
+        <div className="grid grid-cols-6 gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[46px] min-w-[188px] justify-items-center content-start">
+          {tiles.map((t, i) => {
+            const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === idx;
+            const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
+            return (
+              <div
+                key={t.id + i}
+                className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
+                title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
+              >
+                <MahjongTile tile={t} size="xs" isSelected={isSelectedMatch} dimmed={selectedTile ? !isSelectedMatch : false} />
+                {isLatest && (
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {tiles.length > 0 && (
+          <span
+            className="absolute -top-2 -left-2 min-w-[18px] px-1 rounded-full bg-stone-950 border border-stone-700 text-[9px] leading-[14px] text-center font-mono text-stone-400"
+            title={`${seatOf(idx)}已舍 ${tiles.length} 张`}
+          >
+            {tiles.length}
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-5.5rem)] min-h-[640px] max-h-[920px] bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-2 sm:p-4 select-none">
+    <div className="relative w-full h-full bg-[#0E3D24] rounded-2xl overflow-hidden shadow-2xl border-8 border-[#2E1810] flex flex-col justify-between p-3 select-none">
       {/* Subtle table felt inner shadow ring */}
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
 
       {/* ================= TOP PLAYER (对家) ================= */}
-      <div className="relative z-10 flex flex-col items-center gap-1">
-        {/* Opponent Info Badge */}
-        <div
-          className={`flex flex-col items-center px-2.5 py-1 rounded-xl text-xs transition-all ${
-            activePlayerIndex === 2
-              ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
-              : 'bg-stone-900/60 text-stone-300 border border-stone-800'
-          }`}
-        >
-          <span className="font-bold truncate max-w-[140px] sm:max-w-[180px]">{topBot.name}</span>
-          <div className="flex items-center gap-1 text-[10px] text-stone-400">
-            <span className="text-amber-400 font-mono">{WIND_NAMES[topBot.seatWind]}风</span>
-            <span>{topBot.score}点</span>
-          </div>
-        </div>
-
+      {/* Badge sits beside the hand; the hand stays centered on the table */}
+      <div className="relative z-10 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+        <div className="justify-self-end">{seatBadge(2)}</div>
         {/* Top Hand Tiles & Melds */}
         <div className="flex items-center gap-3">
           {/* Concealed or Revealed Tiles */}
@@ -151,25 +188,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           )}
         </div>
+        <div />
       </div>
 
       {/* ================= MIDDLE ZONE (LEFT, CENTER, RIGHT) ================= */}
-      <div className="relative z-10 flex-1 flex items-center justify-between px-1 sm:px-4 my-1">
+      <div className="relative z-10 flex-1 min-h-0 flex items-center justify-between px-1 my-1">
         {/* LEFT PLAYER (上家) */}
         <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-28 sm:w-36 shrink-0 py-0.5">
-          <div
-            className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full shrink-0 ${
-              activePlayerIndex === 3
-                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
-                : 'bg-stone-900/60 text-stone-300 border border-stone-800'
-            }`}
-          >
-            <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{leftBot.name}</span>
-            <div className="flex items-center gap-1 text-[10px] text-stone-400">
-              <span className="text-amber-400 font-mono">{WIND_NAMES[leftBot.seatWind]}风</span>
-              <span>{leftBot.score}点</span>
-            </div>
-          </div>
+          {seatBadge(3)}
 
           {/* Left Bot Hand Tiles */}
           {revealAllHands ? (
@@ -219,264 +245,88 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           )}
         </div>
 
-        {/* ================= CENTER MAH JONG COMPASS & 4-PLAYER DISCARD RIVERS ================= */}
-        <div className="flex-1 max-w-3xl h-full flex flex-col items-center justify-between py-1 px-1 sm:px-2 min-h-0">
-          {/* 1. TOP DISCARDS (对家 · 北 弃牌池) */}
-          <div className="flex flex-col items-center">
-            <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1.5">
-              <span className="font-bold text-amber-200">对家牌河</span>
-              <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
-                {topBot.discards.length}张
-              </span>
-            </div>
-            <div className="grid grid-cols-6 gap-0.5 sm:gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[38px] justify-items-center">
-              {topBot.discards.length === 0 ? (
-                <div className="col-span-6 text-[10px] text-stone-500 italic py-1 px-4">暂无舍牌</div>
-              ) : (
-                topBot.discards.map((t, idx) => {
-                  const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === 2;
-                  const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
-                  return (
-                    <div
-                      key={t.id + idx}
-                      className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                      title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-                    >
-                      <MahjongTile
-                        tile={t}
-                        size="xs"
-                        isSelected={isSelectedMatch}
-                        dimmed={selectedTile ? !isSelectedMatch : false}
-                      />
-                      {isLatest && (
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+        {/* ================= CENTER: COMPASS & 4 DISCARD RIVERS ================= */}
+        <div className="flex-1 h-full min-h-0 flex flex-col items-center justify-between gap-1 px-1 sm:px-2">
+          {river(2)}
 
-          {/* 2. MIDDLE ROW: LEFT DISCARDS (上家) + COMPASS + RIGHT DISCARDS (下家) */}
-          <div className="w-full flex items-center justify-between gap-1 sm:gap-2 my-0.5">
-            {/* 上家 (Left Bot) 弃牌池 */}
-            <div className="flex-1 flex flex-col items-center max-w-[200px]">
-              <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1">
-                <span className="font-bold text-amber-200">上家牌河</span>
-                <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
-                  {leftBot.discards.length}张
-                </span>
-              </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-0.5 sm:gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[38px] w-full justify-items-center">
-                {leftBot.discards.length === 0 ? (
-                  <div className="col-span-4 sm:col-span-6 text-[10px] text-stone-500 italic py-1 px-1">暂无舍牌</div>
-                ) : (
-                  leftBot.discards.map((t, idx) => {
-                    const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === 3;
-                    const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
-                    return (
-                      <div
-                        key={t.id + idx}
-                        className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                        title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-                      >
-                        <MahjongTile
-                          tile={t}
-                          size="xs"
-                          isSelected={isSelectedMatch}
-                          dimmed={selectedTile ? !isSelectedMatch : false}
-                        />
-                        {isLatest && (
-                          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+          <div className="w-full flex items-center justify-center gap-3">
+            <div className="flex-1 flex justify-end">{river(3)}</div>
 
             {/* Center Table Compass & Live HUD */}
-            <div className="relative shrink-0 flex items-center justify-center my-0.5">
-              <div className="w-36 sm:w-44 h-28 sm:h-32 rounded-2xl bg-stone-950/90 backdrop-blur border border-stone-800 shadow-2xl flex flex-col items-center justify-between p-2 text-stone-300 relative overflow-hidden">
+            <div className="relative shrink-0 flex items-center justify-center">
+              <div className="w-44 h-32 rounded-2xl bg-stone-950/90 backdrop-blur border border-stone-800 shadow-2xl flex flex-col items-center justify-between p-2 text-stone-300 relative overflow-hidden whitespace-nowrap">
                 {/* Visual Action Banner Overlay (碰！吃！杠！胡！) */}
                 {actionBanner && (
-                  <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center z-30 animate-in zoom-in-75 duration-200">
-                    <span className="font-serif font-black text-2xl tracking-widest text-amber-300 drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-bounce">
+                  <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center px-2 z-30 animate-in zoom-in-75 duration-200">
+                    <span
+                      className={`text-center text-amber-300 whitespace-normal ${
+                        actionBanner.text.length <= 4
+                          ? 'font-serif font-black text-3xl tracking-widest drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-bounce'
+                          : 'font-bold text-xs leading-snug'
+                      }`}
+                    >
                       {actionBanner.text}
                     </span>
-                    <span className="text-[10px] text-stone-300 mt-1">
-                      {players[actionBanner.playerIdx]?.name}
-                    </span>
+                    <span className="text-[10px] text-stone-300 mt-1">{players[actionBanner.playerIdx]?.name}</span>
                   </div>
                 )}
 
-                {/* Top compass wind */}
-                <div
-                  className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
-                    activePlayerIndex === 2 ? 'text-amber-400 scale-125' : 'text-stone-500'
-                  }`}
-                >
+                {/* Seat winds around the dial; the active seat lights up */}
+                <div className={`text-sm font-serif font-bold transition-colors ${activePlayerIndex === 2 ? 'text-amber-400 scale-125' : 'text-stone-500'}`}>
                   {WIND_NAMES[topBot.seatWind]}
                 </div>
 
-                {/* Middle row: Left, Center info, Right */}
-                <div className="w-full flex items-center justify-between px-2">
-                  <div
-                    className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
-                      activePlayerIndex === 3 ? 'text-amber-400 scale-125' : 'text-stone-500'
-                    }`}
-                  >
+                <div className="w-full flex items-center justify-between px-1">
+                  <div className={`text-sm font-serif font-bold transition-colors ${activePlayerIndex === 3 ? 'text-amber-400 scale-125' : 'text-stone-500'}`}>
                     {WIND_NAMES[leftBot.seatWind]}
                   </div>
 
-                  {/* Core Dial info */}
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xl sm:text-2xl font-serif font-black text-amber-400">
-                        {prevailingWind === 'E'
-                          ? '東'
-                          : prevailingWind === 'S'
-                          ? '南'
-                          : prevailingWind === 'W'
-                          ? '西'
-                          : '北'}
+                  {/* Prevailing wind, hand number and tiles left */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-3xl font-serif font-black text-amber-400 leading-none">
+                      {prevailingWind === 'E' ? '東' : prevailingWind === 'S' ? '南' : prevailingWind === 'W' ? '西' : '北'}
+                    </span>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[11px] text-stone-200 font-bold">
+                        {handName} <span className="text-stone-400 font-mono font-normal">{currentRoundNumber}/16</span>
                       </span>
-                      <span className="text-[11px] text-stone-300 font-bold">{windRoundName()}</span>
-                    </div>
-
-                    <div className="text-[10px] text-stone-400 font-mono mt-0.5">
-                      余牌: <span className="text-emerald-400 font-bold">{wallRemaining}</span> 张
-                    </div>
-
-                    <div className="text-[9px] text-stone-500 mt-0.5">
-                      {revealAllHands ? (
-                        <span className="text-amber-300 font-bold">对局结束 · 终局亮牌</span>
-                      ) : isHumanTurn ? (
-                        <span className="text-amber-400 font-semibold animate-pulse">轮到您出牌</span>
-                      ) : (
-                        <span>{players[activePlayerIndex]?.name}思考中...</span>
-                      )}
+                      <span className="text-[10px] text-stone-400">
+                        余 <span className="text-emerald-400 font-bold font-mono">{wallRemaining}</span> 张
+                      </span>
                     </div>
                   </div>
 
-                  <div
-                    className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
-                      activePlayerIndex === 1 ? 'text-amber-400 scale-125' : 'text-stone-500'
-                    }`}
-                  >
+                  <div className={`text-sm font-serif font-bold transition-colors ${activePlayerIndex === 1 ? 'text-amber-400 scale-125' : 'text-stone-500'}`}>
                     {WIND_NAMES[rightBot.seatWind]}
                   </div>
                 </div>
 
-                {/* Bottom compass wind */}
-                <div
-                  className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
-                    activePlayerIndex === 0 ? 'text-amber-400 scale-125' : 'text-stone-500'
-                  }`}
-                >
-                  {WIND_NAMES[human.seatWind]}
+                <div className="flex flex-col items-center leading-tight">
+                  <div className={`text-sm font-serif font-bold transition-colors ${activePlayerIndex === 0 ? 'text-amber-400 scale-125' : 'text-stone-500'}`}>
+                    {WIND_NAMES[human.seatWind]}
+                  </div>
+                  <div className="text-[9px] text-stone-500">
+                    {revealAllHands ? (
+                      <span className="text-amber-300 font-bold">对局结束 · 终局亮牌</span>
+                    ) : isHumanTurn ? (
+                      <span className="text-amber-400 font-semibold animate-pulse">轮到您出牌</span>
+                    ) : (
+                      <span>{seatOf(activePlayerIndex)}思考中…</span>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Pointer glow for active player */}
-              {activePlayerIndex === 0 && (
-                <div className="absolute -bottom-2 w-8 h-1 bg-amber-400 rounded-full animate-pulse shadow-[0_0_8px_#F59E0B]" />
-              )}
             </div>
 
-            {/* 下家 (Right Bot) 弃牌池 */}
-            <div className="flex-1 flex flex-col items-center max-w-[200px]">
-              <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1">
-                <span className="font-bold text-amber-200">下家牌河</span>
-                <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
-                  {rightBot.discards.length}张
-                </span>
-              </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-0.5 sm:gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[38px] w-full justify-items-center">
-                {rightBot.discards.length === 0 ? (
-                  <div className="col-span-4 sm:col-span-6 text-[10px] text-stone-500 italic py-1 px-1">暂无舍牌</div>
-                ) : (
-                  rightBot.discards.map((t, idx) => {
-                    const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === 1;
-                    const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
-                    return (
-                      <div
-                        key={t.id + idx}
-                        className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                        title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-                      >
-                        <MahjongTile
-                          tile={t}
-                          size="xs"
-                          isSelected={isSelectedMatch}
-                          dimmed={selectedTile ? !isSelectedMatch : false}
-                        />
-                        {isLatest && (
-                          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+            <div className="flex-1 flex justify-start">{river(1)}</div>
           </div>
 
-          {/* 3. BOTTOM DISCARDS (玩家自家 弃牌池) */}
-          <div className="flex flex-col items-center">
-            <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1.5">
-              <span className="font-bold text-emerald-300">自家牌河</span>
-              <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
-                {human.discards.length}张
-              </span>
-            </div>
-            <div className="grid grid-cols-6 gap-0.5 sm:gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[38px] justify-items-center">
-              {human.discards.length === 0 ? (
-                <div className="col-span-6 text-[10px] text-stone-500 italic py-1 px-4">暂无舍牌</div>
-              ) : (
-                human.discards.map((t, idx) => {
-                  const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === 0;
-                  const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
-                  return (
-                    <div
-                      key={t.id + idx}
-                      className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                      title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-                    >
-                      <MahjongTile
-                        tile={t}
-                        size="xs"
-                        isSelected={isSelectedMatch}
-                        dimmed={selectedTile ? !isSelectedMatch : false}
-                      />
-                      {isLatest && (
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+          {river(0)}
         </div>
 
         {/* RIGHT PLAYER (下家) */}
         <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-28 sm:w-36 shrink-0 py-0.5">
-          <div
-            className={`flex flex-col items-center px-2 py-1 rounded-xl text-xs transition-all w-full shrink-0 ${
-              activePlayerIndex === 1
-                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
-                : 'bg-stone-900/60 text-stone-300 border border-stone-800'
-            }`}
-          >
-            <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{rightBot.name}</span>
-            <div className="flex items-center gap-1 text-[10px] text-stone-400">
-              <span className="text-amber-400 font-mono">{WIND_NAMES[rightBot.seatWind]}风</span>
-              <span>{rightBot.score}点</span>
-            </div>
-          </div>
+          {seatBadge(1)}
 
           {/* Right Bot Hand Tiles */}
           {revealAllHands ? (
@@ -528,50 +378,40 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* ================= BOTTOM HUMAN PLAYER (玩家) ================= */}
-      <div className="relative z-40 flex flex-col items-center gap-2">
-        {/* Action Controls Overlay (Chi, Peng, Gang, Hu) */}
-        <ActionControls
-          canChi={canChi}
-          chiCombinations={chiCombinations}
-          canPeng={canPeng}
-          canGang={canGang}
-          gangCandidates={gangCandidates}
-          canHu={canHu}
-          isSelfDraw={isSelfDraw}
-          onChi={onChi}
-          onPeng={onPeng}
-          onGang={onGang}
-          onHu={onHu}
-          onPass={onPass}
-          discardPendingTile={isHumanTurn && human.hand.length % 3 === 2 ? selectedTile : null}
-          isHumanTurnToDiscard={isHumanTurn && human.hand.length % 3 === 2}
-          calledTile={lastDiscardedTile?.tile}
-          onConfirmDiscard={() => {
-            if (selectedTile) {
-              onConfirmDiscard(selectedTile);
-            }
-          }}
-        />
+      <div className="relative z-40">
+        {/* Action Controls (Chi, Peng, Gang, Hu, confirm discard) float above the right end of the hand,
+            clear of the rivers, so they never shift the table */}
+        <div className="absolute bottom-full right-1 mb-2 w-max max-w-full z-40">
+          <ActionControls
+            canChi={canChi}
+            chiCombinations={chiCombinations}
+            canPeng={canPeng}
+            canGang={canGang}
+            gangCandidates={gangCandidates}
+            canHu={canHu}
+            isSelfDraw={isSelfDraw}
+            onChi={onChi}
+            onPeng={onPeng}
+            onGang={onGang}
+            onHu={onHu}
+            onPass={onPass}
+            discardPendingTile={isHumanTurn && human.hand.length % 3 === 2 ? selectedTile : null}
+            isHumanTurnToDiscard={isHumanTurn && human.hand.length % 3 === 2}
+            calledTile={lastDiscardedTile?.tile}
+            onConfirmDiscard={() => {
+              if (selectedTile) {
+                onConfirmDiscard(selectedTile);
+              }
+            }}
+          />
+        </div>
 
-        {/* Hand Area Container */}
-        <div className="w-full flex items-end justify-center px-1.5 sm:px-4 gap-2 sm:gap-3">
-          {/* Player Info Badge (Left of hand) */}
-          <div
-            className={`shrink-0 flex flex-col items-center px-2.5 py-1 sm:py-1.5 rounded-xl text-xs transition-all ${
-              activePlayerIndex === 0
-                ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 ring-2 ring-amber-400/30 shadow-md'
-                : 'bg-stone-900/60 text-stone-300 border border-stone-800'
-            }`}
-          >
-            <span className="font-bold truncate max-w-[100px] sm:max-w-[130px]">{human.name}</span>
-            <div className="flex items-center gap-1 text-[10px] text-stone-400">
-              <span className="text-amber-400 font-mono">{WIND_NAMES[human.seatWind]}风</span>
-              <span>{human.score}点</span>
-            </div>
-          </div>
+        {/* Hand Area: badge on the left, hand and melds centered on the table */}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-3">
+          <div className="justify-self-start pb-1">{seatBadge(0)}</div>
 
           {/* Interactive Hand Tiles & Exposed Melds (Grouped side by side) */}
-          <div className="flex-1 min-w-0 flex items-end justify-center gap-2 sm:gap-3 overflow-x-auto pt-6 sm:pt-7 pb-1 max-w-full">
+          <div className="flex items-end justify-center gap-3 pt-7 pb-1">
             <div className="flex items-end justify-center gap-0.5 sm:gap-1 shrink-0">
               {human.hand.map((tile, idx) => {
                 const isNewlyDrawn =
@@ -626,6 +466,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               </div>
             )}
           </div>
+          <div />
         </div>
       </div>
     </div>
