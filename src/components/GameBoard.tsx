@@ -554,7 +554,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         />
 
         {/* Hand Area Container */}
-        <div className="w-full flex items-end justify-between px-1.5 sm:px-4 gap-1.5 sm:gap-3">
+        <div className="w-full flex items-end justify-center px-1.5 sm:px-4 gap-2 sm:gap-3">
           {/* Player Info Badge (Left of hand) */}
           <div
             className={`shrink-0 flex flex-col items-center px-2.5 py-1 sm:py-1.5 rounded-xl text-xs transition-all ${
@@ -563,64 +563,68 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 : 'bg-stone-900/60 text-stone-300 border border-stone-800'
             }`}
           >
-            <span className="font-bold truncate max-w-[115px] sm:max-w-[135px]">{human.name}</span>
+            <span className="font-bold truncate max-w-[100px] sm:max-w-[130px]">{human.name}</span>
             <div className="flex items-center gap-1 text-[10px] text-stone-400">
               <span className="text-amber-400 font-mono">{WIND_NAMES[human.seatWind]}风</span>
               <span>{human.score}点</span>
             </div>
           </div>
 
-          {/* Interactive Hand Tiles */}
-          <div className="flex-1 min-w-0 flex items-end justify-center gap-0.5 sm:gap-1 overflow-x-auto pt-6 sm:pt-7 pb-1 max-w-full">
-            {human.hand.map((tile, idx) => {
-              const isNewlyDrawn =
-                isHumanTurn && human.hand.length % 3 === 2 && idx === human.hand.length - 1;
-              const isRecommended = tile.id === bestRecTileId;
-              // One recommendation per tile kind: every copy in hand shares its risk tag
-              const rec = discardRecommendations.find((r) => r.tile.type === tile.type);
-              const isPengTarget = canPeng && lastDiscardedTile?.tile.type === tile.type;
-              const isChiTarget = canChi && chiCombinations.some((comb) => comb.some((t) => t.id === tile.id));
+          {/* Interactive Hand Tiles & Exposed Melds (Grouped side by side) */}
+          <div className="flex-1 min-w-0 flex items-end justify-center gap-2 sm:gap-3 overflow-x-auto pt-6 sm:pt-7 pb-1 max-w-full">
+            <div className="flex items-end justify-center gap-0.5 sm:gap-1 shrink-0">
+              {human.hand.map((tile, idx) => {
+                const isNewlyDrawn =
+                  isHumanTurn && human.hand.length % 3 === 2 && idx === human.hand.length - 1;
+                const isRecommended = tile.id === bestRecTileId;
+                // One recommendation per tile kind: every copy in hand shares its risk tag
+                const rec = discardRecommendations.find((r) => r.tile.type === tile.type);
+                const isPengTarget = canPeng && lastDiscardedTile?.tile.type === tile.type;
+                const isChiTarget = canChi && chiCombinations.some((comb) => comb.some((t) => t.id === tile.id));
 
-              const isWinTile = roundResult?.winnerIndex === 0 && roundResult?.winningTile?.id === tile.id;
+                const isWinTile = roundResult?.winnerIndex === 0 && roundResult?.winningTile?.id === tile.id;
 
-              return (
-                <div key={tile.id} className="relative">
-                  <MahjongTile
-                    tile={tile}
-                    size="lg"
-                    isSelected={selectedTile?.id === tile.id || (revealAllHands && selectedTile?.type === tile.type)}
-                    isRecommended={isRecommended}
-                    safetyLevel={rec?.safetyLevel}
-                    isDrawn={isNewlyDrawn}
-                    showHints={showHints}
-                    isPengTarget={isPengTarget}
-                    isChiTarget={isChiTarget}
-                    onClick={() => {
-                      soundManager.playTileClick();
-                      if (selectedTile?.id === tile.id && isHumanTurn && human.hand.length % 3 === 2 && !roundResult) {
-                        // Double click to discard
-                        soundManager.playTileDiscard();
-                        onConfirmDiscard(tile);
-                      } else {
-                        onSelectTile(tile);
-                      }
-                    }}
-                  />
-                  {isWinTile && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-1.5 py-0.2 bg-gradient-to-r from-amber-500 to-amber-400 text-stone-950 font-black text-[10px] rounded shadow ring-1 ring-amber-200">
-                      和牌
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                return (
+                  <div key={tile.id} className="relative">
+                    <MahjongTile
+                      tile={tile}
+                      size="lg"
+                      isSelected={selectedTile?.id === tile.id || (revealAllHands && selectedTile?.type === tile.type)}
+                      isRecommended={isRecommended}
+                      safetyLevel={rec?.safetyLevel}
+                      isDrawn={isNewlyDrawn}
+                      showHints={showHints}
+                      isPengTarget={isPengTarget}
+                      isChiTarget={isChiTarget}
+                      onClick={() => {
+                        soundManager.playTileClick();
+                        if (selectedTile?.id === tile.id && isHumanTurn && human.hand.length % 3 === 2 && !roundResult) {
+                          // Double click to discard
+                          soundManager.playTileDiscard();
+                          onConfirmDiscard(tile);
+                        } else {
+                          onSelectTile(tile);
+                        }
+                      }}
+                    />
+                    {isWinTile && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-1.5 py-0.2 bg-gradient-to-r from-amber-500 to-amber-400 text-stone-950 font-black text-[10px] rounded shadow ring-1 ring-amber-200">
+                        和牌
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-          {/* Exposed Melds (Right of hand) */}
-          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
-            {human.melds.map((meld) => (
-              <MeldDisplay key={meld.id} meld={meld} playerIndex={0} size="sm" />
-            ))}
+            {/* Exposed Melds (Directly beside hand tiles) */}
+            {human.melds.length > 0 && (
+              <div className="shrink-0 flex items-end gap-1.5 sm:gap-2 pb-0.5 pl-1.5 sm:pl-2.5 border-l border-white/15">
+                {human.melds.map((meld) => (
+                  <MeldDisplay key={meld.id} meld={meld} playerIndex={0} size="sm" />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
