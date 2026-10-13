@@ -50,7 +50,6 @@ import {
   BookOpen,
   BarChart3,
   GraduationCap,
-  Sparkles,
   RotateCcw,
   Trophy,
   Bot,
@@ -723,7 +722,7 @@ export default function App() {
             雀圣研习社
           </span>
           <span className="text-[11px] text-stone-500 hidden sm:inline">
-            · TVB 广东麻将比赛规则 · 16 局实战研习
+            · TVB 香港麻将比赛规则 · 16 局实战研习
           </span>
         </div>
 
@@ -828,19 +827,6 @@ export default function App() {
             <Share2 className="w-4 h-4" />
           </button>
 
-          {/* Strategy Panel Toggle */}
-          <button
-            onClick={() => setIsStrategyPanelOpen(!isStrategyPanelOpen)}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
-              isStrategyPanelOpen
-                ? 'bg-amber-600 text-stone-950 font-bold'
-                : 'bg-stone-900 text-amber-400 hover:bg-stone-800'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">策略助手</span>
-          </button>
-
           {/* Restart 16-round match */}
           <button
             onClick={() => setShowRestartConfirmModal(true)}
@@ -915,7 +901,7 @@ export default function App() {
         <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] font-mono text-stone-400 flex-wrap">
           <span>雀圣研习社</span>
           <span className="text-stone-700 hidden sm:inline">|</span>
-          <span className="hidden sm:inline">TVB 广东麻将比赛实战研习</span>
+          <span className="hidden sm:inline">TVB 香港麻将比赛实战研习</span>
           <span className="text-stone-700">|</span>
           <span className="text-stone-300">
             Current App Version: <span className="text-amber-400 font-semibold font-mono">{FULL_VERSION_STRING}</span>

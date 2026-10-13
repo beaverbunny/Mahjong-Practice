@@ -196,7 +196,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           ) : (
             <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
-              {leftBot.hand.slice(0, 13).map((_, idx) => (
+              {leftBot.hand.map((_, idx) => (
                 <div
                   key={idx}
                   className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
@@ -225,7 +225,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           <div className="flex flex-col items-center">
             <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1.5">
               <span className="font-bold text-amber-200">对家牌河</span>
-              <span className="text-stone-400">({topBot.name})</span>
               <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
                 {topBot.discards.length}张
               </span>
@@ -265,9 +264,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <div className="flex-1 flex flex-col items-center max-w-[200px]">
               <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1">
                 <span className="font-bold text-amber-200">上家牌河</span>
-                <span className="text-stone-400 truncate max-w-[50px] sm:max-w-[70px]">({leftBot.name})</span>
                 <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
-                  {leftBot.discards.length}
+                  {leftBot.discards.length}张
                 </span>
               </div>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-0.5 sm:gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[38px] w-full justify-items-center">
@@ -316,24 +314,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
                 {/* Top compass wind */}
                 <div
-                  className={`text-[11px] font-serif font-bold transition-colors ${
-                    activePlayerIndex === 2 ? 'text-amber-400 scale-110' : 'text-stone-500'
+                  className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
+                    activePlayerIndex === 2 ? 'text-amber-400 scale-125' : 'text-stone-500'
                   }`}
                 >
-                  对家 · {WIND_NAMES[topBot.seatWind]}
+                  {WIND_NAMES[topBot.seatWind]}
                 </div>
 
                 {/* Middle row: Left, Center info, Right */}
-                <div className="w-full flex items-center justify-between px-1">
+                <div className="w-full flex items-center justify-between px-2">
                   <div
-                    className={`text-[11px] font-serif font-bold transition-colors ${
-                      activePlayerIndex === 3 ? 'text-amber-400 scale-110' : 'text-stone-500'
+                    className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
+                      activePlayerIndex === 3 ? 'text-amber-400 scale-125' : 'text-stone-500'
                     }`}
                   >
-                    <div className="flex flex-col items-center leading-tight whitespace-nowrap">
-                      <span>上家</span>
-                      <span>{WIND_NAMES[leftBot.seatWind]}</span>
-                    </div>
+                    {WIND_NAMES[leftBot.seatWind]}
                   </div>
 
                   {/* Core Dial info */}
@@ -367,24 +362,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   </div>
 
                   <div
-                    className={`text-[11px] font-serif font-bold transition-colors ${
-                      activePlayerIndex === 1 ? 'text-amber-400 scale-110' : 'text-stone-500'
+                    className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
+                      activePlayerIndex === 1 ? 'text-amber-400 scale-125' : 'text-stone-500'
                     }`}
                   >
-                    <div className="flex flex-col items-center leading-tight whitespace-nowrap">
-                      <span>下家</span>
-                      <span>{WIND_NAMES[rightBot.seatWind]}</span>
-                    </div>
+                    {WIND_NAMES[rightBot.seatWind]}
                   </div>
                 </div>
 
                 {/* Bottom compass wind */}
                 <div
-                  className={`text-[11px] font-serif font-bold transition-colors ${
-                    activePlayerIndex === 0 ? 'text-amber-400 scale-110' : 'text-stone-500'
+                  className={`text-xs sm:text-sm font-serif font-bold transition-colors ${
+                    activePlayerIndex === 0 ? 'text-amber-400 scale-125' : 'text-stone-500'
                   }`}
                 >
-                  您 · {WIND_NAMES[human.seatWind]}
+                  {WIND_NAMES[human.seatWind]}
                 </div>
               </div>
 
@@ -398,9 +390,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <div className="flex-1 flex flex-col items-center max-w-[200px]">
               <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1">
                 <span className="font-bold text-amber-200">下家牌河</span>
-                <span className="text-stone-400 truncate max-w-[50px] sm:max-w-[70px]">({rightBot.name})</span>
                 <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
-                  {rightBot.discards.length}
+                  {rightBot.discards.length}张
                 </span>
               </div>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-0.5 sm:gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[38px] w-full justify-items-center">
@@ -437,10 +428,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           <div className="flex flex-col items-center">
             <div className="text-[10px] text-stone-300 font-medium mb-0.5 flex items-center gap-1.5">
               <span className="font-bold text-emerald-300">自家牌河</span>
-              <span className="text-stone-400">(您)</span>
-              <span className="text-[9px] text-stone-400" title="摸切 = 打出刚摸到的牌；手切 = 从手牌中打出">
-                · 淡色 = 摸切
-              </span>
               <span className="text-[9px] px-1 bg-black/40 rounded text-stone-300 font-mono">
                 {human.discards.length}张
               </span>
@@ -516,14 +503,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           ) : (
             <div className="flex flex-col gap-0.5 max-h-48 overflow-hidden items-center">
-              {rightBot.hand.slice(0, 13).map((_, idx) => (
+              {rightBot.hand.map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
+                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-950 via-emerald-700 to-emerald-800 border border-emerald-950 shadow-sm flex items-center justify-between px-1"
                   title="下家手牌"
                 >
-                  <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
                   <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
+                  <div className="w-1.5 h-full bg-[#FAF8F5] rounded-r-[1px] border-l border-stone-300" />
                 </div>
               ))}
             </div>
