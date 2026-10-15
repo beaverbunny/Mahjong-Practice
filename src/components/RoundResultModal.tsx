@@ -76,14 +76,9 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
           <div className="flex items-center gap-2.5">
             {!isDraw && (
-              <div className="text-right">
-                <span className="text-lg sm:text-xl font-bold font-mono text-amber-400">
-                  {result.totalFan} 番
-                </span>
-                <div className="text-[10px] sm:text-[11px] text-stone-400">
-                  {result.isSelfDraw ? '自摸(+15每番)' : '胡牌(+10每番)'}
-                </div>
-              </div>
+              <span className="text-lg sm:text-xl font-bold font-mono text-amber-400">
+                {result.totalFan} 番
+              </span>
             )}
             {onInspectBoard && (
               <button
@@ -110,7 +105,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                   </div>
                   <div className="text-stone-400 text-xs mt-0.5">
                     {result.isSelfDraw
-                      ? '自摸胡牌，其他每方各付'
+                      ? '自摸胡牌'
                       : `出铳方：${discarder?.name || '未知'}`}
                   </div>
                 </div>
@@ -182,18 +177,29 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                 <span className="text-[11px] text-stone-400">指定番数计入</span>
               </div>
               <div className="divide-y divide-stone-800 bg-stone-950/50 rounded-xl border border-stone-800 p-2">
-                {result.fanDetails.map((f, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 px-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-amber-500 font-bold text-[11px]">
+                {result.fanDetails.map((f, idx) => {
+                  // "中发白其中一刻 (A Triplet of Dragon Tiles)" → Chinese name, English name
+                  const m = f.name.match(/^(.*?)\s*\((.*)\)$/);
+                  const zh = m ? m[1] : f.name;
+                  const en = m ? m[2] : '';
+                  return (
+                    <div key={idx} className="flex items-start gap-3 py-2 px-2 text-xs">
+                      <span className="w-8 shrink-0 font-mono text-amber-500 font-bold text-[11px] leading-5">
                         [{f.code}]
                       </span>
-                      <span className="text-stone-100 font-medium">{f.name}</span>
-                      <span className="text-stone-500 text-[10px] hidden sm:inline">{f.desc}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="leading-5">
+                          <span className="text-stone-100 font-medium">{zh}</span>
+                          {en && <span className="ml-1.5 text-stone-500 text-[11px]">{en}</span>}
+                        </div>
+                        <div className="text-stone-500 text-[10px] leading-snug hidden sm:block">{f.desc}</div>
+                      </div>
+                      <span className="shrink-0 whitespace-nowrap font-mono font-bold text-amber-400 leading-5">
+                        +{f.fan} 番
+                      </span>
                     </div>
-                    <span className="font-mono font-bold text-amber-400">+{f.fan} 番</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
