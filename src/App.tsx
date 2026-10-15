@@ -35,7 +35,7 @@ import {
 } from './engine/table';
 import { decideTurn, decideClaim } from './ai/brain';
 import { Persona, samplePersonas, STYLE_LABELS, getBotPlayerName } from './ai/personas';
-import { soundManager, getTileSpokenName, VoiceLang } from './utils/audio';
+import { soundManager, VoiceLang } from './utils/audio';
 import { GameBoard } from './components/GameBoard';
 import { StrategyPanel } from './components/StrategyPanel';
 import { TableFit } from './components/TableFit';
@@ -454,7 +454,7 @@ export default function App() {
     if (e.action === 'discard') {
       soundManager.playTileDiscard();
       if (e.tile) {
-        soundManager.speak(getTileSpokenName(e.tile));
+        soundManager.speakTile(e.tile);
       }
     } else if (e.action === 'chi') {
       soundManager.playMeld();
@@ -750,7 +750,7 @@ export default function App() {
             雀圣研习社
           </span>
           <span className="mt-1 xl:mt-0 text-xs leading-none text-[#908985]">
-            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 16 盘实战研习
+            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 一番起胡
           </span>
         </div>
 
