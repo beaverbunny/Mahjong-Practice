@@ -617,9 +617,9 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
         {shouldShowRec && !badgeText && !isPengTarget && !isChiTarget && (
           <span
             className="w-4 h-4 bg-emerald-600 text-white text-[9px] font-sans font-bold rounded-[3px] shadow flex items-center justify-center leading-none"
-            title="策略引擎推薦打出"
+            title="策略引擎推荐打出"
           >
-            薦
+            荐
           </span>
         )}
 
@@ -633,7 +633,7 @@ export const MahjongTile: React.FC<MahjongTileProps> = ({
                 ? 'bg-amber-500 text-stone-950'
                 : 'bg-rose-600 text-white animate-pulse'
             }`}
-            title={`危險度評估：${safetyLevel === 'safe' ? '安全牌' : safetyLevel === 'medium' ? '中度危險' : '高危危險牌'}`}
+            title={`危险度评估：${safetyLevel === 'safe' ? '安全牌' : safetyLevel === 'medium' ? '中度危险' : '高危危险牌'}`}
           >
             {safetyLevel === 'safe' ? '安' : safetyLevel === 'medium' ? '中' : '危'}
           </span>

@@ -3,23 +3,23 @@ import { sortTiles } from './mahjongTiles';
 
 // Complete Winning Hand Definitions according to Appendix III
 export const DESIGNATED_HANDS = {
-  A1: { code: 'A1', name: '平胡 (Common Hand)', fan: 1, desc: '由一對眼及四副順子及序數牌組成' },
-  A2: { code: 'A2', name: '自摸 (Self-Draw)', fan: 1, desc: '自己摸到能胡牌的牌，並報胡牌' },
-  A3: { code: 'A3', name: '圈風刻 (Prevailing Wind Triplet)', fan: 1, desc: '與圈風相同的風刻（即東、南、西或北）' },
-  A4: { code: 'A4', name: '門風刻 (Seat Wind Triplet)', fan: 1, desc: '與本門風相同的風刻' },
-  A5: { code: 'A5', name: '海底撈月 (Under the Sea)', fan: 1, desc: '胡最後一張牌（打出或自摸）' },
-  A6: { code: 'A6', name: '槓上自摸 (Self-Draw on Kong)', fan: 1, desc: '槓牌之後即自摸胡牌' },
-  A7: { code: 'A7', name: '中發白其中一刻 (A Triplet of Dragon Tiles)', fan: 1, desc: '由中、發、白三張相同的牌組成的刻子（不能與小三元重複計算）' },
-  A8: { code: 'A8', name: '中發白其中第二刻 (Second Triplet of Dragon Tiles)', fan: 1, desc: '第二個由中、發、白三張相同的牌組成的刻子（不能與小三元重複計算）' },
-  B1: { code: 'B1', name: '對對胡 (All Triplets)', fan: 3, desc: '由四副刻子（或槓）組成的胡牌' },
-  B2: { code: 'B2', name: '混一色 (Half Flush)', fan: 3, desc: '由一種花色的序數牌及字牌組成的胡牌' },
-  B3: { code: 'B3', name: '小三元 (Little Three Dragons)', fan: 4, desc: '胡牌中有兩副刻子（或槓）及一對子都是中、發、白' },
-  B4: { code: 'B4', name: '小四喜 (Little Four Winds)', fan: 5, desc: '由三副風刻（或槓）及一對風牌組成的胡牌' },
-  B5: { code: 'B5', name: '清一色 (Full Flush)', fan: 7, desc: '由一種花色的序數牌組成的胡牌' },
-  X1: { code: 'X1', name: '大三元 (Big Three Dragons)', fan: 8, desc: '胡牌中有中、發、白三副刻子（或槓）' },
-  X2: { code: 'X2', name: '大四喜 (Big Four Winds)', fan: 10, desc: '由四副風刻（或槓）組成的胡牌' },
-  X3: { code: 'X3', name: '十三幺 (Thirteen Orphans)', fan: 10, desc: '由三種序數牌的一、九牌及七種字牌及其中一對作眼組成的胡牌' },
-  X4: { code: 'X4', name: '字一色 (All Honors)', fan: 10, desc: '由全字牌刻子（或槓）組成的胡牌' },
+  A1: { code: 'A1', name: '平胡 (Common Hand)', fan: 1, desc: '由一对眼及四副顺子及序数牌组成' },
+  A2: { code: 'A2', name: '自摸 (Self-Draw)', fan: 1, desc: '自己摸到能胡牌的牌，并报胡牌' },
+  A3: { code: 'A3', name: '圈风刻 (Prevailing Wind Triplet)', fan: 1, desc: '与圈风相同的风刻（即东、南、西或北）' },
+  A4: { code: 'A4', name: '门风刻 (Seat Wind Triplet)', fan: 1, desc: '与本门风相同的风刻' },
+  A5: { code: 'A5', name: '海底捞月 (Under the Sea)', fan: 1, desc: '胡最后一张牌（打出或自摸）' },
+  A6: { code: 'A6', name: '杠上自摸 (Self-Draw on Kong)', fan: 1, desc: '杠牌之后即自摸胡牌' },
+  A7: { code: 'A7', name: '中发白其中一刻 (A Triplet of Dragon Tiles)', fan: 1, desc: '由中、发、白三张相同的牌组成的刻子（不能与小三元重复计算）' },
+  A8: { code: 'A8', name: '中发白其中第二刻 (Second Triplet of Dragon Tiles)', fan: 1, desc: '第二个由中、发、白三张相同的牌组成的刻子（不能与小三元重复计算）' },
+  B1: { code: 'B1', name: '对对胡 (All Triplets)', fan: 3, desc: '由四副刻子（或杠）组成的胡牌' },
+  B2: { code: 'B2', name: '混一色 (Half Flush)', fan: 3, desc: '由一种花色的序数牌及字牌组成的胡牌' },
+  B3: { code: 'B3', name: '小三元 (Little Three Dragons)', fan: 4, desc: '胡牌中有两副刻子（或杠）及一对子都是中、发、白' },
+  B4: { code: 'B4', name: '小四喜 (Little Four Winds)', fan: 5, desc: '由三副风刻（或杠）及一对风牌组成的胡牌' },
+  B5: { code: 'B5', name: '清一色 (Full Flush)', fan: 7, desc: '由一种花色的序数牌组成的胡牌' },
+  X1: { code: 'X1', name: '大三元 (Big Three Dragons)', fan: 8, desc: '胡牌中有中、发、白三副刻子（或杠）' },
+  X2: { code: 'X2', name: '大四喜 (Big Four Winds)', fan: 10, desc: '由四副风刻（或杠）组成的胡牌' },
+  X3: { code: 'X3', name: '十三幺 (Thirteen Orphans)', fan: 10, desc: '由三种序数牌的一、九牌及七种字牌及其中一对作眼组成的胡牌' },
+  X4: { code: 'X4', name: '字一色 (All Honors)', fan: 10, desc: '由全字牌刻子（或杠）组成的胡牌' },
 };
 
 // Points calculation as defined in Appendix I
@@ -427,7 +427,7 @@ export function evaluateWin(
       fanDetails: [],
       totalFan: 0,
       pointsAwarded: 0,
-      description: '無番不能胡',
+      description: '无番不能胡',
       breakdown: null,
     };
   }

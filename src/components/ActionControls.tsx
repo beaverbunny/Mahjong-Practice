@@ -60,7 +60,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
       {showChiPicker && chiCombinations.length > 0 && (
         <div className="bg-stone-900/95 backdrop-blur border border-amber-500/60 rounded-xl p-3 shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in zoom-in-95 z-30">
           <div className="text-xs text-amber-300 font-bold flex items-center gap-1.5">
-            <span>請選擇吃牌順子組合：</span>
+            <span>请选择吃牌顺子组合：</span>
             {calledTile && (
               <span className="text-[11px] text-stone-400 font-normal">
                 (吃上家打出的【{calledTile.displayName}】)
@@ -106,7 +106,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
       {/* Gang Candidate Selector Drawer */}
       {showGangPicker && gangCandidates.length > 0 && (
         <div className="bg-stone-900/95 backdrop-blur border border-amber-500/60 rounded-xl p-3 shadow-2xl flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 z-30">
-          <div className="text-xs text-amber-300 font-bold">請選擇要開槓的牌組：</div>
+          <div className="text-xs text-amber-300 font-bold">请选择要开杠的牌组：</div>
           <div className="flex items-center gap-3">
             {gangCandidates.map((cand, idx) => (
               <button
@@ -124,7 +124,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
                   ))}
                 </div>
                 <span className="text-xs text-amber-200 ml-1">
-                  {cand.type === 'an_gang' ? '暗槓' : cand.type === 'bu_gang' ? '補槓' : '明槓'}
+                  {cand.type === 'an_gang' ? '暗杠' : cand.type === 'bu_gang' ? '补杠' : '明杠'}
                 </span>
               </button>
             ))}
@@ -144,7 +144,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
           {/* Discard prompt / confirmation button */}
           {isHumanTurnToDiscard && discardPendingTile && !hasAnyMeldAction && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-stone-300 font-medium">確認打出：</span>
+              <span className="text-xs text-stone-300 font-medium">确认打出：</span>
               <MahjongTile tile={discardPendingTile} size="xs" />
               <button
                 onClick={() => {
@@ -184,7 +184,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
               }}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-serif font-black text-sm tracking-wider shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              槓
+              杠
             </button>
           )}
 
@@ -222,7 +222,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
               <span>吃</span>
               {chiCombinations.length > 1 && (
                 <span className="text-[10px] bg-emerald-800/80 px-1 rounded">
-                  ({chiCombinations.length}種)
+                  ({chiCombinations.length}种)
                 </span>
               )}
             </button>
@@ -238,7 +238,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
               }}
               className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-sans text-xs transition-colors cursor-pointer"
             >
-              過
+              过
             </button>
           )}
         </div>

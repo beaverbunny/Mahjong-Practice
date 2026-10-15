@@ -65,11 +65,11 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             <div>
               <h2 className="text-sm sm:text-base font-bold font-serif">
                 {isDraw
-                  ? '流局 (牌牆摸盡)'
+                  ? '流局 (牌墙摸尽)'
                   : `${winner?.name} ${result.isSelfDraw ? '自摸胡牌！' : '胡牌！'}`}
               </h2>
               <div className="text-[11px] sm:text-xs text-stone-400">
-                第 {currentRoundNumber} 盤 / 共 16 盤 · {WIND_NAMES[result.prevailingWind]}風圈
+                第 {currentRoundNumber} 盘 / 共 16 盘 · {WIND_NAMES[result.prevailingWind]}风圈
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               <button
                 onClick={onInspectBoard}
                 className="p-1.5 rounded-lg bg-stone-800/80 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
-                title="關閉彈窗，回到牌桌查看所有玩家亮明手牌及棄牌區"
+                title="关闭弹窗，回到牌桌查看所有玩家亮明手牌及弃牌区"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -106,19 +106,19 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                 <MahjongTile tile={result.winningTile} size="md" />
                 <div>
                   <div className="font-semibold text-stone-100 text-sm">
-                    胡牌張：{result.winningTile.displayName}
+                    胡牌张：{result.winningTile.displayName}
                   </div>
                   <div className="text-stone-400 text-xs mt-0.5">
                     {result.isSelfDraw
                       ? '自摸胡牌，其他每方各付'
-                      : `出銃方：${discarder?.name || '未知'}`}
+                      : `出铳方：${discarder?.name || '未知'}`}
                   </div>
                 </div>
               </div>
 
               {/* Fan Badge */}
               <div className="px-3 py-1.5 rounded-lg bg-amber-950/60 border border-amber-600/60 text-amber-300 font-bold font-mono text-sm">
-                總番數：{result.totalFan} 番
+                总番数：{result.totalFan} 番
               </div>
             </div>
           )}
@@ -129,7 +129,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               <div className="font-semibold text-stone-200 text-xs flex items-center justify-between">
                 <span>{winner.name} 完整胡牌牌型：</span>
                 <span className="text-[11px] text-amber-400">
-                  {result.isSelfDraw ? '自摸' : `胡牌 (出銃方: ${discarder?.name || '未知'})`}
+                  {result.isSelfDraw ? '自摸' : `胡牌 (出铳方: ${discarder?.name || '未知'})`}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
@@ -178,8 +178,8 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
           {!isDraw && result.fanDetails.length > 0 && (
             <div className="space-y-2">
               <div className="font-semibold text-stone-200 flex items-center justify-between">
-                <span>番種明細 (依附錄二【指定胡牌種類表】)：</span>
-                <span className="text-[11px] text-stone-400">指定番數計入</span>
+                <span>番种明细 (依附录二【指定胡牌种类表】)：</span>
+                <span className="text-[11px] text-stone-400">指定番数计入</span>
               </div>
               <div className="divide-y divide-stone-800 bg-stone-950/50 rounded-xl border border-stone-800 p-2">
                 {result.fanDetails.map((f, idx) => (
@@ -201,7 +201,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
           {/* Points Delta Table (According to Appendix I) */}
           <div className="space-y-2">
             <div className="font-semibold text-stone-200">
-              本盤結算分數變動 (依附錄一【番數得失分表】)：
+              本盘结算分数变动 (依附录一【番数得失分表】)：
             </div>
             <div className="grid grid-cols-4 gap-2">
               {players.map((p, idx) => {
@@ -229,7 +229,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                       {isPositive ? `+${delta}` : delta}
                     </div>
                     <div className="text-[10px] text-stone-400 mt-0.5">
-                      總分: {p.score}
+                      总分: {p.score}
                     </div>
                   </div>
                 );
@@ -245,7 +245,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               <button
                 onClick={onInspectBoard}
                 className="px-3 sm:px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer ring-1 ring-amber-300/50"
-                title="回到牌桌查看胡牌後所有玩家亮明手牌及棄牌區"
+                title="回到牌桌查看胡牌后所有玩家亮明手牌及弃牌区"
               >
                 <Eye className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-stone-950" />
                 <span>查看牌桌</span>
@@ -257,17 +257,17 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               className="px-3 sm:px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <FileSearch className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-400" />
-              <span>實戰復盤</span>
+              <span>实战复盘</span>
             </button>
 
             {onOpenStats && (
               <button
                 onClick={onOpenStats}
                 className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="查看生涯戰績與本場積分"
+                title="查看生涯战绩与本场积分"
               >
                 <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-                <span>戰績</span>
+                <span>战绩</span>
               </button>
             )}
 
@@ -275,10 +275,10 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               <button
                 onClick={onRestartMatch}
                 className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/80 text-stone-300 hover:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="重新開始整場 16 盤大局比賽"
+                title="重新开始整场 16 盘大局比赛"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                <span>重開</span>
+                <span>重开</span>
               </button>
             )}
           </div>
@@ -287,7 +287,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             onClick={onNextRound}
             className="px-5 sm:px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-amber-950/60 transition-all active:scale-95 cursor-pointer ml-auto shrink-0 ring-2 ring-amber-300/40"
           >
-            <span>{currentRoundNumber >= 16 ? '進入最終結算' : '進入下一盤'}</span>
+            <span>{currentRoundNumber >= 16 ? '进入最终结算' : '进入下一盘'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
