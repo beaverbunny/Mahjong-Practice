@@ -131,3 +131,39 @@ describe('粤 (Cantonese) is additive', () => {
     });
   }
 });
+
+describe('bamboo tiles: 条 in Mandarin, 索 in Cantonese, 幺鸡 in both', () => {
+  const BAMBOO = ['1tiao', '2tiao', '5tiao', '9tiao'];
+  const sayTiles = (list: FakeVoice[], lang: 'cmn' | 'yue') => {
+    voices = list;
+    synth.onvoiceschanged?.();
+    audio.soundManager.voiceLang = lang;
+    return BAMBOO.map((type) => {
+      audio.soundManager.speakTile({ type });
+      return spoken[spoken.length - 1];
+    });
+  };
+
+  test('普 says 幺鸡 and X条 with the Mandarin voice', () => {
+    const s = sayTiles(MAC, 'cmn');
+    expect(s.map((x) => x.text)).toEqual(['幺鸡', '二条', '五条', '九条']);
+    for (const x of s) expect({ lang: x.lang, voice: x.voice }).toEqual(before(MAC));
+  });
+
+  test('粤 says 幺鸡 and X索 with the Cantonese voice', () => {
+    const s = sayTiles(WINDOWS, 'yue');
+    expect(s.map((x) => x.text)).toEqual(['幺鸡', '二索', '五索', '九索']);
+    for (const x of s) expect(x.lang).toBe('zh-HK');
+  });
+
+  test('粤 without a Cantonese voice keeps the Mandarin names', () => {
+    expect(sayTiles(NO_CANTONESE, 'yue').map((x) => x.text)).toEqual(['幺鸡', '二条', '五条', '九条']);
+  });
+
+  test('other tiles are named the same in both', () => {
+    const others = ['3wan', '5tong', 'wind_E', 'dragon_C', 'dragon_F', 'dragon_B'];
+    expect(others.map((type) => audio.getTileSpokenName({ type }, 'yue'))).toEqual(
+      others.map((type) => audio.getTileSpokenName({ type }, 'cmn'))
+    );
+  });
+});

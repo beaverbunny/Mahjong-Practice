@@ -5,7 +5,10 @@
 
 import { Tile } from '../types/mahjong';
 
-export function getTileSpokenName(tile: Tile | { type: string; displayName?: string }): string {
+// Spoken language for announcements: Mandarin (普) or Cantonese (粤)
+export type VoiceLang = 'cmn' | 'yue';
+
+export function getTileSpokenName(tile: Tile | { type: string; displayName?: string }, lang: VoiceLang = 'cmn'): string {
   if (!tile) return '';
   const type = tile.type;
   const numMap: Record<string, string> = {
@@ -19,7 +22,8 @@ export function getTileSpokenName(tile: Tile | { type: string; displayName?: str
   }
   if (type.endsWith('tiao')) {
     const val = type[0];
-    return `${val === '1' ? '幺鸡' : (numMap[val] || val) + '条'}`;
+    // 幺鸡 in both; otherwise Mandarin says X条 and Cantonese says X索
+    return `${val === '1' ? '幺鸡' : (numMap[val] || val) + (lang === 'yue' ? '索' : '条')}`;
   }
   if (type.endsWith('tong')) {
     const val = type[0];
@@ -35,9 +39,6 @@ export function getTileSpokenName(tile: Tile | { type: string; displayName?: str
 
   return tile.displayName || '';
 }
-
-// Spoken language for announcements: Mandarin (普) or Cantonese (粤)
-export type VoiceLang = 'cmn' | 'yue';
 
 const isCantonese = (v: SpeechSynthesisVoice) => /zh[-_]hk|yue/i.test(v.lang);
 
@@ -87,7 +88,7 @@ class SoundController {
       }
 
       // 粤: switch to a Cantonese voice when the device has one. 普 (default) keeps the voice above unchanged.
-      const cantonese = this.voiceLang === 'yue' ? this.cachedVoices.find(isCantonese) : undefined;
+      const cantonese = this.cantoneseVoice();
       if (cantonese) {
         utterance.lang = cantonese.lang;
         utterance.voice = cantonese;
@@ -97,6 +98,27 @@ class SoundController {
     } catch {
       // Graceful fallback if speech synthesis is disabled or blocked
     }
+  }
+
+  // Announce a discarded tile, named the way the voice that will speak it says it
+  public speakTile(tile: Tile | { type: string; displayName?: string }) {
+    if (!this.enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    let lang: VoiceLang = 'cmn';
+    try {
+      if (this.cantoneseVoice()) lang = 'yue';
+    } catch {
+      // Speak the Mandarin name if voices cannot be read
+    }
+    this.speak(getTileSpokenName(tile, lang));
+  }
+
+  // The Cantonese voice to use: only when 粤 is chosen and the device has one
+  private cantoneseVoice(): SpeechSynthesisVoice | undefined {
+    if (this.voiceLang !== 'yue') return undefined;
+    if (this.cachedVoices.length === 0) {
+      this.cachedVoices = window.speechSynthesis.getVoices();
+    }
+    return this.cachedVoices.find(isCantonese);
   }
 
   private initCtx() {
