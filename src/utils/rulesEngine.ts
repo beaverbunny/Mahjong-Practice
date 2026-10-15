@@ -3,23 +3,23 @@ import { sortTiles } from './mahjongTiles';
 
 // Complete Winning Hand Definitions according to Appendix III
 export const DESIGNATED_HANDS = {
-  A1: { code: 'A1', name: '平胡 (Common Hand)', fan: 1, desc: '由4副序数牌顺子及1对将牌（可为字牌）组成的和牌' },
-  A2: { code: 'A2', name: '自摸 (Self-Draw)', fan: 1, desc: '自己摸到和牌张并宣告和牌' },
-  A3: { code: 'A3', name: '圈风刻 (Prevailing Wind Triplet)', fan: 1, desc: '与当前圈风相同的风牌刻子或杠' },
-  A4: { code: 'A4', name: '门风刻 (Seat Wind Triplet)', fan: 1, desc: '与自己门风相同的风牌刻子或杠' },
-  A5: { code: 'A5', name: '海底捞月 (Under the Sea)', fan: 1, desc: '和牌张为牌墙最后一张牌（抓打皆可）' },
-  A6: { code: 'A6', name: '杠上开花 (Self-Draw on Kong)', fan: 1, desc: '开杠后从牌墙摸补牌并自摸和牌' },
-  A7: { code: 'A7', name: '箭牌刻 (A Triplet of Dragon Tiles)', fan: 1, desc: '中、发、白任意一组刻子或杠' },
-  A8: { code: 'A8', name: '第二箭牌刻 (Second Triplet of Dragon Tiles)', fan: 1, desc: '中、发、白的第二组刻子或杠' },
-  B1: { code: 'B1', name: '碰碰胡 (All Triplets)', fan: 3, desc: '由4副刻子（或杠）及1对将牌组成的和牌' },
-  B2: { code: 'B2', name: '混一色 (Half Flush)', fan: 3, desc: '由同一种序数牌及字牌（风牌/箭牌）组成' },
-  B3: { code: 'B3', name: '小三元 (Little Three Dragons)', fan: 4, desc: '由中、发、白中的2组刻子和1对组成' },
-  B4: { code: 'B4', name: '小四喜 (Little Four Winds)', fan: 5, desc: '由东、南、西、北中的3组刻子和1对组成' },
-  B5: { code: 'B5', name: '清一色 (Full Flush)', fan: 7, desc: '完全由同一种序数牌组成的和牌' },
-  X1: { code: 'X1', name: '大三元 (Big Three Dragons)', fan: 8, desc: '由中、发、白3组刻子（或杠）组成的和牌' },
-  X2: { code: 'X2', name: '大四喜 (Big Four Winds)', fan: 10, desc: '由东、南、西、北4组刻子（或杠）组成的和牌' },
-  X3: { code: 'X3', name: '十三幺 (Thirteen Orphans)', fan: 10, desc: '由三种序数牌的一、九，四风，三箭共13种牌加其中任意一张成对组成' },
-  X4: { code: 'X4', name: '字一色 (All Honors)', fan: 10, desc: '完全由字牌（风牌及箭牌）刻子/对子组成' },
+  A1: { code: 'A1', name: '平胡 (Common Hand)', fan: 1, desc: '由一對眼及四副順子及序數牌組成' },
+  A2: { code: 'A2', name: '自摸 (Self-Draw)', fan: 1, desc: '自己摸到能胡牌的牌，並報胡牌' },
+  A3: { code: 'A3', name: '圈風刻 (Prevailing Wind Triplet)', fan: 1, desc: '與圈風相同的風刻（即東、南、西或北）' },
+  A4: { code: 'A4', name: '門風刻 (Seat Wind Triplet)', fan: 1, desc: '與本門風相同的風刻' },
+  A5: { code: 'A5', name: '海底撈月 (Under the Sea)', fan: 1, desc: '胡最後一張牌（打出或自摸）' },
+  A6: { code: 'A6', name: '槓上自摸 (Self-Draw on Kong)', fan: 1, desc: '槓牌之後即自摸胡牌' },
+  A7: { code: 'A7', name: '中發白其中一刻 (A Triplet of Dragon Tiles)', fan: 1, desc: '由中、發、白三張相同的牌組成的刻子（不能與小三元重複計算）' },
+  A8: { code: 'A8', name: '中發白其中第二刻 (Second Triplet of Dragon Tiles)', fan: 1, desc: '第二個由中、發、白三張相同的牌組成的刻子（不能與小三元重複計算）' },
+  B1: { code: 'B1', name: '對對胡 (All Triplets)', fan: 3, desc: '由四副刻子（或槓）組成的胡牌' },
+  B2: { code: 'B2', name: '混一色 (Half Flush)', fan: 3, desc: '由一種花色的序數牌及字牌組成的胡牌' },
+  B3: { code: 'B3', name: '小三元 (Little Three Dragons)', fan: 4, desc: '胡牌中有兩副刻子（或槓）及一對子都是中、發、白' },
+  B4: { code: 'B4', name: '小四喜 (Little Four Winds)', fan: 5, desc: '由三副風刻（或槓）及一對風牌組成的胡牌' },
+  B5: { code: 'B5', name: '清一色 (Full Flush)', fan: 7, desc: '由一種花色的序數牌組成的胡牌' },
+  X1: { code: 'X1', name: '大三元 (Big Three Dragons)', fan: 8, desc: '胡牌中有中、發、白三副刻子（或槓）' },
+  X2: { code: 'X2', name: '大四喜 (Big Four Winds)', fan: 10, desc: '由四副風刻（或槓）組成的胡牌' },
+  X3: { code: 'X3', name: '十三幺 (Thirteen Orphans)', fan: 10, desc: '由三種序數牌的一、九牌及七種字牌及其中一對作眼組成的胡牌' },
+  X4: { code: 'X4', name: '字一色 (All Honors)', fan: 10, desc: '由全字牌刻子（或槓）組成的胡牌' },
 };
 
 // Points calculation as defined in Appendix I
@@ -230,7 +230,7 @@ export function evaluateWin(
       fanDetails: [],
       totalFan: 0,
       pointsAwarded: 0,
-      description: '未和牌',
+      description: '未胡牌',
       breakdown: null,
     };
   }
@@ -247,7 +247,7 @@ export function evaluateWin(
       fanDetails,
       totalFan,
       pointsAwarded: totalFan * (context.isSelfDraw ? 15 : 10),
-      description: '国士无双 · 十三幺极品满贯！',
+      description: '十三幺！',
       breakdown: { sequences: [], triplets: [], pair: [winningTile], isThirteenOrphans: true },
     };
   }
@@ -260,7 +260,7 @@ export function evaluateWin(
       fanDetails: [],
       totalFan: 0,
       pointsAwarded: 0,
-      description: '未和牌',
+      description: '未胡牌',
       breakdown: null,
     };
   }
@@ -427,7 +427,7 @@ export function evaluateWin(
       fanDetails: [],
       totalFan: 0,
       pointsAwarded: 0,
-      description: '无番不和',
+      description: '無番不能胡',
       breakdown: null,
     };
   }

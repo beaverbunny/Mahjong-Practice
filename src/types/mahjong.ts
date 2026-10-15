@@ -168,7 +168,7 @@ export interface GameStats {
   totalRounds: number;
   humanWins: number;
   humanSelfDraws: number;
-  humanDealIns: number; // 放铳/出冲
+  humanDealIns: number; // 出铳/出冲
   humanTenpaiCount: number;
   highestFan: number;
   highestFanNames: string[];

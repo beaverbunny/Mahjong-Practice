@@ -26,6 +26,9 @@ import {
   ListFilter,
 } from 'lucide-react';
 
+// The log counts every discard at the table; one 輪 is four of them (once around the table)
+const goAround = (turnNumber: number) => Math.ceil(turnNumber / 4);
+
 interface GameReviewModalProps {
   roundResult: RoundResult;
   roundNumber: number;
@@ -58,8 +61,8 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
   }, [roundResult]);
 
   // Seat labels with each seat's wind in this hand (seat winds move with the dealer)
-  const seatNames = ['玩家 (您)', '下家', '对家', '上家'].map(
-    (role, i) => `${role} · ${WIND_NAMES[seatWindFor(i, roundResult.dealerIndex)]}风`
+  const seatNames = ['玩家 (您)', '下家', '對家', '上家'].map(
+    (role, i) => `${role} · ${WIND_NAMES[seatWindFor(i, roundResult.dealerIndex)]}風`
   );
 
   const logs = roundResult.actionLogs;
@@ -116,18 +119,18 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
             <FileSearch className="w-5 h-5 text-amber-400" />
             <div>
               <h2 className="text-base font-bold font-serif text-stone-100 flex items-center gap-2 flex-wrap">
-                <span>实战复盘与打法研析 · 第 {roundResult.roundIndex + 1} 局</span>
+                <span>實戰復盤與打法研析 · 第 {roundResult.roundIndex + 1} 盤</span>
                 {allRounds && allRounds.length > 1 && currentIndex >= 0 && (
                   <span className="text-xs font-normal text-stone-400 font-mono">
-                    (对局 #{currentIndex + 1} / 共 {allRounds.length} 局)
+                    (對局 #{currentIndex + 1} / 共 {allRounds.length} 盤)
                   </span>
                 )}
               </h2>
               <div className="text-xs text-stone-400">
-                {WIND_NAMES[roundResult.prevailingWind]}风圈 · 总计 {totalSteps} 步操作
+                {WIND_NAMES[roundResult.prevailingWind]}風圈 · 總計 {totalSteps} 步操作
                 {blunderLogs.length > 0 && (
                   <span className="text-rose-400 ml-2 font-medium">
-                    · 检测到 {blunderLogs.length} 处疑问手/恶手
+                    · 檢測到 {blunderLogs.length} 處失誤
                   </span>
                 )}
               </div>
@@ -140,17 +143,17 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
               className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-xs text-stone-300 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               {showAllHands ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{showAllHands ? '透视全家手牌' : '仅看玩家手牌'}</span>
+              <span>{showAllHands ? '透視全家手牌' : '僅看玩家手牌'}</span>
             </button>
 
             {onDeleteRound && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="px-2.5 py-1.5 rounded-lg bg-stone-800/80 hover:bg-rose-950/80 border border-stone-700/60 hover:border-rose-700 text-stone-400 hover:text-rose-300 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="删除本局复盘记录"
+                title="刪除本盤復盤記錄"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">删除此局记录</span>
+                <span className="hidden sm:inline">刪除此盤記錄</span>
               </button>
             )}
 
@@ -167,7 +170,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
         {allRounds && allRounds.length > 1 && (
           <div className="px-6 py-2.5 bg-stone-950 border-b border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <span className="text-stone-400 font-medium shrink-0">回溯其他对局:</span>
+              <span className="text-stone-400 font-medium shrink-0">回溯其他對局:</span>
               <select
                 value={currentIndex >= 0 ? currentIndex : ''}
                 onChange={(e) => {
@@ -180,14 +183,14 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
               >
                 {allRounds.map((r, idx) => {
                   const isDraw = r.winnerIndex === null;
-                  const winnerName = isDraw ? '流局' : r.winnerIndex === 0 ? '玩家' : `电脑${r.winnerIndex}`;
+                  const winnerName = isDraw ? '流局' : r.winnerIndex === 0 ? '玩家' : `電腦${r.winnerIndex}`;
                   const outcomeDesc = isDraw
-                    ? '荒庄流局'
-                    : `${winnerName}${r.isSelfDraw ? '自摸' : '荣和'} (${r.totalFan}番)`;
+                    ? '流局'
+                    : `${winnerName}${r.isSelfDraw ? '自摸' : '胡牌'} (${r.totalFan}番)`;
                   const deltaStr = r.pointsDelta[0] > 0 ? `+${r.pointsDelta[0]}` : `${r.pointsDelta[0]}`;
                   return (
                     <option key={idx} value={idx}>
-                      [#{idx + 1}] 第 {r.roundIndex + 1} 局 ({WIND_NAMES[r.prevailingWind]}风圈) · {outcomeDesc} [得分:{deltaStr}点]
+                      [#{idx + 1}] 第 {r.roundIndex + 1} 盤 ({WIND_NAMES[r.prevailingWind]}風圈) · {outcomeDesc} [得分:{deltaStr}點]
                     </option>
                   );
                 })}
@@ -203,10 +206,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                 }}
                 disabled={currentIndex <= 0}
                 className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed text-stone-300 text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                title={currentIndex > 0 ? `切换至上一局 (#${currentIndex})` : '已是第一局'}
+                title={currentIndex > 0 ? `切換至上一盤 (#${currentIndex})` : '已是第一盤'}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                <span>上一局</span>
+                <span>上一盤</span>
               </button>
               <button
                 onClick={() => {
@@ -216,9 +219,9 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                 }}
                 disabled={currentIndex < 0 || currentIndex >= allRounds.length - 1}
                 className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed text-stone-300 text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                title={currentIndex < allRounds.length - 1 ? `切换至下一局 (#${currentIndex + 2})` : '已是最后一局'}
+                title={currentIndex < allRounds.length - 1 ? `切換至下一盤 (#${currentIndex + 2})` : '已是最後一盤'}
               >
-                <span>下一局</span>
+                <span>下一盤</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -232,14 +235,14 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
             <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
-                <span className="font-bold text-stone-200">本局打法与恶手全览：</span>
+                <span className="font-bold text-stone-200">本盤打法與失誤全覽：</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-stone-400">
-                  出牌总巡：<strong className="text-stone-200 font-mono">{humanDiscards.length}</strong> 巡
+                  出牌總數：<strong className="text-stone-200 font-mono">{humanDiscards.length}</strong> 張
                 </span>
                 <span className="text-stone-400">
-                  牌效优良率：
+                  進張效率：
                   <strong
                     className={`font-mono ml-0.5 ${
                       accuracyRate >= 85
@@ -253,10 +256,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   </strong>
                 </span>
                 <span className="text-stone-400">
-                  恶手统计：
-                  <strong className="text-rose-400 font-mono ml-0.5">{criticalBlunders.length}</strong> 严重
+                  失誤統計：
+                  <strong className="text-rose-400 font-mono ml-0.5">{criticalBlunders.length}</strong> 嚴重
                   {inaccuracyBlunders.length > 0 && (
-                    <span className="text-amber-400 font-mono ml-1">/ {inaccuracyBlunders.length} 缓手</span>
+                    <span className="text-amber-400 font-mono ml-1">/ {inaccuracyBlunders.length} 次優</span>
                   )}
                 </span>
               </div>
@@ -266,17 +269,17 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
             {blunderLogs.length > 0 ? (
               <div className="space-y-2 pt-1 border-t border-stone-800/80">
                 <div className="text-[11px] text-stone-400 flex items-center justify-between flex-wrap gap-2">
-                  <span>检测到下列策略疑问手（点击标签可直达对应巡目）：</span>
+                  <span>檢測到下列次優或失誤出牌（點擊標籤可直達對應輪次）：</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowBlunderDrawer(!showBlunderDrawer)}
                       className="px-2 py-0.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 text-[10px] font-medium flex items-center gap-1 transition-colors cursor-pointer border border-stone-700"
                     >
                       <ListFilter className="w-3 h-3 text-amber-400" />
-                      <span>{showBlunderDrawer ? '收起恶手诊断表' : `展开恶手精研表 (${blunderLogs.length})`}</span>
+                      <span>{showBlunderDrawer ? '收起失誤診斷表' : `展開失誤診斷表 (${blunderLogs.length})`}</span>
                     </button>
                     <span className="text-[10px] text-rose-400 font-medium">
-                      共 {blunderLogs.length} 处需研析
+                      共 {blunderLogs.length} 處需研析
                     </span>
                   </div>
                 </div>
@@ -300,10 +303,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                             : 'bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300'
                         }`}
                       >
-                        <span className="font-mono">第{bLog.turnNumber}巡</span>
+                        <span className="font-mono">第{goAround(bLog.turnNumber)}輪</span>
                         {bLog.tile && <MahjongTile tile={bLog.tile} size="xs" />}
                         <span className="text-[10px] opacity-90">
-                          {bLog.blunderTypeName?.split(' ')[0] || '打法失误'}
+                          {bLog.blunderTypeName?.split(' ')[0] || '打法失誤'}
                         </span>
                       </button>
                     );
@@ -316,9 +319,9 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     <div className="flex items-center justify-between text-xs pb-1 border-b border-stone-800">
                       <span className="font-bold text-rose-300 flex items-center gap-1.5">
                         <ShieldAlert className="w-4 h-4 text-rose-400" />
-                        <span>本局所有恶手全量诊断明细清单</span>
+                        <span>本盤所有失誤診斷明細</span>
                       </span>
-                      <span className="text-[11px] text-stone-400">点击行可直接跳至该巡复盘</span>
+                      <span className="text-[11px] text-stone-400">點擊行可直接跳至該輪復盤</span>
                     </div>
 
                     <div className="divide-y divide-stone-800/80 max-h-56 overflow-y-auto pr-1">
@@ -338,15 +341,15 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                           >
                             <div className="flex items-center gap-2.5">
                               <span className="font-mono font-bold text-stone-300 px-1.5 py-0.5 rounded bg-stone-800 text-[11px] shrink-0">
-                                第 {bLog.turnNumber} 巡
+                                第 {goAround(bLog.turnNumber)} 輪
                               </span>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10px] text-rose-400">实战切牌:</span>
+                                <span className="text-[10px] text-rose-400">實戰出牌:</span>
                                 {bLog.tile && <MahjongTile tile={bLog.tile} size="xs" />}
                               </div>
                               <ArrowRight className="w-3 h-3 text-stone-500 shrink-0" />
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10px] text-emerald-400">推荐切牌:</span>
+                                <span className="text-[10px] text-emerald-400">推薦出牌:</span>
                                 {bLog.recommendedDiscard && (
                                   <MahjongTile tile={bLog.recommendedDiscard} size="xs" />
                                 )}
@@ -375,7 +378,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
             ) : (
               <div className="flex items-center gap-2 p-2 bg-emerald-950/30 border border-emerald-700/50 rounded-lg text-xs text-emerald-300">
                 <Award className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>本局发挥近乎完美！经 AI 牌效全量复盘，未检测到任何向听倒退或恶手。</span>
+                <span>本盤發揮近乎完美！經 AI 全面復盤，未檢測到任何離聽牌倒退或失誤。</span>
               </div>
             )}
           </div>
@@ -384,10 +387,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
           <div className="p-4 bg-stone-950/60 rounded-xl border border-stone-800 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-stone-300">
-                巡目与进度：第 {currentLog?.turnNumber || 1} 巡 · 操作 #{currentStepIndex + 1} / {totalSteps}
+                輪次與進度：第 {goAround(currentLog?.turnNumber || 1)} 輪 · 操作 #{currentStepIndex + 1} / {totalSteps}
               </span>
               <span className="text-amber-400 font-mono font-medium">
-                当前行动方：{currentLog?.playerName || '系统'}
+                當前行動方：{currentLog?.playerName || '系統'}
               </span>
             </div>
 
@@ -413,7 +416,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     setCurrentStepIndex(0);
                   }}
                   className="p-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs cursor-pointer"
-                  title="回到开头"
+                  title="回到開頭"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
@@ -433,7 +436,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  <span>{isPlaying ? '暂停' : '自动复盘'}</span>
+                  <span>{isPlaying ? '暫停' : '自動復盤'}</span>
                 </button>
                 <button
                   disabled={currentStepIndex >= totalSteps - 1}
@@ -466,7 +469,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   className="px-3 py-1.5 rounded-lg bg-rose-950/70 border border-rose-700/60 text-rose-300 hover:bg-rose-900 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                  <span>下一个疑问手 ({blunderLogs.length})</span>
+                  <span>下一個次優出牌 ({blunderLogs.length})</span>
                 </button>
               )}
             </div>
@@ -484,28 +487,28 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm text-stone-100">
-                    {currentLog.playerName} 执行了：
+                    {currentLog.playerName} 執行了：
                   </span>
                   <span className="px-2 py-0.5 rounded bg-stone-800 text-amber-400 font-mono text-xs font-bold">
                     {currentLog.action === 'draw'
                       ? '摸牌'
                       : currentLog.action === 'discard'
-                      ? '打出舍牌'
+                      ? '打牌'
                       : currentLog.action === 'chi'
                       ? '吃牌'
                       : currentLog.action === 'peng'
                       ? '碰牌'
                       : currentLog.action === 'gang'
-                      ? '开杠'
+                      ? '開槓'
                       : currentLog.action === 'hu'
-                      ? '宣告和牌！'
-                      : '过牌'}
+                      ? '報胡！'
+                      : '過牌'}
                   </span>
                 </div>
 
                 {currentLog.tile && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-stone-400">操作目标牌：</span>
+                    <span className="text-xs text-stone-400">操作目標牌：</span>
                     <MahjongTile tile={currentLog.tile} size="sm" />
                   </div>
                 )}
@@ -517,7 +520,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2 text-rose-300 font-bold text-sm">
                       <ShieldAlert className="w-5 h-5 text-rose-400" />
-                      <span>恶手复盘与打法研析</span>
+                      <span>失誤復盤與打法研析</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span
@@ -527,7 +530,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                             : 'bg-amber-600 text-stone-950'
                         }`}
                       >
-                        {currentLog.blunderSeverity === 'critical' ? '🔴 严重恶手' : '🟡 缓手/疑问手'}
+                        {currentLog.blunderSeverity === 'critical' ? '🔴 嚴重失誤' : '🟡 次優打法'}
                       </span>
                       {currentLog.blunderTypeName && (
                         <span className="px-2 py-0.5 rounded bg-stone-900 text-rose-200 border border-rose-800 text-[11px] font-medium">
@@ -543,27 +546,27 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800/80 flex items-center justify-between">
                       <div className="space-y-1">
                         <div className="text-[11px] text-rose-300 font-semibold flex items-center gap-1">
-                          <span>实战切牌 (实际操作)</span>
+                          <span>實戰出牌 (實際操作)</span>
                         </div>
                         <div className="text-xs text-stone-300">
-                          向听状态：
+                          離聽牌：
                           <strong className="text-rose-400 font-mono">
-                            {currentLog.shantenAfter === 0 ? '听牌' : currentLog.shantenAfter + '向听'}
+                            {currentLog.shantenAfter === 0 ? '聽牌' : '差 ' + currentLog.shantenAfter + ' 張聽牌'}
                           </strong>
                         </div>
                         {currentLog.chosenRec && (
                           <div className="text-[11px] text-stone-400">
-                            进张面：
+                            進張面：
                             <span className="text-stone-200 font-bold font-mono">
                               {currentLog.chosenRec.effectiveTilesCount}
                             </span>{' '}
-                            张
+                            張
                             <span className="ml-2 text-[10px] px-1 rounded bg-black/40 text-stone-300">
                               {currentLog.chosenRec.safetyLevel === 'safe'
                                 ? '安全牌'
                                 : currentLog.chosenRec.safetyLevel === 'danger'
-                                ? '危险牌'
-                                : '半安牌'}
+                                ? '危險牌'
+                                : '較安全'}
                             </span>
                           </div>
                         )}
@@ -580,31 +583,31 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                       <div className="space-y-1">
                         <div className="text-[11px] text-emerald-300 font-semibold flex items-center gap-1">
                           <Zap className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>AI 推荐最优切牌 (应选)</span>
+                          <span>AI 推薦最優出牌 (應選)</span>
                         </div>
                         <div className="text-xs text-stone-300">
-                          向听状态：
+                          離聽牌：
                           <strong className="text-emerald-400 font-mono">
                             {currentLog.bestRec
                               ? currentLog.bestRec.shantenAfter === 0
-                                ? '听牌'
-                                : currentLog.bestRec.shantenAfter + '向听'
-                              : currentLog.shantenAfter + '向听'}
+                                ? '聽牌'
+                                : '差 ' + currentLog.bestRec.shantenAfter + ' 張聽牌'
+                              : '差 ' + currentLog.shantenAfter + ' 張聽牌'}
                           </strong>
                         </div>
                         {currentLog.bestRec && (
                           <div className="text-[11px] text-stone-400">
-                            进张面：
+                            進張面：
                             <span className="text-emerald-300 font-bold font-mono">
                               {currentLog.bestRec.effectiveTilesCount}
                             </span>{' '}
-                            张
+                            張
                             <span className="ml-2 text-[10px] px-1 rounded bg-black/40 text-stone-300">
                               {currentLog.bestRec.safetyLevel === 'safe'
                                 ? '安全牌'
                                 : currentLog.bestRec.safetyLevel === 'danger'
-                                ? '危险牌'
-                                : '半安牌'}
+                                ? '危險牌'
+                                : '較安全'}
                             </span>
                           </div>
                         )}
@@ -619,7 +622,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
 
                   {/* Diagnosis Commentary */}
                   <div className="p-3 rounded-lg bg-black/50 border border-rose-900/60 text-xs text-rose-200/95 leading-relaxed">
-                    <span className="font-bold text-rose-300 mr-1.5">💡 牌效与得失深度研判：</span>
+                    <span className="font-bold text-rose-300 mr-1.5">💡 進張與得失分析：</span>
                     {currentLog.blunderReason}
                   </div>
                 </div>
@@ -631,15 +634,15 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <div className="font-semibold text-emerald-300 flex items-center gap-1.5">
-                      <span>切牌正确 (符合 AI 最优策略)</span>
+                      <span>出牌正確 (符合 AI 最優策略)</span>
                       {currentLog.shantenAfter !== undefined && (
                         <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-900/60 text-emerald-200 font-mono">
-                          {currentLog.shantenAfter === 0 ? '进入听牌' : `${currentLog.shantenAfter}向听`}
+                          {currentLog.shantenAfter === 0 ? '進入聽牌' : `差 ${currentLog.shantenAfter} 張聽牌`}
                         </span>
                       )}
                     </div>
                     <p className="text-stone-300 leading-relaxed text-[11px]">
-                      {currentLog.aiComment || '此巡切牌进张面最大化，手牌结构保持紧凑顺畅。'}
+                      {currentLog.aiComment || '此輪出牌進張面最大化，手牌結構保持緊湊順暢。'}
                     </p>
                   </div>
                 </div>
@@ -680,15 +683,15 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                       <div className="flex items-center gap-2">
                         <Trophy className="w-5 h-5 text-amber-400" />
                         <span className="font-bold text-sm text-amber-200">
-                          🏆 优胜和牌完整牌姿展示 · {winnerName}
+                          🏆 胡牌完整牌型 · {winnerName}
                         </span>
                         <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500 text-stone-950">
-                          {roundResult.isSelfDraw ? '自摸和牌' : '荣和点炮'}
+                          {roundResult.isSelfDraw ? '自摸胡牌' : '胡牌'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold text-xs border border-amber-500/40">
-                          总计 {roundResult.totalFan} 番
+                          總計 {roundResult.totalFan} 番
                         </span>
                         {roundResult.fanDetails.map((f, i) => (
                           <span
@@ -704,9 +707,9 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     {/* Complete Winning Hand Form: Melds + Concealed Hand + Winning Tile */}
                     <div className="p-3 bg-stone-950/80 rounded-xl border border-amber-500/30 space-y-2">
                       <div className="text-[11px] text-stone-400 flex items-center justify-between">
-                        <span>副露明牌 (碰/吃/杠) + 门前暗手牌 + 决胜和牌张：</span>
+                        <span>吃碰槓明牌 + 門前暗手牌 + 胡牌張：</span>
                         <span className="text-[10px] text-amber-400 font-medium">
-                          {roundResult.isSelfDraw ? '自摸胡牌' : `放铳出冲方：${playerNames[roundResult.discarderIndex ?? 0]}`}
+                          {roundResult.isSelfDraw ? '自摸胡牌' : `出銃方：${playerNames[roundResult.discarderIndex ?? 0]}`}
                         </span>
                       </div>
 
@@ -733,8 +736,8 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                                     : meld.type === 'chi'
                                     ? '吃'
                                     : meld.type === 'an_gang'
-                                    ? '暗杠'
-                                    : '杠'}
+                                    ? '暗槓'
+                                    : '槓'}
                                 </span>
                                 <div className="flex items-center gap-0.5">
                                   {meld.tiles.map((t, idx) => (
@@ -764,7 +767,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                         {roundResult.winningTile && (
                           <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-amber-950/80 border border-amber-500/80 ring-2 ring-amber-400/40 shadow-lg">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-stone-950 font-black">
-                              {roundResult.isSelfDraw ? '自摸' : '荣和'}
+                              {roundResult.isSelfDraw ? '自摸' : '胡牌'}
                             </span>
                             <MahjongTile tile={roundResult.winningTile} size="sm" />
                           </div>
@@ -780,10 +783,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-stone-300 flex items-center gap-1.5">
                     <Flame className="w-4 h-4 text-amber-400" />
-                    <span>终局四家完整手牌与副露速览：</span>
+                    <span>終局四家完整手牌與吃碰槓速覽：</span>
                   </h3>
                   <span className="text-[11px] text-stone-400">
-                    完整展示四家立牌与吃/碰/杠等所有副露
+                    完整展示四家手牌與所有吃碰槓
                   </span>
                 </div>
 
@@ -810,7 +813,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                             <span>{names[pIdx]}</span>
                             {snap.melds.length === 0 && (
                               <span className="text-[10px] px-1 rounded bg-stone-800 text-stone-400">
-                                门前清
+                                門前清
                               </span>
                             )}
                           </div>
@@ -824,9 +827,9 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                             }`}
                           >
                             {isWinner
-                              ? `🏆 和牌胜者 (${roundResult.totalFan}番)`
+                              ? `🏆 胡牌方 (${roundResult.totalFan}番)`
                               : isDiscarder
-                              ? '💥 放铳点炮'
+                              ? '💥 出銃方'
                               : '陪打'}
                           </span>
                         </div>
@@ -834,7 +837,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                         {/* Melds (副露区: 吃 / 碰 / 杠) */}
                         {snap.melds && snap.melds.length > 0 && (
                           <div className="space-y-1">
-                            <span className="text-[10px] text-stone-400">副露牌组 (碰/吃/杠)：</span>
+                            <span className="text-[10px] text-stone-400">吃碰槓牌組：</span>
                             <div className="flex flex-wrap items-center gap-1.5">
                               {snap.melds.map((meld, mIdx) => (
                                 <div
@@ -850,7 +853,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                                         : 'bg-purple-950 text-purple-300'
                                     }`}
                                   >
-                                    {meld.type === 'peng' ? '碰' : meld.type === 'chi' ? '吃' : '杠'}
+                                    {meld.type === 'peng' ? '碰' : meld.type === 'chi' ? '吃' : '槓'}
                                   </span>
                                   <div className="flex items-center gap-0.5">
                                     {meld.tiles.map((t, idx) => (
@@ -877,7 +880,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                             {isWinner && !roundResult.isSelfDraw && roundResult.winningTile && (
                               <div className="flex items-center gap-1 pl-1 ml-1 border-l border-amber-600/60">
                                 <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500 text-stone-950 font-bold">
-                                  和
+                                  胡
                                 </span>
                                 <MahjongTile tile={roundResult.winningTile} size="xs" />
                               </div>
@@ -886,7 +889,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                             {/* If Tsumo Winner, label indicator */}
                             {isWinner && roundResult.isSelfDraw && (
                               <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 ml-1">
-                                自摸和
+                                自摸
                               </span>
                             )}
                           </div>
@@ -903,13 +906,13 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex items-center justify-between text-xs shrink-0">
           <span className="text-stone-400">
-            按左右方向键或拖动滑块可逐步复盘，深入研习每一步牌效得失。
+            按左右方向鍵或拖動滑塊可逐步復盤，深入研習每一步出牌得失。
           </span>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium transition-colors cursor-pointer"
           >
-            关闭复盘
+            關閉復盤
           </button>
         </div>
       </div>
@@ -924,10 +927,10 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-stone-100">
-                  确认删除第 {roundResult.roundIndex + 1} 局{currentIndex >= 0 ? ` (对局 #${currentIndex + 1})` : ''}复盘记录？
+                  確認刪除第 {roundResult.roundIndex + 1} 盤{currentIndex >= 0 ? ` (對局 #${currentIndex + 1})` : ''}復盤記錄？
                 </h3>
                 <p className="text-xs text-stone-400 leading-relaxed">
-                  您即将删除【第 {roundResult.roundIndex + 1} 局 ({WIND_NAMES[roundResult.prevailingWind]}风圈){currentIndex >= 0 ? ` · 历史归档 #${currentIndex + 1}` : ''}】的牌谱及恶手研析记录。此操作不可逆，您的累计生涯胜场与积分将保持不变。
+                  您即將刪除【第 {roundResult.roundIndex + 1} 盤 ({WIND_NAMES[roundResult.prevailingWind]}風圈){currentIndex >= 0 ? ` · 歷史歸檔 #${currentIndex + 1}` : ''}】的牌譜及失誤分析記錄。此操作不可逆，您的累計生涯勝場與積分將保持不變。
                 </p>
               </div>
             </div>
@@ -948,7 +951,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-950/50 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>确认删除</span>
+                <span>確認刪除</span>
               </button>
             </div>
           </div>

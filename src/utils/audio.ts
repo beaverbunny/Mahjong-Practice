@@ -15,22 +15,22 @@ export function getTileSpokenName(tile: Tile | { type: string; displayName?: str
 
   if (type.endsWith('wan')) {
     const val = type[0];
-    return `${numMap[val] || val}万`;
+    return `${numMap[val] || val}萬`;
   }
   if (type.endsWith('tiao')) {
     const val = type[0];
-    return `${val === '1' ? '幺鸡' : (numMap[val] || val) + '条'}`;
+    return `${val === '1' ? '幺雞' : (numMap[val] || val) + '條'}`;
   }
   if (type.endsWith('tong')) {
     const val = type[0];
     return `${numMap[val] || val}筒`;
   }
-  if (type === 'wind_E') return '东风';
-  if (type === 'wind_S') return '南风';
-  if (type === 'wind_W') return '西风';
-  if (type === 'wind_N') return '北风';
-  if (type === 'dragon_C') return '红中';
-  if (type === 'dragon_F') return '发财';
+  if (type === 'wind_E') return '東風';
+  if (type === 'wind_S') return '南風';
+  if (type === 'wind_W') return '西風';
+  if (type === 'wind_N') return '北風';
+  if (type === 'dragon_C') return '紅中';
+  if (type === 'dragon_F') return '發財';
   if (type === 'dragon_B') return '白板';
 
   return tile.displayName || '';

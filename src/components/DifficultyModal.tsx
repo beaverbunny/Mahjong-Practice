@@ -30,35 +30,35 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
   }[] = [
     {
       id: 'tournament',
-      title: '比赛实战 (Tournament Field · 推荐)',
-      subTitle: '模拟 TVB 外围赛真实对手 · 每位对手风格与水平各不相同',
-      desc: '每场随机分配三位对手：速攻型、大牌型、稳健型、防守型或随性型，水平从一般到高手不等。按真实比赛数据校准（每 16 局约 14-15 次和牌，平均每和约 2 番），让你在接近比赛的牌桌上练习。',
-      features: ['风格随机 · 场场不同', '依明牌判断危险', '整场结束后揭晓对手风格'],
-      tag: '推荐',
+      title: '比賽實戰 (Tournament Field · 推薦)',
+      subTitle: '模擬 TVB 外圍賽真實對手 · 每位對手風格與水平各不相同',
+      desc: '每場隨機分配三位對手：速攻型、大牌型、穩健型、防守型或隨性型，水平從一般到高手不等。按真實比賽數據校準（每 16 盤約 14-15 次胡牌，平均每次胡牌約 2 番），讓你在接近比賽的牌桌上練習。',
+      features: ['風格隨機 · 場場不同', '依明牌判斷危險', '整場結束後揭曉對手風格'],
+      tag: '推薦',
     },
     {
       id: 'beginner',
-      title: '入门研习 (Beginner / 初级)',
-      subTitle: '轻松上手 · 对手多为随性型玩家',
-      desc: '对手多为随性型：见牌就吃碰、很少防守、判断误差较大。适合熟悉 TVB 番种与计分规则。',
-      features: ['吃碰频繁', '几乎不防守', '判断误差大'],
+      title: '入門研習 (Beginner / 初級)',
+      subTitle: '輕鬆上手 · 對手多為隨性型玩家',
+      desc: '對手多為隨性型：見牌就吃碰、很少防守、判斷誤差較大。適合熟悉 TVB 番種與計分規則。',
+      features: ['吃碰頻繁', '幾乎不防守', '判斷誤差大'],
       tag: '新手',
     },
     {
       id: 'intermediate',
-      title: '进阶实战 (Intermediate / 中级)',
-      subTitle: '常规牌友水平 · 各种风格混合',
-      desc: '对手风格混合，牌效扎实但偶有失误，会在明显危险时适度防守。',
-      features: ['风格混合', '适度防守', '偶有失误'],
-      tag: '进阶',
+      title: '進階實戰 (Intermediate / 中級)',
+      subTitle: '常規牌友水平 · 各種風格混合',
+      desc: '對手風格混合，出牌紮實但偶有失誤，會在明顯危險時適度防守。',
+      features: ['風格混合', '適度防守', '偶有失誤'],
+      tag: '進階',
     },
     {
       id: 'master',
-      title: '雀圣宗师 (Master / 高级)',
-      subTitle: '高手牌桌 · 精准牌效与读牌防守',
-      desc: '对手均为高水平：精确计算进张与番数，积极做大牌，按对手副露推算危险度防守，几乎没有失误。',
-      features: ['精确牌效', '积极做番', '读牌防守'],
-      tag: '高难挑战',
+      title: '雀聖宗師 (Master / 高級)',
+      subTitle: '高手牌桌 · 精準出牌與讀牌防守',
+      desc: '對手均為高水平：精確計算進張與番數，積極做大牌，按對手吃碰推算危險度防守，幾乎沒有失誤。',
+      features: ['精確進張', '積極做番', '讀牌防守'],
+      tag: '高難挑戰',
     },
   ];
 
@@ -79,18 +79,18 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
             <Bot className="w-5 h-5 text-amber-400" />
             <div>
               <h2 className="text-base font-bold font-serif text-stone-100">
-                AI 对手难度配置
+                AI 對手難度配置
               </h2>
               <div className="text-xs text-stone-400">
-                当前所选：
+                當前所選：
                 <span className="text-amber-400 font-semibold ml-1">
                   {selectedDifficulty === 'tournament'
-                    ? '比赛实战 (推荐)'
+                    ? '比賽實戰 (推薦)'
                     : selectedDifficulty === 'beginner'
-                    ? '入门研习 (初级)'
+                    ? '入門研習 (初級)'
                     : selectedDifficulty === 'intermediate'
-                    ? '进阶实战 (中级)'
-                    : '雀圣宗师 (高级)'}
+                    ? '進階實戰 (中級)'
+                    : '雀聖宗師 (高級)'}
                 </span>
               </div>
             </div>
@@ -99,7 +99,7 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
-            title="关闭窗口"
+            title="關閉視窗"
           >
             <X className="w-4 h-4" />
           </button>
@@ -170,7 +170,7 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
         {/* Footer (Fixed at bottom) */}
         <div className="px-5 sm:px-6 py-3.5 bg-stone-950/95 border-t border-stone-800 flex items-center justify-between gap-3 text-xs shrink-0 shadow-lg">
           <span className="text-stone-400 text-[11px] sm:text-xs">
-            切换后从下一局生效，对手风格会重新抽取。
+            切換後從下一盤生效，對手風格會重新抽取。
           </span>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -183,7 +183,7 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
               onClick={handleConfirm}
               className="px-5 sm:px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold cursor-pointer transition-all shadow-md active:scale-95 ring-1 ring-amber-300/40"
             >
-              确定
+              確定
             </button>
           </div>
         </div>
