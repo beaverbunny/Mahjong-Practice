@@ -153,13 +153,9 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
   const yakuGoals = analyzeYakuProgress();
 
   return (
-    // Open: docked beside the table (right in landscape, below in portrait) so it never covers a seat.
-    // Closed: only a small button over the table's top-right corner.
     <aside
-      className={`flex flex-col ${
-        isOpen
-          ? 'shrink-0 min-h-0 landscape:w-72 xl:landscape:w-80 2xl:landscape:w-92 landscape:h-full portrait:w-full portrait:h-[40%]'
-          : 'fixed top-16 right-2 sm:right-4 z-30 pointer-events-none'
+      className={`fixed top-16 right-2 sm:right-4 z-30 transition-all duration-300 flex flex-col max-h-[calc(100vh-230px)] sm:max-h-[calc(100vh-250px)] ${
+        isOpen ? 'w-84 sm:w-92 shadow-2xl' : 'w-auto pointer-events-none'
       }`}
     >
       {/* Toggle Tab Button when collapsed */}
@@ -175,7 +171,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
 
       {/* Main Container */}
       {isOpen && (
-        <div className="flex-1 min-h-0 bg-stone-900/95 backdrop-blur-md border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-stone-200">
+        <div className="flex-1 bg-stone-900/95 backdrop-blur-md border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-stone-200">
           {/* Header */}
           <div className="px-3.5 py-2.5 border-b border-stone-800 bg-stone-950/70 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">

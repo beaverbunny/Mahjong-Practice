@@ -716,14 +716,12 @@ export default function App() {
     <div className="h-dvh overflow-hidden bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
       {/* ================= ZONE 1, 2, 3: TOP BAR CONTRACT ================= */}
       <header className="h-14 border-b border-stone-800 bg-stone-950/90 backdrop-blur px-4 sm:px-6 flex items-center justify-between z-40 shrink-0">
-        {/* Zone 1: Single Wordmark */}
-        <div className="flex items-center gap-2 whitespace-nowrap">
+        {/* Zone 1: Wordmark with the TVB subtitle stacked underneath, so both fit at every width */}
+        <div className="flex flex-col leading-tight whitespace-nowrap">
           <span className="text-base font-serif font-black tracking-wider text-amber-400">
             雀圣研习社
           </span>
-          <span className="text-[11px] text-stone-500 hidden xl:inline">
-            · TVB 香港麻将比赛规则 · 16 局实战研习
-          </span>
+          <span className="text-[10px] text-stone-500">TVB 香港麻将比赛规则 · 16 局实战研习</span>
         </div>
 
         {/* Zone 2: Navigation Links (Text Links with Hover Underlines) */}
@@ -840,7 +838,7 @@ export default function App() {
       </header>
 
       {/* ================= MAIN MAH JONG PLAY AREA ================= */}
-      <main className="flex-1 min-h-0 w-full p-2 sm:p-3 flex flex-col landscape:flex-row gap-2 sm:gap-3">
+      <main className="flex-1 min-h-0 w-full p-2 sm:p-3 flex flex-col">
         <div className="flex-1 min-w-0 min-h-0">
           {players.length === 4 && (
             <TableFit>

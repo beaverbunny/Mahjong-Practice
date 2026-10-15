@@ -55,7 +55,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
   const hasAnyMeldAction = canChi || canPeng || canGang || canHu;
 
   return (
-    <div className="flex flex-col items-end gap-2 select-none">
+    <div className="flex flex-col items-center gap-2 select-none">
       {/* Chi Combination Selector Drawer */}
       {showChiPicker && chiCombinations.length > 0 && (
         <div className="bg-stone-900/95 backdrop-blur border border-amber-500/60 rounded-xl p-3 shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in zoom-in-95 z-30">

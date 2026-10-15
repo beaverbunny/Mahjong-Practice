@@ -108,33 +108,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const river = (idx: number) => {
     const tiles = players[idx].discards;
     return (
-      <div className="relative">
-        <div className="grid grid-cols-6 gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[46px] min-w-[188px] justify-items-center content-start">
-          {tiles.map((t, i) => {
-            const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === idx;
-            const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
-            return (
-              <div
-                key={t.id + i}
-                className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-                title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
-              >
-                <MahjongTile tile={t} size="xs" isSelected={isSelectedMatch} dimmed={selectedTile ? !isSelectedMatch : false} />
-                {isLatest && (
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {tiles.length > 0 && (
-          <span
-            className="absolute -top-2 -left-2 min-w-[18px] px-1 rounded-full bg-stone-950 border border-stone-700 text-[9px] leading-[14px] text-center font-mono text-stone-400"
-            title={`${seatOf(idx)}已舍 ${tiles.length} 张`}
-          >
-            {tiles.length}
-          </span>
-        )}
+      <div className="grid grid-cols-6 gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[46px] min-w-[188px] justify-items-center content-start">
+        {tiles.map((t, i) => {
+          const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === idx;
+          const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
+          return (
+            <div
+              key={t.id + i}
+              className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
+              title={drawnDiscardIds.has(t.id) ? '摸切：打出的是刚摸到的牌' : '手切：从手牌中打出'}
+            >
+              <MahjongTile tile={t} size="xs" isSelected={isSelectedMatch} dimmed={selectedTile ? !isSelectedMatch : false} />
+              {isLatest && (
+                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping ring-2 ring-amber-300 pointer-events-none" />
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -379,9 +369,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* ================= BOTTOM HUMAN PLAYER (玩家) ================= */}
       <div className="relative z-40">
-        {/* Action Controls (Chi, Peng, Gang, Hu, confirm discard) float above the right end of the hand,
-            clear of the rivers, so they never shift the table */}
-        <div className="absolute bottom-full right-1 mb-2 w-max max-w-full z-40">
+        {/* Action Controls (Chi, Peng, Gang, Hu, confirm discard) float centred above the hand so they never shift the table */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max z-40">
           <ActionControls
             canChi={canChi}
             chiCombinations={chiCombinations}
