@@ -750,7 +750,7 @@ export default function App() {
             雀圣研习社
           </span>
           <span className="mt-1 xl:mt-0 text-xs leading-none text-[#908985]">
-            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 16 盘实战研习
+            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 一番起胡
           </span>
         </div>
 
