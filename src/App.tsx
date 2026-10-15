@@ -396,8 +396,11 @@ export default function App() {
   React.useEffect(() => {
     if (!table || activeRoundResult) return;
     if (table.phase === 'turn' && table.active !== 0) {
-      // Natural thinking delay: 1700ms - 2300ms
-      const delay = 1700 + Math.floor(Math.random() * 600);
+      // Natural thinking delay: 1700ms - 2300ms, +1500ms right after this bot calls 吃/碰/杠 so the call
+      // (and its banner) registers before the next discard
+      const last = table.log[table.log.length - 1];
+      const justCalled = !!last && last.playerIndex === table.active && ['chi', 'peng', 'gang'].includes(last.action);
+      const delay = 1700 + Math.floor(Math.random() * 600) + (justCalled ? 1500 : 0);
       const timer = setTimeout(() => setTable((prev) => (prev === table ? runBotTurn(prev) : prev)), delay);
       return () => clearTimeout(timer);
     }

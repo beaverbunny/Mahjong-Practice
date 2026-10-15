@@ -104,11 +104,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     );
   };
 
-  // One player's discards, 6 per row. Tiles thrown straight from the draw (摸切) are faded.
+  // One player's discards, 6 per row, inside a dashed outline of the full river area (4 rows) so the
+  // table keeps its shape all hand; the river is labelled until its first discard.
+  // Tiles thrown straight from the draw (摸切) are faded.
   const river = (idx: number) => {
     const tiles = players[idx].discards;
     return (
-      <div className="grid grid-cols-6 gap-1 p-1 rounded-lg bg-black/30 border border-stone-800/60 min-h-[46px] min-w-[188px] justify-items-center content-start">
+      <div className="relative grid grid-cols-6 gap-1 p-1 rounded-xl bg-black/10 border border-dashed border-white/15 min-h-[166px] min-w-[188px] justify-items-center content-start">
+        {tiles.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pl-[0.4em] pointer-events-none text-base font-serif tracking-[0.4em] text-white/25">
+            {['自家', '下家', '对家', '上家'][idx]}牌河
+          </div>
+        )}
         {tiles.map((t, i) => {
           const isLatest = lastDiscardedTile?.tile.id === t.id && lastDiscardedTile.fromPlayer === idx;
           const isSelectedMatch = selectedTile ? selectedTile.type === t.type : false;
