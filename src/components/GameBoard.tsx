@@ -96,8 +96,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       >
         <span className="font-bold truncate max-w-[150px]">{p.name}</span>
         <div className="flex items-center gap-1 text-[10px] text-stone-400">
-          <span className="text-amber-400 font-mono">{WIND_NAMES[p.seatWind]}風</span>
-          <span>{p.score}點</span>
+          <span className="text-amber-400 font-mono">{WIND_NAMES[p.seatWind]}风</span>
+          <span>{p.score}点</span>
         </div>
       </div>
     );
@@ -112,7 +112,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <div className="relative grid grid-cols-6 gap-1 p-1 rounded-xl bg-black/10 border border-dashed border-white/15 min-h-[166px] min-w-[188px] justify-items-center content-start">
         {tiles.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pl-[0.4em] pointer-events-none text-base font-serif tracking-[0.4em] text-white/25">
-            {['自家', '下家', '對家', '上家'][idx]}棄牌區
+            {['自家', '下家', '对家', '上家'][idx]}弃牌区
           </div>
         )}
         {tiles.map((t, i) => {
@@ -122,7 +122,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <div
               key={t.id + i}
               className={`relative ${drawnDiscardIds.has(t.id) ? 'opacity-50 saturate-50' : ''}`}
-              title={drawnDiscardIds.has(t.id) ? '摸到就打：打出的是剛摸到的牌' : '從手牌打出'}
+              title={drawnDiscardIds.has(t.id) ? '摸到就打：打出的是刚摸到的牌' : '从手牌打出'}
             >
               <MahjongTile tile={t} size="xs" isSelected={isSelectedMatch} dimmed={selectedTile ? !isSelectedMatch : false} />
               {isLatest && (
@@ -286,10 +286,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     </span>
                     <div className="flex flex-col leading-tight">
                       <span className="text-[11px] text-stone-200 font-bold">
-                        第 {currentRoundNumber} 盤 <span className="text-stone-400 font-mono font-normal">/16</span>
+                        第 {currentRoundNumber} 盘 <span className="text-stone-400 font-mono font-normal">/16</span>
                       </span>
                       <span className="text-[10px] text-stone-400">
-                        餘 <span className="text-emerald-400 font-bold font-mono">{wallRemaining}</span> 張
+                        余 <span className="text-emerald-400 font-bold font-mono">{wallRemaining}</span> 张
                       </span>
                     </div>
                   </div>
@@ -305,9 +305,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   </div>
                   <div className="text-[9px] text-stone-500">
                     {revealAllHands ? (
-                      <span className="text-amber-300 font-bold">對局結束 · 終局亮牌</span>
+                      <span className="text-amber-300 font-bold">对局结束 · 终局亮牌</span>
                     ) : isHumanTurn ? (
-                      <span className="text-amber-400 font-semibold animate-pulse">輪到您出牌</span>
+                      <span className="text-amber-400 font-semibold animate-pulse">轮到您出牌</span>
                     ) : (
                       <span>{seatOf(activePlayerIndex)}思考中…</span>
                     )}

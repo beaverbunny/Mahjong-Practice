@@ -7,20 +7,20 @@ export const SUITS: { id: Suit; name: string; symbol: string }[] = [
 ];
 
 export const WINDS: { id: Wind; name: string; char: string }[] = [
-  { id: 'E', name: '東風', char: '東' },
-  { id: 'S', name: '南風', char: '南' },
-  { id: 'W', name: '西風', char: '西' },
-  { id: 'N', name: '北風', char: '北' },
+  { id: 'E', name: '东风', char: '東' },
+  { id: 'S', name: '南风', char: '南' },
+  { id: 'W', name: '西风', char: '西' },
+  { id: 'N', name: '北风', char: '北' },
 ];
 
 export const DRAGONS: { id: Dragon; name: string; char: string; color: string }[] = [
-  { id: 'C', name: '紅中', char: '中', color: '#DC2626' }, // Red
-  { id: 'F', name: '發財', char: '發', color: '#16A34A' }, // Green
+  { id: 'C', name: '红中', char: '中', color: '#DC2626' }, // Red
+  { id: 'F', name: '发财', char: '發', color: '#16A34A' }, // Green
   { id: 'B', name: '白板', char: '白', color: '#2563EB' }, // Blue frame
 ];
 
 // Chinese name of each wind, for labels such as 东风圈 or 门风:南
-export const WIND_NAMES: Record<Wind, string> = { E: '東', S: '南', W: '西', N: '北' };
+export const WIND_NAMES: Record<Wind, string> = { E: '东', S: '南', W: '西', N: '北' };
 
 export const CHINESE_NUMS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
@@ -129,12 +129,12 @@ export function getTileNameByType(type: TileType): string {
   if (type.endsWith('wan')) return `${CHINESE_NUMS[parseInt(type[0], 10)]}萬`;
   if (type.endsWith('tiao')) return `${CHINESE_NUMS[parseInt(type[0], 10)]}條`;
   if (type.endsWith('tong')) return `${CHINESE_NUMS[parseInt(type[0], 10)]}筒`;
-  if (type === 'wind_E') return '東風';
-  if (type === 'wind_S') return '南風';
-  if (type === 'wind_W') return '西風';
-  if (type === 'wind_N') return '北風';
-  if (type === 'dragon_C') return '紅中';
-  if (type === 'dragon_F') return '發財';
+  if (type === 'wind_E') return '东风';
+  if (type === 'wind_S') return '南风';
+  if (type === 'wind_W') return '西风';
+  if (type === 'wind_N') return '北风';
+  if (type === 'dragon_C') return '红中';
+  if (type === 'dragon_F') return '发财';
   if (type === 'dragon_B') return '白板';
   return type;
 }

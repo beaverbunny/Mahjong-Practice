@@ -70,10 +70,10 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
             <GraduationCap className="w-5 h-5 text-amber-400" />
             <div>
               <h2 className="text-base font-bold font-serif text-stone-100">
-                出牌練習 · 進張與聽牌進階
+                出牌练习 · 进张与听牌进阶
               </h2>
               <div className="text-xs text-stone-400">
-                實戰題庫演練 · 磨鍊出牌直覺與進張最大化
+                实战题库演练 · 磨炼出牌直觉与进张最大化
               </div>
             </div>
           </div>
@@ -90,9 +90,9 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
         <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 text-xs text-stone-300">
           <div className="p-3.5 bg-stone-950/60 rounded-xl border border-stone-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-stone-200">當前手牌 (14張)：</span>
+              <span className="font-semibold text-stone-200">当前手牌 (14张)：</span>
               <span className="text-[11px] text-stone-400">
-                請點擊選擇一張你認為【進張最多】的牌打出
+                请点击选择一张你认为【进张最多】的牌打出
               </span>
             </div>
             <button
@@ -100,7 +100,7 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
               className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>換一題</span>
+              <span>换一题</span>
             </button>
           </div>
 
@@ -125,7 +125,7 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
                 onClick={handleConfirmDiscard}
                 className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs shadow-lg transition-transform active:scale-95 cursor-pointer"
               >
-                確認打出【{selectedTile.displayName}】並分析進張
+                确认打出【{selectedTile.displayName}】并分析进张
               </button>
             </div>
           )}
@@ -147,19 +147,19 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
                 )}
                 <div>
                   <h3 className="font-bold text-sm">
-                    {isOptimal ? '正解！你的出牌進張最多' : '略有瑕疵：存在更優進張選擇'}
+                    {isOptimal ? '正解！你的出牌进张最多' : '略有瑕疵：存在更优进张选择'}
                   </h3>
                   <p className="mt-1 leading-relaxed text-xs">
                     {isOptimal
-                      ? `打出【${selectedTile?.displayName}】後，離聽牌降至差 ${userRec.shantenAfter} 張，有效進張達${userRec.effectiveTilesCount}張！`
-                      : `你打出了【${selectedTile?.displayName}】(進張${userRec.effectiveTilesCount}張)，而最佳出牌為【${bestRec.tile.displayName}】(進張高達${bestRec.effectiveTilesCount}張)！`}
+                      ? `打出【${selectedTile?.displayName}】后，离听牌降至差 ${userRec.shantenAfter} 张，有效进张达${userRec.effectiveTilesCount}张！`
+                      : `你打出了【${selectedTile?.displayName}】(进张${userRec.effectiveTilesCount}张)，而最佳出牌为【${bestRec.tile.displayName}】(进张高达${bestRec.effectiveTilesCount}张)！`}
                   </p>
                 </div>
               </div>
 
               {/* Detailed Options Comparison Table */}
               <div className="space-y-2">
-                <span className="font-semibold text-stone-200">各候選打法進張對比：</span>
+                <span className="font-semibold text-stone-200">各候选打法进张对比：</span>
                 <div className="space-y-1.5">
                   {recommendations.slice(0, 4).map((rec, idx) => (
                     <div
@@ -182,14 +182,14 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
                             打 {rec.tile.displayName}
                           </div>
                           <div className="text-[10px] text-stone-400">
-                            {rec.shantenAfter === 0 ? '聽牌' : `差 ${rec.shantenAfter} 張聽牌`}
-                            {rec.noFanRoute ? ' (無番·只能自摸)' : ''} ·{' '}
+                            {rec.shantenAfter === 0 ? '听牌' : `差 ${rec.shantenAfter} 张听牌`}
+                            {rec.noFanRoute ? ' (无番·只能自摸)' : ''} ·{' '}
                             {rec.recommendationReason}
                           </div>
                         </div>
                       </div>
                       <span className="font-mono font-bold text-amber-400 text-xs">
-                        {rec.effectiveTilesCount} 張進張
+                        {rec.effectiveTilesCount} 张进张
                       </span>
                     </div>
                   ))}
@@ -201,12 +201,12 @@ export const PracticeDrillsModal: React.FC<PracticeDrillsModalProps> = ({ onClos
 
         {/* Footer */}
         <div className="px-6 py-3.5 bg-stone-950/80 border-t border-stone-800 flex justify-between items-center text-xs shrink-0">
-          <span className="text-stone-400">多做出牌練習，可在實戰對局中快人一步聽牌。</span>
+          <span className="text-stone-400">多做出牌练习，可在实战对局中快人一步听牌。</span>
           <button
             onClick={generateNewProblem}
             className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold transition-colors cursor-pointer"
           >
-            下一題演練
+            下一题演练
           </button>
         </div>
       </div>

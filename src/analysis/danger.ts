@@ -18,7 +18,7 @@ import { tileIndex } from '../engine/shanten';
 import { MODEL } from './dangerModel';
 
 const WIND_INDEX: Record<Wind, number> = { E: 27, S: 28, W: 29, N: 30 };
-const SUIT_NAMES = ['萬', '條', '筒'];
+const SUIT_NAMES = ['万', '条', '筒'];
 // Tiles left in the wall after the deal (136 - 53)
 const WALL_AFTER_DEAL = 83;
 
@@ -295,7 +295,7 @@ export interface DangerRead {
 }
 
 export function seatLabel(viewer: number, seat: number): string {
-  return ['自己', '下家', '對家', '上家'][(seat - viewer + 4) % 4];
+  return ['自己', '下家', '对家', '上家'][(seat - viewer + 4) % 4];
 }
 
 export function readDanger(view: PublicView, types: TileType[]): DangerRead {
@@ -343,11 +343,11 @@ function readyReasons(view: PublicView, o: number, x: number[]): string[] {
   const st = view.seats[o];
   const f = Object.fromEntries(READY_FEATURES.map((k, i) => [k, x[i]]));
   const out: string[] = [];
-  if (st.melds.length > 0) out.push(`已吃碰 ${st.melds.length} 組`);
-  else if (st.discards.length >= 9) out.push(`門清已打 ${st.discards.length} 張（中後盤門清也常已聽牌）`);
-  if (f.streakBreak) out.push('連續摸到就打後，突然從手牌打出');
-  else if (f.drawStreak >= 0.75) out.push('連續多張摸到就打（手牌不再變化，可能已在等牌）');
-  if (f.recentMiddle >= 2 / 3) out.push('最近從手牌打出中張');
+  if (st.melds.length > 0) out.push(`已吃碰 ${st.melds.length} 组`);
+  else if (st.discards.length >= 9) out.push(`门清已打 ${st.discards.length} 张（中后盘门清也常已听牌）`);
+  if (f.streakBreak) out.push('连续摸到就打后，突然从手牌打出');
+  else if (f.drawStreak >= 0.75) out.push('连续多张摸到就打（手牌不再变化，可能已在等牌）');
+  if (f.recentMiddle >= 2 / 3) out.push('最近从手牌打出中张');
   if (f.valueMelds > 0) out.push('已碰番子（有番，可胡）');
   const fs = flushSuitOf(st);
   if (fs !== null) out.push(`吃碰全是${SUIT_NAMES[fs]}子（一色方向）`);
@@ -369,28 +369,28 @@ function waitReasons(view: PublicView, o: number, idx: number, x: number[], pct:
     if (weight(k) <= -0.15) safer.push(text);
     else if (weight(k) >= 0.15) riskier.push(text);
   };
-  cite('passed', `${who}手牌沒變後此牌已打過，他沒胡（過張）`);
-  cite('genbutsu', `${who}自己打過此牌（但他仍可胡此牌，並非絕對安全）`);
-  cite('sujiFull', `${who}打過相隔三位的牌（兩頭聽較少）`);
-  cite('sujiHalf', `${who}打過一側相隔三位的牌`);
-  cite('seqDead', '此牌已不能組成順子等張');
-  cite('earlyNeighbor', `${who}前幾輪打過附近的牌`);
+  cite('passed', `${who}手牌没变后此牌已打过，他没胡（过张）`);
+  cite('genbutsu', `${who}自己打过此牌（但他仍可胡此牌，并非绝对安全）`);
+  cite('sujiFull', `${who}打过相隔三位的牌（两头听较少）`);
+  cite('sujiHalf', `${who}打过一侧相隔三位的牌`);
+  cite('seqDead', '此牌已不能组成顺子等张');
+  cite('earlyNeighbor', `${who}前几轮打过附近的牌`);
   if (fs !== null) {
     cite('flushOff', `${who}做${SUIT_NAMES[fs]}一色，此牌不是其花色`);
     cite('flushIn', `${who}吃碰全是${SUIT_NAMES[fs]}子，此牌正是他要的花色`);
   }
-  if (!f.flushIn) cite('suitShareLow', `${who}幾乎不打此花色（可能在做一色）`);
+  if (!f.flushIn) cite('suitShareLow', `${who}几乎不打此花色（可能在做一色）`);
   if (isHonor(idx)) {
-    if (unseen === 0) safer.push('此字牌已全部可見，無人能等');
-    else if (unseen === 1) safer.push('此字牌只剩 1 張未見（只能單釣）');
-    else if (unseen >= 3) riskier.push(`生張字牌：還有 ${unseen} 張未見`);
+    if (unseen === 0) safer.push('此字牌已全部可见，无人能等');
+    else if (unseen === 1) safer.push('此字牌只剩 1 张未见（只能单钓）');
+    else if (unseen >= 3) riskier.push(`生张字牌：还有 ${unseen} 张未见`);
     cite('honorValue', `${who}的番子字牌`);
-    cite('pungOnlyHonor', `${who}全是碰（對對胡方向，字牌對碰/單釣）`);
+    cite('pungOnlyHonor', `${who}全是碰（对对胡方向，字牌对碰/单钓）`);
   } else {
-    if (f.t456 && !f.sujiFull && !f.seqDead) riskier.push('中張：兩頭等張最多');
-    cite('pungOnlySuited', `${who}全是碰（對對胡方向，相隔三位推斷無效）`);
+    if (f.t456 && !f.sujiFull && !f.seqDead) riskier.push('中张：两头等张最多');
+    cite('pungOnlySuited', `${who}全是碰（对对胡方向，相隔三位推断无效）`);
   }
-  cite('nearLastHand', `靠近${who}最近從手牌打出的牌`);
+  cite('nearLastHand', `靠近${who}最近从手牌打出的牌`);
   // Lead with what drives the number
   const lead = pct >= LEVELS.medium ? [...riskier, ...safer] : [...safer, ...riskier];
   return lead.slice(0, 3);

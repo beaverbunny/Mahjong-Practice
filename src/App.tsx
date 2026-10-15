@@ -110,7 +110,7 @@ export default function App() {
   const [showDifficultyModal, setShowDifficultyModal] = React.useState(false);
   const [showRestartConfirmModal, setShowRestartConfirmModal] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
-  // Voice for announcements: 普 (Mandarin, default) or 粵 (Cantonese)
+  // Voice for announcements: 普 (Mandarin, default) or 粤 (Cantonese)
   const [voiceLang, setVoiceLang] = React.useState<VoiceLang>(() => {
     try {
       return localStorage.getItem('mahjong_voice_lang_v1') === 'yue' ? 'yue' : 'cmn';
@@ -248,7 +248,7 @@ export default function App() {
     try {
       localStorage.setItem('mahjong_voice_lang_v1', next);
     } catch {}
-    soundManager.speak(next === 'yue' ? '粵語' : '普通話');
+    soundManager.speak(next === 'yue' ? '粤语' : '普通话');
   };
 
   // Visual action announcement banner (碰！吃！杠！胡！)
@@ -466,12 +466,12 @@ export default function App() {
       soundManager.speak(`${seat}碰`);
     } else if (e.action === 'gang') {
       soundManager.playKong();
-      showActionBanner(`${who}槓！`, e.playerIndex);
-      soundManager.speak(`${seat}槓`);
+      showActionBanner(`${who}杠！`, e.playerIndex);
+      soundManager.speak(`${seat}杠`);
     } else if (e.action === 'hu') {
-      if (e.aiComment?.includes('詐胡')) {
-        showActionBanner(`${who}詐胡！罰 ${FALSE_WIN_PENALTY_EACH * 3} 點`, e.playerIndex);
-        soundManager.speak(`${seat}詐胡`);
+      if (e.aiComment?.includes('诈胡')) {
+        showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
+        soundManager.speak(`${seat}诈胡`);
       } else {
         soundManager.playHu();
         const isSelfDraw = e.aiComment?.includes('自摸');
@@ -604,12 +604,12 @@ export default function App() {
         danger,
         aiComment:
           afterInfo.noFanRoute
-            ? `已無番種路線，只能自摸（${shantenAfter === 0 ? '聽牌' : `差 ${shantenAfter} 張聽牌`}）`
+            ? `已无番种路线，只能自摸（${shantenAfter === 0 ? '听牌' : `差 ${shantenAfter} 张听牌`}）`
             : shantenAfter === 0
-            ? '成功進入有番聽牌！'
+            ? '成功进入有番听牌！'
             : blunder.isBlunder
             ? undefined
-            : `打出【${tile.displayName}】，保持差 ${shantenAfter} 張聽牌`,
+            : `打出【${tile.displayName}】，保持差 ${shantenAfter} 张听牌`,
       })
     );
   };
@@ -716,8 +716,8 @@ export default function App() {
 
   const handleShareApp = async () => {
     const shareUrl = 'https://tinyurl.com/mahjong-pro-arena';
-    const shareTitle = '雀聖研習社 - TVB 麻將比賽實戰與策略復盤';
-    const shareText = '邀你加入雀聖研習社，體驗16盤完整賽制與深度出牌復盤！';
+    const shareTitle = '雀圣研习社 - TVB 麻将比赛实战与策略复盘';
+    const shareText = '邀你加入雀圣研习社，体验16盘完整赛制与深度出牌复盘！';
 
     if (navigator.share) {
       try {
@@ -734,9 +734,9 @@ export default function App() {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      showActionBanner('已複製分享連結：https://tinyurl.com/mahjong-pro-arena (可發給微信好友/社交媒體)', 0);
+      showActionBanner('已复制分享链接：https://tinyurl.com/mahjong-pro-arena (可发给微信好友/社媒)', 0);
     } catch {
-      showActionBanner('分享短連結：https://tinyurl.com/mahjong-pro-arena', 0);
+      showActionBanner('分享短链：https://tinyurl.com/mahjong-pro-arena', 0);
     }
   };
 
@@ -747,10 +747,10 @@ export default function App() {
         {/* Zone 1: Wordmark with the TVB subtitle beside it on wide screens, stacked underneath when space is tight */}
         <div className="flex flex-col xl:flex-row xl:items-baseline xl:gap-2 whitespace-nowrap">
           <span className="text-xl leading-none font-serif font-black tracking-wider text-amber-400">
-            雀聖研習社
+            雀圣研习社
           </span>
           <span className="mt-1 xl:mt-0 text-xs leading-none text-[#908985]">
-            <span className="hidden xl:inline">· </span>TVB 香港麻將比賽規則 · 16 盤實戰研習
+            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 16 盘实战研习
           </span>
         </div>
 
@@ -759,16 +759,16 @@ export default function App() {
           <button
             onClick={() => {
               if (careerStats.historicalRounds.length === 0) {
-                showActionBanner('暫無已完成的牌局記錄，完成一盤後可隨時復盤', 0);
+                showActionBanner('暂无已完成的牌局记录，完成一盘后可随时复盘', 0);
               } else {
                 setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
               }
             }}
             className="flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
-            title="隨時回溯復盤已完成的對局"
+            title="随时回溯复盘已完成的对局"
           >
             <FileSearch className="w-3.5 h-3.5 text-amber-400" />
-            <span>實戰復盤</span>
+            <span>实战复盘</span>
             {careerStats.historicalRounds.length > 0 && (
               <span className="px-1.5 py-0.2 text-[10px] bg-amber-950 text-amber-300 rounded-full border border-amber-600/50 font-mono">
                 {careerStats.historicalRounds.length}
@@ -778,24 +778,24 @@ export default function App() {
           <button
             onClick={() => setShowRulesModal(true)}
             className="hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
-            title="查看麻將規則手冊"
+            title="查看麻将规则手册"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>規則</span>
+            <span>规则</span>
           </button>
           <button
             onClick={() => setShowPracticeModal(true)}
             className="hidden sm:flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer"
           >
             <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-            <span>出牌練習</span>
+            <span>出牌练习</span>
           </button>
           <button
             onClick={() => setShowStatsModal(true)}
             className="hidden md:flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer"
           >
             <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-            <span>生涯戰績</span>
+            <span>生涯战绩</span>
           </button>
         </nav>
 
@@ -805,17 +805,17 @@ export default function App() {
           <button
             onClick={() => setShowDifficultyModal(true)}
             className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-amber-400 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
-            title="查看或調整 AI 難度"
+            title="查看或调整 AI 难度"
           >
             <Bot className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden lg:inline">
               {difficulty === 'tournament'
-                ? 'AI: 比賽實戰'
+                ? 'AI: 比赛实战'
                 : difficulty === 'beginner'
-                ? 'AI: 入門'
+                ? 'AI: 入门'
                 : difficulty === 'intermediate'
-                ? 'AI: 進階'
-                : 'AI: 宗師'}
+                ? 'AI: 进阶'
+                : 'AI: 宗师'}
             </span>
           </button>
 
@@ -829,37 +829,37 @@ export default function App() {
             }`}
             title={
               strictHu
-                ? '嚴格胡牌：只要牌型完整就可報胡，是否有番需自行判斷；無番詐胡罰每家 50 點且本盤不得再胡'
-                : '提示胡牌：只有合法（至少 1 番）時才顯示胡牌按鈕'
+                ? '严格胡牌：只要牌型完整就可报胡，是否有番需自行判断；无番诈胡罚每家 50 点且本盘不得再胡'
+                : '提示胡牌：只有合法（至少 1 番）时才显示胡牌按钮'
             }
           >
             <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline whitespace-nowrap">{strictHu ? '嚴格胡牌' : '提示胡牌'}</span>
+            <span className="hidden lg:inline whitespace-nowrap">{strictHu ? '严格胡牌' : '提示胡牌'}</span>
           </button>
 
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
             className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer"
-            title={soundEnabled ? '音效開啓' : '音效靜音'}
+            title={soundEnabled ? '音效开启' : '音效静音'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
-          {/* Voice language toggle: 普 (Mandarin) / 粵 (Cantonese) */}
+          {/* Voice language toggle: 普 (Mandarin) / 粤 (Cantonese) */}
           <button
             onClick={toggleVoiceLang}
             className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-400 text-sm font-serif font-bold transition-colors cursor-pointer"
-            title={voiceLang === 'cmn' ? '語音：普通話（點擊切換粵語）' : '語音：粵語（點擊切換普通話）'}
+            title={voiceLang === 'cmn' ? '语音：普通话（点击切换粤语）' : '语音：粤语（点击切换普通话）'}
           >
-            {voiceLang === 'cmn' ? '普' : '粵'}
+            {voiceLang === 'cmn' ? '普' : '粤'}
           </button>
 
           {/* Share App Button */}
           <button
             onClick={handleShareApp}
             className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-amber-400 text-xs transition-colors cursor-pointer"
-            title="分享專屬短連結給微信好友或社交媒體 (https://tinyurl.com/mahjong-pro-arena)"
+            title="分享专属短链给微信好友或社媒 (https://tinyurl.com/mahjong-pro-arena)"
           >
             <Share2 className="w-4 h-4" />
           </button>
@@ -868,10 +868,10 @@ export default function App() {
           <button
             onClick={() => setShowRestartConfirmModal(true)}
             className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-amber-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
-            title="重新開始整場 16 盤比賽"
+            title="重新开始整场 16 盘比赛"
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline whitespace-nowrap">重開大局</span>
+            <span className="hidden lg:inline whitespace-nowrap">重开大局</span>
           </button>
         </div>
       </header>
@@ -940,9 +940,9 @@ export default function App() {
       {/* ================= BOTTOM FOOTER WITH CURRENT APP VERSION ================= */}
       <footer className="py-1 px-4 text-center shrink-0 z-10 select-none bg-stone-950/90 border-t border-stone-850">
         <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] font-mono text-stone-400 flex-wrap">
-          <span>雀聖研習社</span>
+          <span>雀圣研习社</span>
           <span className="text-stone-700 hidden sm:inline">|</span>
-          <span className="hidden sm:inline">TVB 香港麻將比賽實戰研習</span>
+          <span className="hidden sm:inline">TVB 香港麻将比赛实战研习</span>
           <span className="text-stone-700">|</span>
           <span className="text-stone-300">
             Current App Version: <span className="text-amber-400 font-semibold font-mono">{FULL_VERSION_STRING}</span>
@@ -961,11 +961,11 @@ export default function App() {
             <button
               onClick={() => setIsInspectionBarCollapsed(false)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-stone-900/95 hover:bg-stone-850 text-amber-400 border border-amber-500/80 shadow-2xl backdrop-blur-md text-xs font-bold cursor-pointer transition-all hover:scale-105 ring-2 ring-black/40"
-              title="展開終局牌桌控制欄"
+              title="展开终局牌桌控制栏"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <Eye className="w-3.5 h-3.5" />
-              <span>終局牌桌 · 展開控制欄</span>
+              <span>终局牌桌 · 展开控制栏</span>
               <Maximize2 className="w-3 h-3 text-stone-400" />
             </button>
           </div>
@@ -981,10 +981,10 @@ export default function App() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="font-bold text-stone-100 flex items-center gap-1.5">
                 <Eye className="w-4 h-4 text-amber-400" />
-                <span>終局牌桌 · 全員亮明手牌</span>
+                <span>终局牌桌 · 全员亮明手牌</span>
               </span>
               <span className="text-[11px] text-stone-400 hidden xl:inline">
-                (各家手牌及棄牌區已明示，點擊任意手牌可高亮對局同色牌)
+                (各家手牌及弃牌区已明示，点击任意手牌可高亮对局同色牌)
               </span>
             </div>
 
@@ -995,10 +995,10 @@ export default function App() {
                   setIsInspectingFinalBoard(false);
                 }}
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95 ring-1 ring-amber-300/40"
-                title="重新打開本盤得分及番種詳細結算面板"
+                title="重新打开本盘得分及番种详细结算面板"
               >
                 <Award className="w-3.5 h-3.5" />
-                <span>查看結算面板</span>
+                <span>查看结算面板</span>
               </button>
 
               <button
@@ -1006,10 +1006,10 @@ export default function App() {
                   setReviewRoundResult(activeRoundResult);
                 }}
                 className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-stone-700/80"
-                title="逐輪回溯單步牌譜與失誤診斷"
+                title="逐轮回溯单步牌谱与失误诊断"
               >
                 <FileSearch className="w-3.5 h-3.5 text-amber-400" />
-                <span>實戰復盤</span>
+                <span>实战复盘</span>
               </button>
 
               {currentRoundIndex >= 15 ? (
@@ -1020,7 +1020,7 @@ export default function App() {
                   className="px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
                 >
                   <Trophy className="w-3.5 h-3.5" />
-                  <span>進入最終結算</span>
+                  <span>进入最终结算</span>
                 </button>
               ) : (
                 <button
@@ -1030,7 +1030,7 @@ export default function App() {
                   }}
                   className="px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
                 >
-                  <span>進入下一盤</span>
+                  <span>进入下一盘</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -1038,17 +1038,17 @@ export default function App() {
               <button
                 onClick={() => setShowRestartConfirmModal(true)}
                 className="px-2.5 py-1.5 rounded-xl bg-stone-800/80 hover:bg-stone-700 text-stone-300 text-xs flex items-center gap-1 transition-colors cursor-pointer border border-stone-700/80"
-                title="重新開始整場 16 盤比賽"
+                title="重新开始整场 16 盘比赛"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">重開大局</span>
+                <span className="hidden sm:inline">重开大局</span>
               </button>
 
               {/* Toggle Dock Position: Top or Bottom */}
               <button
                 onClick={() => setInspectionDockPosition(inspectionDockPosition === 'top' ? 'bottom' : 'top')}
                 className="p-1.5 rounded-xl bg-stone-800/70 hover:bg-stone-700 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer border border-stone-700/60"
-                title={inspectionDockPosition === 'top' ? '移至螢幕底部' : '移至螢幕頂部（避免遮擋手牌）'}
+                title={inspectionDockPosition === 'top' ? '移至屏幕底部' : '移至屏幕顶部（避免遮挡手牌）'}
               >
                 {inspectionDockPosition === 'top' ? (
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -1061,7 +1061,7 @@ export default function App() {
               <button
                 onClick={() => setIsInspectionBarCollapsed(true)}
                 className="p-1.5 rounded-xl bg-stone-800/70 hover:bg-stone-700 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer border border-stone-700/60"
-                title="收起控制欄，全螢幕純淨看牌"
+                title="收起控制栏，全屏纯净看牌"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
               </button>
@@ -1163,7 +1163,7 @@ export default function App() {
             <button
               onClick={() => setIsGameOver16(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
-              title="關閉結算面板"
+              title="关闭结算面板"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1171,10 +1171,10 @@ export default function App() {
             <Trophy className="w-16 h-16 text-amber-400 mx-auto animate-bounce" />
             <div>
               <h2 className="text-2xl font-bold font-serif text-amber-300">
-                16 盤完整賽事總結算！
+                16 盘完整赛事总结算！
               </h2>
               <p className="text-xs text-stone-400 mt-1">
-                歷經東、南、西、北 4 個風圈共 16 盤決戰，最終戰績排行榜出爐
+                历经东、南、西、北 4 个风圈共 16 盘决战，最终战绩排行榜出炉
               </p>
             </div>
 
@@ -1203,14 +1203,14 @@ export default function App() {
                       )}
                     </div>
                     <span className="font-mono font-bold text-amber-400 text-base">
-                      {p.score > 0 ? `+${p.score}` : p.score} 點
+                      {p.score > 0 ? `+${p.score}` : p.score} 点
                     </span>
                   </div>
                 ))}
             </div>
 
             <p className="text-[10px] text-stone-500">
-              同分依次比較：番數 → 胡牌次數 → 出銃次數（少者優先）
+              同分依次比较：番数 → 胡牌次数 → 出铳次数（少者优先）
             </p>
 
             <div className="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
@@ -1225,7 +1225,7 @@ export default function App() {
                   setIsInspectingFinalBoard(true);
                 }}
                 className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
-                title="回到牌桌查看第16盤胡牌後所有玩家亮明手牌及棄牌區"
+                title="回到牌桌查看第16盘胡牌后所有玩家亮明手牌及弃牌区"
               >
                 <Eye className="w-3.5 h-3.5 text-amber-400" />
                 <span>返回牌桌查看</span>
@@ -1235,7 +1235,7 @@ export default function App() {
                 className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
               >
                 <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-                <span>查看生涯總戰績</span>
+                <span>查看生涯总战绩</span>
               </button>
               {careerStats.historicalRounds.length > 0 && (
                 <button
@@ -1243,17 +1243,17 @@ export default function App() {
                     setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
                   }}
                   className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-700/80"
-                  title="回溯復盤第16盤牌譜與失誤診斷"
+                  title="回溯复盘第16盘牌谱与失误诊断"
                 >
                   <FileSearch className="w-3.5 h-3.5 text-amber-400" />
-                  <span>復盤終局牌譜</span>
+                  <span>复盘终局牌谱</span>
                 </button>
               )}
               <button
                 onClick={startNew16RoundMatch}
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 text-xs font-bold shadow-lg transition-transform active:scale-95 cursor-pointer ml-auto"
               >
-                再開一場 (16盤)
+                再开一场 (16盘)
               </button>
             </div>
           </div>
@@ -1269,10 +1269,10 @@ export default function App() {
             </div>
             <div>
               <h3 className="text-base font-bold font-serif text-amber-300">
-                重新開始 16 盤完整賽事？
+                重新开始 16 盘完整赛事？
               </h3>
               <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">
-                將重置進度回到第 1 盤（東風圈），全桌 4 家分數清零重新開始。當前進行中的牌局進度將被重置。
+                将重置进度回到第 1 盘（东风圈），全桌 4 家分数清零重新开始。当前进行中的牌局进度将被重置。
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
@@ -1286,11 +1286,11 @@ export default function App() {
                 onClick={() => {
                   setShowRestartConfirmModal(false);
                   startNew16RoundMatch();
-                  showActionBanner('全新 16 盤已開啓', 0);
+                  showActionBanner('全新 16 盘已开启', 0);
                 }}
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs shadow-lg transition-transform active:scale-95 cursor-pointer"
               >
-                確認重開大局
+                确认重开大局
               </button>
             </div>
           </div>
