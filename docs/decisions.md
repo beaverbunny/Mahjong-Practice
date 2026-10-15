@@ -272,7 +272,6 @@ That gives about 3.2 s to read a normal bot discard and about 3.7 s for one thro
 
 **Workflow.**
 - Sync with `main` first, work on a branch, open a PR, and merge with a regular merge commit once CI is green.
-- Commit and PR text never names a model.
 - Claude settings, such as permission rules, stay out of the repo. They belong to the owner's own environment.
 
 ## 9. Not supported, deferred and open
