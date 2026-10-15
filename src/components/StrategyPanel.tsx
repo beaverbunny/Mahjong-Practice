@@ -176,10 +176,10 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
           <div className="px-3.5 py-2.5 border-b border-stone-800 bg-stone-950/70 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-xs sm:text-sm font-semibold text-stone-100">实战策略与牌效</h3>
+              <h3 className="text-xs sm:text-sm font-semibold text-stone-100 whitespace-nowrap">策略助手</h3>
             </div>
             <div className="flex items-center gap-2">
-              <div className="text-[11px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 font-mono">
+              <div className="text-[11px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 font-mono whitespace-nowrap">
                 {shantenLabel()}
               </div>
               <button
@@ -321,9 +321,9 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                               : 'bg-stone-950/40 border-stone-800 hover:bg-stone-800/60'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             <MahjongTile tile={rec.tile} size="sm" isRecommended={idx === 0} className="shrink-0" />
-                            <div>
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-stone-100 text-xs">
                                   {rec.tile.displayName}
@@ -340,7 +340,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                             </div>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-right shrink-0 pl-2 whitespace-nowrap">
                             <span className="text-xs font-mono font-bold text-amber-400 block">
                               {rec.effectiveTilesCount} 张进张
                             </span>
