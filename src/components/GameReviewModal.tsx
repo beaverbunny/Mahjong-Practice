@@ -99,6 +99,24 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
     };
   }, [isPlaying, currentStepIndex, totalSteps]);
 
+  // Left/right arrow keys step the replay, as the footer says
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.altKey || e.ctrlKey || e.metaKey || totalSteps === 0) return;
+      // The slider and the round picker handle their own arrow keys
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      setIsPlaying(false);
+      setCurrentStepIndex((prev) =>
+        e.key === 'ArrowLeft' ? Math.max(0, prev - 1) : Math.min(totalSteps - 1, prev + 1)
+      );
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [totalSteps]);
+
   const currentLog: TurnActionLog | undefined = logs[currentStepIndex];
 
   // Count and categorize blunders in this round

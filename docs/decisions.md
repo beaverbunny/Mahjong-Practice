@@ -2,7 +2,7 @@
 
 This file records the decisions that shape 雀圣研习社 and the reasons behind them. Read it before changing rules, bots, layout, wording or the build. When a decision changes, update its entry and note the date and PR. Reversals stay listed, because they record what was tried and why it was dropped.
 
-PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-15 (through PR #23).
+PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-15.
 
 ## 1. Ground rules
 
@@ -52,8 +52,9 @@ These apply to every change.
 
 **Strict Hu (严格胡牌) is an option; hint mode (提示胡牌) is the default.**
 - In hint mode, the 胡 button only appears for a legal win of at least 1 fan.
-- In strict mode, any complete shape can be declared. A 0-fan declaration is a false win (诈胡): the player pays 50 to each opponent (`FALSE_WIN_PENALTY_EACH`) and can't win again that hand.
-- The penalty comes from the owner's qualifier playbook, not the official rules. Confirm it with the referee if it matters. *(#3)*
+- In strict mode, any complete shape can be declared. A 0-fan declaration is a false win (诈胡): the declarer loses 150 (`FALSE_WIN_PENALTY`), the other players gain nothing, and the declarer can't win again that hand.
+- So scores no longer sum to zero after a false win. The engine's consistency check verifies that win payments sum to zero, and that a penalty never pays anyone.
+- The owner set this rule on 10-15. Until then the penalty paid 50 to each opponent, a figure taken from the owner's qualifier playbook. *(#3, 10-15)*
 
 **There is no furiten (振听).** An opponent can win on a tile they discarded themselves, so a tile they threw is never "absolutely safe". *(#2)*
 
@@ -101,6 +102,7 @@ These apply to every change.
 - **Master** is the toughest table. The owner practises on Master ("I only care about master difficulty from this point on").
 - **Master weights were changed in #14** (they were 3 / 4 / 3 / 2). The owner then asked to drop defensive bots entirely, and reverted that; defensive stays at weight 1.
 - To change who sits at Master, change these weights, not the hand logic.
+- **Bot names show seat, style and rank during play** (e.g. 下家 · 速攻型 (大师)). The owner chose this over hiding styles until the match ends, and the difficulty screen says so (名牌显示对手风格). *(10-15)*
 
 **Bot behaviour is pinned by a fingerprint test** in `scripts/danger.test.ts`. Any intended bot change must:
 - update the fingerprint;
@@ -123,6 +125,9 @@ These apply to every change.
 - With the panel open, hints are on: tile tags (安/中/危 with %), discard recommendations and opponent reads.
 - With the panel closed, there are no hints.
 - The panel opens on load, and the choice isn't remembered. The owner chose to keep it this way. *(#8)*
+- The badges on your tiles don't get a separate switch. *(confirmed 10-15)*
+- While hints are on, every tile in hand carries its 安/中/危 badge, and the recommended tile also carries 荐. *(confirmed 10-15)*
+- During the bots' turns, the default 进张与效率 tab shows a wait message; the player switches to 局势与防守 for the opponent reads. *(confirmed 10-15)*
 
 **The panel floats over the table and may cover 下家.** Docking it beside the table was tried in #15 and shelved: "it's okay for the strategy overlay to cover the next player."
 
@@ -137,6 +142,8 @@ These apply to every change.
 - It notes for each discard whether hints were on.
 - It only measures danger. Whether a push was worth it is the player's call.
 - The old "dangerous discard" blunder flag was removed. *(#8)*
+
+**The move review in 实战复盘 judges efficiency only.** Breaking a hand to fold is marked 离听牌倒退 (严重失误) even when folding was right; defence is judged in 放铳风险复盘, not here. *(confirmed 10-15)*
 
 **Discard ranking tie-break order** (`generateDiscardRecommendations`, panel only; bots don't use it):
 1. Fewest steps to a hand with fan.
@@ -187,6 +194,10 @@ These came from the owner's East/West and 四萬/南 examples. *(#11, #13)*
 **Result window.**
 - The fan list has a fixed code column. The name, Chinese and English in one style, has its description underneath in smaller grey text. The "+N 番" count never wraps.
 - The header shows only the fan total. The per-fan rate label ("自摸(+15每番)") was dropped, because the score cards already show each player's change. *(#22)*
+
+**After a hand, the 查看牌桌 control bar (终局牌桌) docks at the top by default.** It may cover part of 对家's revealed hand; the player can move it to the bottom or collapse it. *(confirmed 10-15)*
+
+**The review replay steps with the ← and → keys,** as well as the slider and buttons. The keys are ignored while the slider or round picker has focus (they handle arrows themselves) and when a modifier key is held. *(10-15)*
 
 **The felt texture overlay was removed.** It only loaded in the AI Studio preview, never in the deployed app. *(#10)*
 
@@ -247,7 +258,7 @@ That gives about 3.2 s to read a normal bot discard and about 3.7 s for one thro
 | `mahjong_strict_hu` | Strict Hu on or off |
 | `mahjong_voice_lang_v1` | 普 or 粤 |
 
-- The match in progress is held in memory only.
+- The match in progress is held in memory only, so a reload starts a new match. This is intended. *(confirmed 10-15)*
 - Saved hand history is capped at the last 80 hands (`MAX_HISTORY_HANDS`). Each hand is about 52 KB against a browser limit of about 5 MB. Career counters are unaffected by the cap. *(#8)*
 
 **Tests stay outside AI Studio.**
@@ -273,6 +284,7 @@ That gives about 3.2 s to read a normal bot discard and about 3.7 s for one thro
 **Workflow.**
 - Sync with `main` first, work on a branch, open a PR, and merge with a regular merge commit once CI is green.
 - Claude settings, such as permission rules, stay out of the repo. They belong to the owner's own environment.
+- There is no `CLAUDE.md`, so this log is not auto-loaded. Read it on purpose before making changes. *(10-15)*
 
 ## 9. Not supported, deferred and open
 
@@ -283,14 +295,10 @@ That gives about 3.2 s to read a normal bot discard and about 3.7 s for one thro
 
 **Portrait** is not supported.
 
-**Offered and not chosen.** The owner had no preference, so these remain open:
-- Keep the match in progress on reload. Today a reload starts a new match.
-- Label a correct defensive fold differently from a mistake in the review.
-- Hide bot styles until the match ends. Names show the style during play (an AI Studio change), but the difficulty screen promises a reveal at the end.
-- Make the review's arrow keys work. The footer text mentions them, but they don't step the replay.
-- Calmer hint badges (show only 危 and 荐).
-- Separate switches for hints and the panel.
-- The end-of-hand control bar covers 对家's hand.
-- A "theoretically efficient" Expert bot (gated search or self-play). The first attempt failed (§3).
+**Still open:** a "theoretically efficient" Expert bot. The first attempt failed (§3). The next options are a gated search on top of Master (a few hours of simulator time to validate) or a self-play learned policy (days of work). Ship one only if it clearly beats Master.
 
-**Rehosting.** The app is a static site and can be served by any static host. The share link is hard-coded to `https://tinyurl.com/mahjong-pro-arena` (in `index.html` and the share button). Not pursued.
+The other open items were settled on 10-15 and are recorded in their sections above.
+
+**Hosting and sharing.**
+- The app is published at `https://mahjong-by-rita.ai.studio`. The share button and the page's `og:url` point there; they previously pointed to a tinyurl short link. *(10-15)*
+- It is a static site, so any static host could serve it. Rehosting was considered and not pursued.
