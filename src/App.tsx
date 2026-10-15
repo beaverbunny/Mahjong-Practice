@@ -741,201 +741,204 @@ export default function App() {
   };
 
   return (
-    <div className="h-dvh overflow-hidden bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
-      {/* ================= ZONE 1, 2, 3: TOP BAR CONTRACT ================= */}
-      <header className="h-14 border-b border-stone-800 bg-stone-950/90 backdrop-blur px-4 sm:px-6 flex items-center justify-between z-40 shrink-0">
-        {/* Zone 1: Wordmark with the TVB subtitle beside it on wide screens, stacked underneath when space is tight */}
-        <div className="flex flex-col xl:flex-row xl:items-baseline xl:gap-2 whitespace-nowrap">
-          <span className="text-xl leading-none font-serif font-black tracking-wider text-amber-400">
-            雀圣研习社
-          </span>
-          <span className="mt-1 xl:mt-0 text-xs leading-none text-[#908985]">
-            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 一番起胡
-          </span>
-        </div>
-
-        {/* Zone 2: Navigation Links (Text Links with Hover Underlines) */}
-        <nav className="flex items-center gap-2.5 sm:gap-5 text-xs font-medium text-stone-400 whitespace-nowrap">
-          <button
-            onClick={() => {
-              if (careerStats.historicalRounds.length === 0) {
-                showActionBanner('暂无已完成的牌局记录，完成一盘后可随时复盘', 0);
-              } else {
-                setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
-              }
-            }}
-            className="flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
-            title="随时回溯复盘已完成的对局"
-          >
-            <FileSearch className="w-3.5 h-3.5 text-amber-400" />
-            <span>实战复盘</span>
-            {careerStats.historicalRounds.length > 0 && (
-              <span className="px-1.5 py-0.2 text-[10px] bg-amber-950 text-amber-300 rounded-full border border-amber-600/50 font-mono">
-                {careerStats.historicalRounds.length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setShowRulesModal(true)}
-            className="hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
-            title="查看麻将规则手册"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>规则</span>
-          </button>
-          <button
-            onClick={() => setShowPracticeModal(true)}
-            className="hidden sm:flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer"
-          >
-            <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-            <span>出牌练习</span>
-          </button>
-          <button
-            onClick={() => setShowStatsModal(true)}
-            className="hidden md:flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer"
-          >
-            <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-            <span>生涯战绩</span>
-          </button>
-        </nav>
-
-        {/* Zone 3: Primary Actions */}
-        <div className="flex items-center gap-2">
-          {/* Difficulty Setting Button */}
-          <button
-            onClick={() => setShowDifficultyModal(true)}
-            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-amber-400 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
-            title="查看或调整 AI 难度"
-          >
-            <Bot className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline">
-              {difficulty === 'tournament'
-                ? 'AI: 比赛实战'
-                : difficulty === 'beginner'
-                ? 'AI: 入门'
-                : difficulty === 'intermediate'
-                ? 'AI: 进阶'
-                : 'AI: 宗师'}
+    <div className="bg-stone-950 text-stone-100 font-sans selection:bg-amber-500 selection:text-stone-950">
+      {/* First screen: header and table fill the window. The footer sits below it and only shows when scrolled down. */}
+      <div className="h-dvh overflow-hidden flex flex-col">
+        {/* ================= ZONE 1, 2, 3: TOP BAR CONTRACT ================= */}
+        <header className="h-14 border-b border-stone-800 bg-stone-950/90 backdrop-blur px-4 sm:px-6 flex items-center justify-between z-40 shrink-0">
+          {/* Zone 1: Wordmark with the TVB subtitle beside it on wide screens, stacked underneath when space is tight */}
+          <div className="flex flex-col xl:flex-row xl:items-baseline xl:gap-2 whitespace-nowrap">
+            <span className="text-xl leading-none font-serif font-black tracking-wider text-amber-400">
+              雀圣研习社
             </span>
-          </button>
+            <span className="mt-1 xl:mt-0 text-xs leading-none text-[#908985]">
+              <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 一番起胡
+            </span>
+          </div>
 
-          {/* Strict Hu: no legality hint, false wins are penalized */}
-          <button
-            onClick={toggleStrictHu}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors ${
-              strictHu
-                ? 'bg-rose-950/60 border-rose-700 text-rose-200'
-                : 'bg-stone-900 border-stone-800 text-stone-300 hover:bg-stone-800'
-            }`}
-            title={
-              strictHu
-                ? '严格胡牌：只要牌型完整就可报胡，是否有番需自行判断；无番诈胡罚每家 50 点且本盘不得再胡'
-                : '提示胡牌：只有合法（至少 1 番）时才显示胡牌按钮'
-            }
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline whitespace-nowrap">{strictHu ? '严格胡牌' : '提示胡牌'}</span>
-          </button>
+          {/* Zone 2: Navigation Links (Text Links with Hover Underlines) */}
+          <nav className="flex items-center gap-2.5 sm:gap-5 text-xs font-medium text-stone-400 whitespace-nowrap">
+            <button
+              onClick={() => {
+                if (careerStats.historicalRounds.length === 0) {
+                  showActionBanner('暂无已完成的牌局记录，完成一盘后可随时复盘', 0);
+                } else {
+                  setReviewRoundResult(careerStats.historicalRounds[careerStats.historicalRounds.length - 1]);
+                }
+              }}
+              className="flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
+              title="随时回溯复盘已完成的对局"
+            >
+              <FileSearch className="w-3.5 h-3.5 text-amber-400" />
+              <span>实战复盘</span>
+              {careerStats.historicalRounds.length > 0 && (
+                <span className="px-1.5 py-0.2 text-[10px] bg-amber-950 text-amber-300 rounded-full border border-amber-600/50 font-mono">
+                  {careerStats.historicalRounds.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setShowRulesModal(true)}
+              className="hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer font-semibold text-stone-300 hover:underline"
+              title="查看麻将规则手册"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span>规则</span>
+            </button>
+            <button
+              onClick={() => setShowPracticeModal(true)}
+              className="hidden sm:flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+              <span>出牌练习</span>
+            </button>
+            <button
+              onClick={() => setShowStatsModal(true)}
+              className="hidden md:flex hover:text-amber-300 transition-colors items-center gap-1 cursor-pointer"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
+              <span>生涯战绩</span>
+            </button>
+          </nav>
 
-          {/* Sound Toggle */}
-          <button
-            onClick={toggleSound}
-            className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer"
-            title={soundEnabled ? '音效开启' : '音效静音'}
-          >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
+          {/* Zone 3: Primary Actions */}
+          <div className="flex items-center gap-2">
+            {/* Difficulty Setting Button */}
+            <button
+              onClick={() => setShowDifficultyModal(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-amber-400 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+              title="查看或调整 AI 难度"
+            >
+              <Bot className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden lg:inline">
+                {difficulty === 'tournament'
+                  ? 'AI: 比赛实战'
+                  : difficulty === 'beginner'
+                  ? 'AI: 入门'
+                  : difficulty === 'intermediate'
+                  ? 'AI: 进阶'
+                  : 'AI: 宗师'}
+              </span>
+            </button>
 
-          {/* Voice language toggle: 普 (Mandarin) / 粤 (Cantonese) */}
-          <button
-            onClick={toggleVoiceLang}
-            className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-400 text-sm font-serif font-bold transition-colors cursor-pointer"
-            title={voiceLang === 'cmn' ? '语音：普通话（点击切换粤语）' : '语音：粤语（点击切换普通话）'}
-          >
-            {voiceLang === 'cmn' ? '普' : '粤'}
-          </button>
+            {/* Strict Hu: no legality hint, false wins are penalized */}
+            <button
+              onClick={toggleStrictHu}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors ${
+                strictHu
+                  ? 'bg-rose-950/60 border-rose-700 text-rose-200'
+                  : 'bg-stone-900 border-stone-800 text-stone-300 hover:bg-stone-800'
+              }`}
+              title={
+                strictHu
+                  ? '严格胡牌：只要牌型完整就可报胡，是否有番需自行判断；无番诈胡罚每家 50 点且本盘不得再胡'
+                  : '提示胡牌：只有合法（至少 1 番）时才显示胡牌按钮'
+              }
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden lg:inline whitespace-nowrap">{strictHu ? '严格胡牌' : '提示胡牌'}</span>
+            </button>
 
-          {/* Share App Button */}
-          <button
-            onClick={handleShareApp}
-            className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-amber-400 text-xs transition-colors cursor-pointer"
-            title="分享专属短链给微信好友或社媒 (https://tinyurl.com/mahjong-pro-arena)"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+            {/* Sound Toggle */}
+            <button
+              onClick={toggleSound}
+              className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-stone-200 text-xs transition-colors cursor-pointer"
+              title={soundEnabled ? '音效开启' : '音效静音'}
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
 
-          {/* Restart 16-round match */}
-          <button
-            onClick={() => setShowRestartConfirmModal(true)}
-            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-amber-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
-            title="重新开始整场 16 盘比赛"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline whitespace-nowrap">重开大局</span>
-          </button>
-        </div>
-      </header>
+            {/* Voice language toggle: 普 (Mandarin) / 粤 (Cantonese) */}
+            <button
+              onClick={toggleVoiceLang}
+              className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-400 text-sm font-serif font-bold transition-colors cursor-pointer"
+              title={voiceLang === 'cmn' ? '语音：普通话（点击切换粤语）' : '语音：粤语（点击切换普通话）'}
+            >
+              {voiceLang === 'cmn' ? '普' : '粤'}
+            </button>
 
-      {/* ================= MAIN MAH JONG PLAY AREA ================= */}
-      <main className="flex-1 min-h-0 w-full p-2 sm:p-3 flex flex-col">
-        <div className="flex-1 min-w-0 min-h-0">
-          {players.length === 4 && (
-            <TableFit>
-              <GameBoard
-                players={players}
-                activePlayerIndex={table!.active}
-                prevailingWind={prevailingWind}
-                currentRoundNumber={currentRoundIndex + 1}
-                dealerIndex={dealerIndex}
-                wallRemaining={table!.wall.length}
-                selectedTile={selectedTile}
-                onSelectTile={setSelectedTile}
-                onConfirmDiscard={handleHumanConfirmDiscard}
-                canChi={!!humanClaim && humanClaim.chi.length > 0}
-                chiCombinations={humanClaim?.chi ?? []}
-                canPeng={!!humanClaim?.pung}
-                canGang={gangCandidates.length > 0}
-                gangCandidates={gangCandidates}
-                canHu={!!(humanClaim?.canHu || humanTurn?.canHu)}
-                isSelfDraw={!!humanTurn?.canHu}
-                onChi={handleHumanChi}
-                onPeng={handleHumanPeng}
-                onGang={handleHumanGang}
-                onHu={handleHumanHu}
-                onPass={handleHumanPass}
-                discardRecommendations={discardRecommendations}
-                lastDiscardedTile={lastDiscardedTile}
-                showHints={isStrategyPanelOpen}
-                actionBanner={actionBanner}
-                drawnDiscardIds={drawnDiscardIds}
-                revealAllHands={table!.phase === 'ended' || !!activeRoundResult || isInspectingFinalBoard}
-                roundResult={activeRoundResult}
-              />
-            </TableFit>
+            {/* Share App Button */}
+            <button
+              onClick={handleShareApp}
+              className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-amber-400 text-xs transition-colors cursor-pointer"
+              title="分享专属短链给微信好友或社媒 (https://tinyurl.com/mahjong-pro-arena)"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+
+            {/* Restart 16-round match */}
+            <button
+              onClick={() => setShowRestartConfirmModal(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-amber-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+              title="重新开始整场 16 盘比赛"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden lg:inline whitespace-nowrap">重开大局</span>
+            </button>
+          </div>
+        </header>
+
+        {/* ================= MAIN MAH JONG PLAY AREA ================= */}
+        <main className="flex-1 min-h-0 w-full p-2 sm:p-3 flex flex-col">
+          <div className="flex-1 min-w-0 min-h-0">
+            {players.length === 4 && (
+              <TableFit>
+                <GameBoard
+                  players={players}
+                  activePlayerIndex={table!.active}
+                  prevailingWind={prevailingWind}
+                  currentRoundNumber={currentRoundIndex + 1}
+                  dealerIndex={dealerIndex}
+                  wallRemaining={table!.wall.length}
+                  selectedTile={selectedTile}
+                  onSelectTile={setSelectedTile}
+                  onConfirmDiscard={handleHumanConfirmDiscard}
+                  canChi={!!humanClaim && humanClaim.chi.length > 0}
+                  chiCombinations={humanClaim?.chi ?? []}
+                  canPeng={!!humanClaim?.pung}
+                  canGang={gangCandidates.length > 0}
+                  gangCandidates={gangCandidates}
+                  canHu={!!(humanClaim?.canHu || humanTurn?.canHu)}
+                  isSelfDraw={!!humanTurn?.canHu}
+                  onChi={handleHumanChi}
+                  onPeng={handleHumanPeng}
+                  onGang={handleHumanGang}
+                  onHu={handleHumanHu}
+                  onPass={handleHumanPass}
+                  discardRecommendations={discardRecommendations}
+                  lastDiscardedTile={lastDiscardedTile}
+                  showHints={isStrategyPanelOpen}
+                  actionBanner={actionBanner}
+                  drawnDiscardIds={drawnDiscardIds}
+                  revealAllHands={table!.phase === 'ended' || !!activeRoundResult || isInspectingFinalBoard}
+                  roundResult={activeRoundResult}
+                />
+              </TableFit>
+            )}
+          </div>
+
+          {/* Live Strategy Panel Sidebar / Drawer */}
+          {human && (
+            <StrategyPanel
+              hand={human.hand}
+              melds={human.melds}
+              currentShanten={humanShanten}
+              shapeShanten={humanShantenInfo.shape}
+              noFanRoute={humanShantenInfo.noFanRoute}
+              tenpaiWaits={tenpaiWaits}
+              discardRecommendations={discardRecommendations}
+              players={players}
+              activePlayerIndex={table!.active}
+              prevailingWind={prevailingWind}
+              humanSeatWind={human.seatWind}
+              dangerRead={dangerRead}
+              onTileSelect={(t) => setSelectedTile(t)}
+              isOpen={isStrategyPanelOpen}
+              onToggle={() => setIsStrategyPanelOpen(!isStrategyPanelOpen)}
+            />
           )}
-        </div>
-
-        {/* Live Strategy Panel Sidebar / Drawer */}
-        {human && (
-          <StrategyPanel
-            hand={human.hand}
-            melds={human.melds}
-            currentShanten={humanShanten}
-            shapeShanten={humanShantenInfo.shape}
-            noFanRoute={humanShantenInfo.noFanRoute}
-            tenpaiWaits={tenpaiWaits}
-            discardRecommendations={discardRecommendations}
-            players={players}
-            activePlayerIndex={table!.active}
-            prevailingWind={prevailingWind}
-            humanSeatWind={human.seatWind}
-            dangerRead={dangerRead}
-            onTileSelect={(t) => setSelectedTile(t)}
-            isOpen={isStrategyPanelOpen}
-            onToggle={() => setIsStrategyPanelOpen(!isStrategyPanelOpen)}
-          />
-        )}
-      </main>
+        </main>
+      </div>
 
       {/* ================= BOTTOM FOOTER WITH CURRENT APP VERSION ================= */}
       <footer className="py-1 px-4 text-center shrink-0 z-10 select-none bg-stone-950/90 border-t border-stone-850">

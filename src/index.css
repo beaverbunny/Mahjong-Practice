@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@layer base {
+  /* The page scrolls only to reveal the footer below the table: keep overscroll dark and hide the page scrollbar */
+  html,
+  body {
+    @apply bg-stone-950;
+  }
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+}
