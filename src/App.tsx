@@ -718,12 +718,14 @@ export default function App() {
     <div className="h-dvh overflow-hidden bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
       {/* ================= ZONE 1, 2, 3: TOP BAR CONTRACT ================= */}
       <header className="h-14 border-b border-stone-800 bg-stone-950/90 backdrop-blur px-4 sm:px-6 flex items-center justify-between z-40 shrink-0">
-        {/* Zone 1: Wordmark with the TVB subtitle stacked underneath, so both fit at every width */}
-        <div className="flex flex-col whitespace-nowrap">
+        {/* Zone 1: Wordmark with the TVB subtitle beside it on wide screens, stacked underneath when space is tight */}
+        <div className="flex flex-col xl:flex-row xl:items-baseline xl:gap-2 whitespace-nowrap">
           <span className="text-xl leading-none font-serif font-black tracking-wider text-amber-400">
             雀圣研习社
           </span>
-          <span className="mt-1 text-xs leading-none text-[#908985]">TVB 香港麻将比赛规则 · 16 局实战研习</span>
+          <span className="mt-1 xl:mt-0 text-xs leading-none text-[#908985]">
+            <span className="hidden xl:inline">· </span>TVB 香港麻将比赛规则 · 16 局实战研习
+          </span>
         </div>
 
         {/* Zone 2: Navigation Links (Text Links with Hover Underlines) */}
