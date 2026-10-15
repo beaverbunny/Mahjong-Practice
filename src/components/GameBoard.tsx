@@ -248,16 +248,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 {/* Visual Action Banner Overlay (碰！吃！杠！胡！) */}
                 {actionBanner && (
                   <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center px-2 z-30 animate-in zoom-in-75 duration-200">
+                    {/* Calls ("下家 · 碰！") in large gold on one line; longer messages in small text */}
                     <span
-                      className={`text-center text-amber-300 whitespace-normal ${
-                        actionBanner.text.length <= 4
-                          ? 'font-serif font-black text-3xl tracking-widest drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-bounce'
+                      className={`text-center text-amber-300 ${
+                        actionBanner.text.length <= 10
+                          ? `font-serif font-black whitespace-nowrap drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-bounce ${
+                              actionBanner.text.length <= 7 ? 'text-2xl tracking-widest' : 'text-xl tracking-wide'
+                            }`
                           : 'font-bold text-xs leading-snug'
                       }`}
                     >
                       {actionBanner.text}
                     </span>
-                    <span className="text-[10px] text-stone-300 mt-1">{players[actionBanner.playerIdx]?.name}</span>
                   </div>
                 )}
 

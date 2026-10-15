@@ -423,6 +423,8 @@ export default function App() {
   }, [table]);
 
   const announce = (e: TurnActionLog) => {
+    // Banner names the seat only: "下家 · 碰！" (the human's own calls show just "碰！")
+    const who = e.playerIndex === 0 ? '' : `${e.playerName.split(' · ')[0]} · `;
     if (e.action === 'discard') {
       soundManager.playTileDiscard();
       if (e.tile) {
@@ -430,24 +432,24 @@ export default function App() {
       }
     } else if (e.action === 'chi') {
       soundManager.playMeld();
-      showActionBanner('吃！', e.playerIndex);
+      showActionBanner(`${who}吃！`, e.playerIndex);
       soundManager.speak('吃');
     } else if (e.action === 'peng') {
       soundManager.playMeld();
-      showActionBanner('碰！', e.playerIndex);
+      showActionBanner(`${who}碰！`, e.playerIndex);
       soundManager.speak('碰');
     } else if (e.action === 'gang') {
       soundManager.playKong();
-      showActionBanner('杠！', e.playerIndex);
+      showActionBanner(`${who}杠！`, e.playerIndex);
       soundManager.speak('杠');
     } else if (e.action === 'hu') {
       if (e.aiComment?.includes('诈胡')) {
-        showActionBanner(`诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
+        showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
         soundManager.speak('诈胡');
       } else {
         soundManager.playHu();
         const isSelfDraw = e.aiComment?.includes('自摸');
-        showActionBanner(e.aiComment ?? '和牌！', e.playerIndex);
+        showActionBanner(`${who}${e.aiComment ?? '和牌！'}`, e.playerIndex);
         soundManager.speak(isSelfDraw ? '自摸' : '胡了');
       }
     }
