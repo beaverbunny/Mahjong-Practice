@@ -35,7 +35,7 @@ import {
 } from './engine/table';
 import { decideTurn, decideClaim } from './ai/brain';
 import { Persona, samplePersonas, STYLE_LABELS, getBotPlayerName } from './ai/personas';
-import { soundManager, getTileSpokenName } from './utils/audio';
+import { soundManager, getTileSpokenName, VoiceLang } from './utils/audio';
 import { GameBoard } from './components/GameBoard';
 import { StrategyPanel } from './components/StrategyPanel';
 import { TableFit } from './components/TableFit';
@@ -110,6 +110,14 @@ export default function App() {
   const [showDifficultyModal, setShowDifficultyModal] = React.useState(false);
   const [showRestartConfirmModal, setShowRestartConfirmModal] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
+  // Voice for announcements: 普 (Mandarin, default) or 粵 (Cantonese)
+  const [voiceLang, setVoiceLang] = React.useState<VoiceLang>(() => {
+    try {
+      return localStorage.getItem('mahjong_voice_lang_v1') === 'yue' ? 'yue' : 'cmn';
+    } catch {
+      return 'cmn';
+    }
+  });
 
   // AI field: 'tournament' mimics a real qualifying field
   const [difficulty, setDifficulty] = React.useState<DifficultyLevel>(() => {
@@ -227,6 +235,20 @@ export default function App() {
     const next = !soundEnabled;
     setSoundEnabled(next);
     soundManager.enabled = next;
+  };
+
+  React.useEffect(() => {
+    soundManager.voiceLang = voiceLang;
+  }, [voiceLang]);
+
+  const toggleVoiceLang = () => {
+    const next: VoiceLang = voiceLang === 'cmn' ? 'yue' : 'cmn';
+    setVoiceLang(next);
+    soundManager.voiceLang = next;
+    try {
+      localStorage.setItem('mahjong_voice_lang_v1', next);
+    } catch {}
+    soundManager.speak(next === 'yue' ? '粵語' : '普通話');
   };
 
   // Visual action announcement banner (碰！吃！杠！胡！)
@@ -822,6 +844,15 @@ export default function App() {
             title={soundEnabled ? '音效開啓' : '音效靜音'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+
+          {/* Voice language toggle: 普 (Mandarin) / 粵 (Cantonese) */}
+          <button
+            onClick={toggleVoiceLang}
+            className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-400 text-sm font-serif font-bold transition-colors cursor-pointer"
+            title={voiceLang === 'cmn' ? '語音：普通話（點擊切換粵語）' : '語音：粵語（點擊切換普通話）'}
+          >
+            {voiceLang === 'cmn' ? '普' : '粵'}
           </button>
 
           {/* Share App Button */}

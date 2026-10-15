@@ -36,9 +36,15 @@ export function getTileSpokenName(tile: Tile | { type: string; displayName?: str
   return tile.displayName || '';
 }
 
+// Spoken language for announcements: Mandarin (普) or Cantonese (粵)
+export type VoiceLang = 'cmn' | 'yue';
+
+const isCantonese = (v: SpeechSynthesisVoice) => /zh[-_]hk|yue/i.test(v.lang);
+
 class SoundController {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
+  public voiceLang: VoiceLang = 'cmn';
   private cachedVoices: SpeechSynthesisVoice[] = [];
 
   constructor() {
@@ -63,7 +69,6 @@ class SoundController {
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'zh-CN';
       utterance.volume = 1.0;
       utterance.pitch = 1.0;
       utterance.rate = 1.28; // 稍微快一点，干练利落
@@ -73,12 +78,17 @@ class SoundController {
       }
 
       const zhVoices = this.cachedVoices.filter(
-        (v) => v.lang.startsWith('zh') || v.lang.includes('cmn')
+        (v) => v.lang.toLowerCase().startsWith('zh') || /cmn|yue/i.test(v.lang)
       );
+      // Cantonese when chosen and the device has a Cantonese voice; otherwise Mandarin (mainland voice first)
+      const voice =
+        (this.voiceLang === 'yue' ? zhVoices.find(isCantonese) : undefined) ??
+        zhVoices.find((v) => /zh[-_](cn|sg)|cmn/i.test(v.lang)) ??
+        zhVoices.find((v) => !isCantonese(v)) ??
+        zhVoices[0];
 
-      if (zhVoices.length > 0) {
-        utterance.voice = zhVoices[0]; // 默认标准御姐音
-      }
+      utterance.lang = voice?.lang ?? (this.voiceLang === 'yue' ? 'zh-HK' : 'zh-CN');
+      if (voice) utterance.voice = voice;
 
       window.speechSynthesis.speak(utterance);
     } catch {
