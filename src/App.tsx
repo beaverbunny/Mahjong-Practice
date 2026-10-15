@@ -21,7 +21,7 @@ import {
 import {
   TableState,
   HANDS_PER_MATCH,
-  FALSE_WIN_PENALTY_EACH,
+  FALSE_WIN_PENALTY,
   dealHand,
   getTurnOptions,
   getClaimOptions,
@@ -470,7 +470,7 @@ export default function App() {
       soundManager.speak(`${seat}杠`);
     } else if (e.action === 'hu') {
       if (e.aiComment?.includes('诈胡')) {
-        showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY_EACH * 3} 点`, e.playerIndex);
+        showActionBanner(`${who}诈胡！罚 ${FALSE_WIN_PENALTY} 点`, e.playerIndex);
         soundManager.speak(`${seat}诈胡`);
       } else {
         soundManager.playHu();
@@ -715,7 +715,7 @@ export default function App() {
   };
 
   const handleShareApp = async () => {
-    const shareUrl = 'https://tinyurl.com/mahjong-pro-arena';
+    const shareUrl = 'https://mahjong-by-rita.ai.studio';
     const shareTitle = '雀圣研习社 - TVB 麻将比赛实战与策略复盘';
     const shareText = '邀你加入雀圣研习社，体验16盘完整赛制与深度出牌复盘！';
 
@@ -734,9 +734,9 @@ export default function App() {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      showActionBanner('已复制分享链接：https://tinyurl.com/mahjong-pro-arena (可发给微信好友/社媒)', 0);
+      showActionBanner(`已复制分享链接：${shareUrl} (可发给微信好友/社媒)`, 0);
     } catch {
-      showActionBanner('分享短链：https://tinyurl.com/mahjong-pro-arena', 0);
+      showActionBanner(`分享链接：${shareUrl}`, 0);
     }
   };
 
@@ -831,7 +831,7 @@ export default function App() {
               }`}
               title={
                 strictHu
-                  ? '严格胡牌：只要牌型完整就可报胡，是否有番需自行判断；无番诈胡罚每家 50 点且本盘不得再胡'
+                  ? '严格胡牌：只要牌型完整就可报胡，是否有番需自行判断；无番诈胡罚 150 点且本盘不得再胡'
                   : '提示胡牌：只有合法（至少 1 番）时才显示胡牌按钮'
               }
             >
@@ -861,7 +861,7 @@ export default function App() {
             <button
               onClick={handleShareApp}
               className="p-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-amber-400 text-xs transition-colors cursor-pointer"
-              title="分享专属短链给微信好友或社媒 (https://tinyurl.com/mahjong-pro-arena)"
+              title="分享链接给微信好友或社媒 (https://mahjong-by-rita.ai.studio)"
             >
               <Share2 className="w-4 h-4" />
             </button>

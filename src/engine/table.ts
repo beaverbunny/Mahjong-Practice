@@ -13,7 +13,8 @@
  * - An added Kong (bu_gang) can be robbed: another player may win on the added tile,
  *   paid by the Kong declarer like a discard win.
  * - After Chi/Pung the caller must discard (no self-draw win or Kong that turn).
- * - False win (strict mode): the declarer pays 50 to each opponent and can't win for the rest of the hand.
+ * - False win (strict mode): the declarer loses 150 (the other players gain nothing) and can't win for
+ *   the rest of the hand.
  */
 import {
   Tile,
@@ -37,7 +38,7 @@ import {
 import { shanten } from './shanten';
 
 export const HANDS_PER_MATCH = 16;
-export const FALSE_WIN_PENALTY_EACH = 50;
+export const FALSE_WIN_PENALTY = 150;
 const WINDS: Wind[] = ['E', 'S', 'W', 'N'];
 
 export type Phase = 'turn' | 'claim' | 'ended';
@@ -400,11 +401,8 @@ export function declareSelfDraw(s: TableState, p: number): TableState {
 function applyFalseWin(s: TableState, p: number): TableState {
   const penaltyDelta = [...s.penaltyDelta];
   const players = clonePlayers(s);
-  for (let i = 0; i < 4; i++) {
-    const d = i === p ? -3 * FALSE_WIN_PENALTY_EACH : FALSE_WIN_PENALTY_EACH;
-    penaltyDelta[i] += d;
-    players[i].score += d;
-  }
+  penaltyDelta[p] -= FALSE_WIN_PENALTY;
+  players[p].score -= FALSE_WIN_PENALTY;
   players[p].isDead = true;
   return {
     ...s,
@@ -414,7 +412,7 @@ function applyFalseWin(s: TableState, p: number): TableState {
       ...s.log,
       logEntry(s, p, {
         action: 'hu',
-        aiComment: `诈胡！手牌不符合任何胡牌种类，罚付每家 ${FALSE_WIN_PENALTY_EACH} 点，本盘不得再胡牌`,
+        aiComment: `诈胡！手牌不符合任何胡牌种类，罚 ${FALSE_WIN_PENALTY} 点，本盘不得再胡牌`,
       }),
     ],
   };
@@ -586,7 +584,9 @@ export function checkInvariants(s: TableState): string[] {
     count += 1;
   }
   if (count !== 136) errors.push(`tile count ${count} != 136`);
-  const scoreSum = s.players.reduce((a, p) => a + p.score, 0);
-  if (scoreSum !== 0) errors.push(`scores sum to ${scoreSum}`);
+  // Win payments are zero-sum; false-win penalties are not (only the declarer loses)
+  const paidSum = s.players.reduce((a, p, i) => a + p.score - p.startingScore - s.penaltyDelta[i], 0);
+  if (paidSum !== 0) errors.push(`win payments sum to ${paidSum}`);
+  if (s.penaltyDelta.some((d) => d > 0)) errors.push('a false-win penalty paid someone');
   return errors;
 }
