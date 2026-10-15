@@ -202,7 +202,7 @@ export function evaluateTileSafety(
     return {
       score: 85,
       level: 'safe',
-      reason: '现物较安全：听牌对手打过此牌，但本规则无振听，仍有被和可能',
+      reason: '對手自己打過此牌，較安全，但他仍可胡此牌',
     };
   }
 
@@ -213,21 +213,21 @@ export function evaluateTileSafety(
       return {
         score: 95,
         level: 'safe',
-        reason: `绝张字牌：场上已现${visibleCopies}张，极难成和`,
+        reason: `絕張字牌：場上已現${visibleCopies}張，極難被胡`,
       };
     }
     if (visibleCopies === 2) {
       return {
         score: 75,
         level: 'safe',
-        reason: '二熟字牌：仅存1张，相对安全',
+        reason: '熟張字牌：僅存1張，相對安全',
       };
     }
     if (visibleCopies === 0) {
       return {
         score: 30,
         level: 'danger',
-        reason: '生张字牌：场上未见，易被对手碰听或和牌',
+        reason: '生張字牌：場上未見，易被對手碰或胡',
       };
     }
   }
@@ -251,13 +251,13 @@ export function evaluateTileSafety(
         return {
           score: 70,
           level: 'medium',
-          reason: `筋一九：对手打过${neighbor}${suit === 'wan' ? '万' : suit === 'tiao' ? '条' : '筒'}，两面听可能性较低（本规则无振听，并非绝对安全）`,
+          reason: `一九相隔三位：對手打過${neighbor}${suit === 'wan' ? '萬' : suit === 'tiao' ? '條' : '筒'}，兩頭聽可能性較低（並非絕對安全）`,
         };
       }
       return {
         score: 65,
         level: 'medium',
-        reason: '一九幺九边张：危险度略低于中张',
+        reason: '一九邊張：危險度略低於中張',
       };
     }
 
@@ -266,7 +266,7 @@ export function evaluateTileSafety(
       return {
         score: 25,
         level: 'danger',
-        reason: '中张生牌：极易点炮多面听（如两面、两头嵌）',
+        reason: '中張生張：容易出銃給兩頭或多面聽',
       };
     }
   }
@@ -274,7 +274,7 @@ export function evaluateTileSafety(
   return {
     score: 55,
     level: 'medium',
-    reason: '普通牌：未见明显危险特征，需谨慎防守',
+    reason: '普通牌：未見明顯危險特徵，需謹慎防守',
   };
 }
 
@@ -363,7 +363,7 @@ export function generateDiscardRecommendations(
       ? {
           score: Math.round(100 * (1 - read.pct)),
           level: read.level,
-          reason: `放铳率约 ${(100 * read.pct).toFixed(read.pct < 0.1 ? 1 : 0)}%${read.reasons.length ? '：' + read.reasons.join('；') : ''}`,
+          reason: `出銃率約 ${(100 * read.pct).toFixed(read.pct < 0.1 ? 1 : 0)}%${read.reasons.length ? '：' + read.reasons.join('；') : ''}`,
         }
       : evaluateTileSafety(tileToDiscard, opponentDiscards, opponentTenpais, allVisibleTiles);
     exactRisk.set(tileToDiscard.id, read ? read.pct : 1 - safety.score / 100);
@@ -378,14 +378,14 @@ export function generateDiscardRecommendations(
     const names = (types: TileType[]) =>
       `${types.slice(0, 3).map(getTileNameByType).join('、')}${types.length > 3 ? '等' : ''}`;
     if (noFanRoute) {
-      recommendationReason = `已无番种路线，只能自摸和：${after.shape <= 0 ? '听牌' : `${shantenAfter}向听`}，进张${effectiveTilesCount}张`;
+      recommendationReason = `已無番種路線，只能自摸：${after.shape <= 0 ? '聽牌' : `差 ${shantenAfter} 張聽牌`}，進張${effectiveTilesCount}張`;
     } else if (shantenAfter === 0) {
-      recommendationReason = `有番听牌！可和${effectiveTileTypes.length}种牌共${effectiveTilesCount}张`;
+      recommendationReason = `有番聽牌！可胡${effectiveTileTypes.length}種牌共${effectiveTilesCount}張`;
     } else {
-      recommendationReason = `有番向听：进张${effectiveTilesCount}张 (${names(effectiveTileTypes)})`;
+      recommendationReason = `有番進張：${effectiveTilesCount}張 (${names(effectiveTileTypes)})`;
     }
     if (!noFanRoute && selfDrawOnlyTilesCount > 0) {
-      recommendationReason += `；另有${selfDrawOnlyTilesCount}张 (${names(selfDrawOnlyTileTypes)}) 可改善牌型，但暂未带番`;
+      recommendationReason += `；另有${selfDrawOnlyTilesCount}張 (${names(selfDrawOnlyTileTypes)}) 可改善牌型，但暫未帶番`;
     }
 
     recommendations.push({
@@ -491,10 +491,10 @@ export function analyzeTurnBlunder(
       isBlunder: true,
       severity: 'critical',
       type: 'shanten_retreat',
-      typeName: '向听数倒退 (严重恶手)',
-      reason: `向听数后退！最佳切牌应为【${bestRec.tile.displayName}】维持${
-        bestRec.shantenAfter === 0 ? '听牌' : bestRec.shantenAfter + '向听'
-      }，实战切出【${chosenRec.tile.displayName}】导致手牌倒退至${chosenRec.shantenAfter}向听，节奏严重受损。`,
+      typeName: '離聽牌倒退 (嚴重失誤)',
+      reason: `離聽牌倒退！最佳出牌應為【${bestRec.tile.displayName}】維持${
+        bestRec.shantenAfter === 0 ? '聽牌' : '差 ' + bestRec.shantenAfter + ' 張聽牌'
+      }，實戰打出【${chosenRec.tile.displayName}】導致手牌倒退至差 ${chosenRec.shantenAfter} 張聽牌，節奏嚴重受損。`,
       bestChoice: bestRec.tile,
       bestRec,
       chosenRec,
@@ -512,8 +512,8 @@ export function analyzeTurnBlunder(
       isBlunder: true,
       severity: 'critical',
       type: 'efficiency_loss',
-      typeName: '牌效重度缩水 (牌效恶手)',
-      reason: `牌效严重亏损：实战切出【${chosenRec.tile.displayName}】仅余${chosenRec.effectiveTilesCount}张进张，而最佳选择【${bestRec.tile.displayName}】进张高达${bestRec.effectiveTilesCount}张，白白损失${tileDiff}张进张面！`,
+      typeName: '進張大幅減少 (嚴重失誤)',
+      reason: `進張嚴重虧損：實戰打出【${chosenRec.tile.displayName}】僅餘${chosenRec.effectiveTilesCount}張進張，而最佳選擇【${bestRec.tile.displayName}】進張高達${bestRec.effectiveTilesCount}張，白白損失${tileDiff}張進張面！`,
       bestChoice: bestRec.tile,
       bestRec,
       chosenRec,
@@ -524,8 +524,8 @@ export function analyzeTurnBlunder(
       isBlunder: true,
       severity: 'inaccuracy',
       type: 'efficiency_loss',
-      typeName: '进张面次优 (缓手/疑问手)',
-      reason: `打法略显狭窄：切出【${chosenRec.tile.displayName}】较最佳切牌【${bestRec.tile.displayName}】减少了${tileDiff}张有效进张（${chosenRec.effectiveTilesCount}张 vs ${bestRec.effectiveTilesCount}张）。`,
+      typeName: '進張面次優 (次優打法)',
+      reason: `打法略顯狹窄：打出【${chosenRec.tile.displayName}】較最佳出牌【${bestRec.tile.displayName}】減少了${tileDiff}張有效進張（${chosenRec.effectiveTilesCount}張 vs ${bestRec.effectiveTilesCount}張）。`,
       bestChoice: bestRec.tile,
       bestRec,
       chosenRec,

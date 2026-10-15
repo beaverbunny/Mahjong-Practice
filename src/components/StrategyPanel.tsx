@@ -55,12 +55,12 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
   const [activeTab, setActiveTab] = React.useState<'efficiency' | 'defense' | 'yaku'>('efficiency');
 
   const shantenLabel = () => {
-    if (noFanRoute) return `${shapeShanten === 0 ? '听牌' : `${shapeShanten} 向听`} · 无番只能自摸`;
-    if (currentShanten === 0) return '有番听牌 (Tenpai)';
-    if (currentShanten === 1) return '一向听 (1-Shanten)';
-    if (currentShanten === 2) return '二向听 (2-Shanten)';
-    if (currentShanten === 3) return '三向听 (3-Shanten)';
-    return `${currentShanten} 向听`;
+    if (noFanRoute) return `${shapeShanten === 0 ? '聽牌' : `差 ${shapeShanten} 張聽牌`} · 無番只能自摸`;
+    if (currentShanten === 0) return '有番聽牌';
+    if (currentShanten === 1) return '差 1 張聽牌';
+    if (currentShanten === 2) return '差 2 張聽牌';
+    if (currentShanten === 3) return '差 3 張聽牌';
+    return `差 ${currentShanten} 張聽牌`;
   };
 
   // Potential Yaku Progress Analysis
@@ -96,7 +96,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
         name: '清一色 (7番)',
         fan: 7,
         progress: Math.min(100, Math.round((dominantSuitCount / 14) * 100)),
-        tip: `已有 ${dominantSuitCount}/14 张${dominantSuit === 'wan' ? '万' : dominantSuit === 'tiao' ? '条' : '筒'}子，可果断清理它色牌`,
+        tip: `已有 ${dominantSuitCount}/14 張${dominantSuit === 'wan' ? '萬' : dominantSuit === 'tiao' ? '條' : '筒'}子，可果斷清理它色牌`,
       });
     }
 
@@ -106,7 +106,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
         name: '混一色 (3番)',
         fan: 3,
         progress: Math.min(100, Math.round(((dominantSuitCount + honors) / 14) * 100)),
-        tip: `单色结合字牌已达 ${dominantSuitCount + honors} 张，成牌极快`,
+        tip: `單色結合字牌已達 ${dominantSuitCount + honors} 張，成牌極快`,
       });
     }
 
@@ -120,20 +120,20 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
 
     if (totalPairsOrTrips >= 3) {
       goals.push({
-        name: '碰碰胡 (3番)',
+        name: '對對胡 (3番)',
         fan: 3,
         progress: Math.min(100, Math.round((totalPairsOrTrips / 5) * 100)),
-        tip: `已有 ${totalPairsOrTrips} 组对子/刻子，遇碰即碰加速成型`,
+        tip: `已有 ${totalPairsOrTrips} 組對子/刻子，遇碰即碰加速成型`,
       });
     }
 
     // Dragon / Wind Triplet (1番 each)
     if (dragons >= 2) {
       goals.push({
-        name: '箭牌刻 (1-2番)',
+        name: '中發白刻 (1-2番)',
         fan: 1,
         progress: Math.min(100, Math.round((dragons / 3) * 100)),
-        tip: '中发白是宝贵的番种来源，注意留存碰出',
+        tip: '中發白是寶貴的番種來源，注意留存碰出',
       });
     }
 
@@ -143,7 +143,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
         name: '平胡 (1番)',
         fan: 1,
         progress: 80,
-        tip: '四副序数顺子加任意对子，进攻防守最均衡',
+        tip: '四副順子加一對眼，進攻防守最均衡',
       });
     }
 
@@ -193,8 +193,8 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
           </div>
           {!noFanRoute && shapeShanten < currentShanten && (
             <div className="px-4 py-2 text-[11px] leading-relaxed bg-amber-950/40 border-b border-amber-900/60 text-amber-200">
-              牌型已是{shapeShanten === 0 ? '听牌' : `${shapeShanten}向听`}，但那样和出无番，只能自摸。按至少 1 番计算为
-              {currentShanten === 0 ? '听牌' : `${currentShanten}向听`}。
+              牌型已是{shapeShanten === 0 ? '聽牌' : `差 ${shapeShanten} 張聽牌`}，但那樣胡出無番，只能自摸。按至少 1 番計算為
+              {currentShanten === 0 ? '聽牌' : `差 ${currentShanten} 張聽牌`}。
             </div>
           )}
 
@@ -208,7 +208,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              进张与牌效
+              進張與效率
             </button>
             <button
               onClick={() => setActiveTab('defense')}
@@ -218,7 +218,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              局势与防守
+              局勢與防守
             </button>
             <button
               onClick={() => setActiveTab('yaku')}
@@ -228,13 +228,13 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                   : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              番种目标
+              番種目標
             </button>
           </div>
 
           {/* Scrollable Body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
-            {/* TAB 1: Tile Efficiency (进张与牌效) */}
+            {/* TAB 1: Tile Efficiency (进张与效率) */}
             {activeTab === 'efficiency' && (
               <div className="space-y-4">
                 {/* Tenpai Status Section */}
@@ -255,12 +255,12 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                         <Award className="w-4 h-4" />
                         <span>
                           {tenpaiWaits.every((w) => w.selfDrawOnly)
-                            ? '听牌但无番：别人打出不能和，只能自摸'
-                            : '已听牌！等待和牌张：'}
+                            ? '聽牌但無番：別人打出不能胡，只能自摸'
+                            : '已聽牌！等待胡牌張：'}
                         </span>
                       </div>
                       <span className="text-[11px] text-stone-400">
-                        共 {tenpaiWaits.reduce((acc, w) => acc + w.remainingCount, 0)} 张余牌
+                        共 {tenpaiWaits.reduce((acc, w) => acc + w.remainingCount, 0)} 張餘牌
                       </span>
                     </div>
 
@@ -277,7 +277,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                                 {wait.displayName}
                                 {wait.selfDrawOnly && (
                                   <span className="text-[9px] px-1 rounded bg-amber-900/80 text-amber-200 border border-amber-700">
-                                    仅自摸
+                                    僅自摸
                                   </span>
                                 )}
                               </div>
@@ -288,9 +288,9 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                           </div>
                           <div className="text-right">
                             <div className="font-bold text-emerald-400 text-sm">
-                              {wait.remainingCount} 张
+                              {wait.remainingCount} 張
                             </div>
-                            <div className="text-[10px] text-stone-400">预估 {wait.estimatedFan} 番</div>
+                            <div className="text-[10px] text-stone-400">預估 {wait.estimatedFan} 番</div>
                           </div>
                         </div>
                       ))}
@@ -301,13 +301,13 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 {/* Discard Recommendations */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-stone-200">最佳舍牌推荐 (牌效排行)：</span>
-                    <span className="text-[11px] text-stone-400">点击牌面可选中</span>
+                    <span className="font-bold text-stone-200">最佳出牌推薦 (進張排行)：</span>
+                    <span className="text-[11px] text-stone-400">點擊牌面可選中</span>
                   </div>
 
                   {discardRecommendations.length === 0 ? (
                     <div className="text-stone-500 italic p-3 text-center bg-stone-950/40 rounded-xl">
-                      手牌为13张时请等待轮到自己摸牌
+                      手牌為13張時請等待輪到自己摸牌
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -330,7 +330,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                                 </span>
                                 {idx === 0 && (
                                   <span className="text-[10px] text-emerald-300 bg-emerald-900/80 px-1.5 py-0.5 rounded font-medium">
-                                    最优推荐
+                                    最優推薦
                                   </span>
                                 )}
                               </div>
@@ -342,7 +342,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
 
                           <div className="text-right shrink-0 pl-2 whitespace-nowrap">
                             <span className="text-xs font-mono font-bold text-amber-400 block">
-                              {rec.effectiveTilesCount} 张进张
+                              {rec.effectiveTilesCount} 張進張
                             </span>
                             <span
                               className={`text-[10px] ${
@@ -356,8 +356,8 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                               {rec.safetyLevel === 'safe'
                                 ? '安全'
                                 : rec.safetyLevel === 'medium'
-                                ? '较稳'
-                                : '危险'}
+                                ? '較穩'
+                                : '危險'}
                               {dangerRead?.tiles[rec.tile.type] && ` ${pctText(dangerRead.tiles[rec.tile.type].pct)}`}
                             </span>
                           </div>
@@ -375,7 +375,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 <div className="p-3 bg-stone-950/50 rounded-xl border border-stone-800 space-y-2">
                   <div className="font-bold text-stone-200 flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    <span>对手读牌（只用您能看到的信息）</span>
+                    <span>對手讀牌（只用您能看到的資訊）</span>
                   </div>
                   {players
                     .filter((p) => !p.isHuman)
@@ -392,7 +392,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                               <span className="text-stone-500 text-[10px] truncate">{bot.name}</span>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {read.label !== '门清' && read.label !== '鸣牌中' && (
+                              {read.label !== '門清' && read.label !== '吃碰中' && (
                                 <span className="text-[10px] text-stone-400">{read.label}</span>
                               )}
                               <span
@@ -403,14 +403,14 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                                     ? 'bg-amber-900/60 text-amber-300 border-amber-700'
                                     : 'text-stone-400 border-stone-700'
                                 }`}
-                                title="此刻能和别人打出的牌的概率"
+                                title="此刻能胡別人打出的牌的機率"
                               >
-                                听牌 {Math.round(100 * ready)}%
+                                聽牌 {Math.round(100 * ready)}%
                               </span>
                               {op && (
                                 <span
                                   className={`text-[10px] font-mono ${op.fan >= 3 ? 'text-rose-300 font-bold' : 'text-stone-400'}`}
-                                  title="若放铳，预计番数（放铳每番 10 点）"
+                                  title="若出銃，預計番數（出銃每番 10 點）"
                                 >
                                   ≈{op.fan.toFixed(1)}番
                                 </span>
@@ -424,13 +424,13 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                       );
                     })}
                   <p className="text-[10px] text-stone-500 leading-relaxed">
-                    根据每家的副露、舍牌顺序、摸切/手切和巡目推测，不看任何暗牌。数字来自模拟大师对局的校准。
+                    根據每家的吃碰、出牌順序、是否摸到就打和輪次推測，不看任何暗牌。數字來自模擬大師對局的校準。
                   </p>
                 </div>
 
                 {/* Defense Safety Guide */}
                 <div className="space-y-2">
-                  <div className="font-bold text-stone-200">当前手牌放铳率（打出后被和的概率）：</div>
+                  <div className="font-bold text-stone-200">當前手牌出銃率（打出後被胡的機率）：</div>
                   <div className="grid grid-cols-2 gap-2">
                     {discardRecommendations.map((rec) => (
                       <div
@@ -455,8 +455,8 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-[11px] text-amber-200/90 leading-relaxed">
-                  <span className="font-bold">防守要点：</span>
-                  最安全的是对手手牌没变后已经有人打过、他却没和的牌（过张）。其次是现物、绝张字牌。本规则无振听，现物也并非绝对安全。对手若在做大牌（≈3番以上），宜更早弃和。
+                  <span className="font-bold">防守要點：</span>
+                  最安全的是對手手牌沒變後已經有人打過、他卻沒胡的牌（過張）。其次是他自己打過的牌、絕張字牌，但他仍可胡自己打過的牌。對手若在做大牌（≈3番以上），宜更早放棄做牌、全力防守。
                 </div>
               </div>
             )}
@@ -466,7 +466,7 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
               <div className="space-y-3">
                 <div className="font-bold text-stone-200 flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-amber-400" />
-                  <span>当前手牌番种潜力分析</span>
+                  <span>當前手牌番種潛力分析</span>
                 </div>
 
                 {yakuGoals.map((goal, idx) => (
@@ -494,11 +494,11 @@ export const StrategyPanel: React.FC<StrategyPanelProps> = ({
                 ))}
 
                 <div className="p-3 rounded-xl bg-stone-950/60 border border-stone-800 text-[11px] text-stone-400 space-y-1">
-                  <div className="font-semibold text-stone-300">本局风圈增益：</div>
+                  <div className="font-semibold text-stone-300">本盤風圈增益：</div>
                   <p>
-                    圈风：<span className="text-amber-400 font-bold">{WIND_NAMES[prevailingWind]}风</span>{' '}
-                    (圈风刻1番) · 门风：
-                    <span className="text-amber-400 font-bold">{WIND_NAMES[humanSeatWind]}风</span> (门风刻1番)
+                    圈風：<span className="text-amber-400 font-bold">{WIND_NAMES[prevailingWind]}風</span>{' '}
+                    (圈風刻1番) · 門風：
+                    <span className="text-amber-400 font-bold">{WIND_NAMES[humanSeatWind]}風</span> (門風刻1番)
                   </p>
                 </div>
               </div>
@@ -520,7 +520,7 @@ function readVisibleThreat(
   prevailingWind: string
 ): { level: 'low' | 'medium' | 'high'; label: string } {
   const melds = pl.melds;
-  if (melds.length === 0) return { level: 'low', label: '门清' };
+  if (melds.length === 0) return { level: 'low', label: '門清' };
   const suits = new Set(melds.map((m) => m.tiles[0].suit).filter(Boolean));
   const hasHonor = melds.some((m) => !m.tiles[0].suit);
   const valuePungs = melds.filter((m) => {
@@ -530,9 +530,9 @@ function readVisibleThreat(
   const allPungs = melds.length >= 2 && melds.every((m) => m.type !== 'chi');
   const signs: string[] = [];
   if (melds.length >= 2 && suits.size === 1) signs.push(hasHonor ? '混一色?' : '清一色?');
-  if (allPungs) signs.push('对对胡?');
-  if (valuePungs > 0) signs.push(`番牌刻×${valuePungs}`);
+  if (allPungs) signs.push('對對胡?');
+  if (valuePungs > 0) signs.push(`番子×${valuePungs}`);
   const big = signs.length > 0 && (melds.length >= 2 || valuePungs >= 2);
   const level = melds.length >= 3 || big ? 'high' : melds.length === 2 ? 'medium' : 'low';
-  return { level, label: signs.join(' ') || (level === 'high' ? '接近听牌' : '鸣牌中') };
+  return { level, label: signs.join(' ') || (level === 'high' ? '接近聽牌' : '吃碰中') };
 }

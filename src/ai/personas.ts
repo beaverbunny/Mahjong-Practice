@@ -23,9 +23,9 @@ export interface Persona {
 export const STYLE_LABELS: Record<PlayStyle, string> = {
   speed: '速攻型',
   value: '大牌型',
-  balanced: '稳健型',
+  balanced: '穩健型',
   defensive: '防守型',
-  casual: '随性型',
+  casual: '隨性型',
 };
 
 type Range = [number, number];
@@ -101,19 +101,19 @@ export function getBotPlayerName(
   skill: number,
   difficulty: DifficultyLevel
 ): string {
-  const seatPrefix = seat === 1 ? '下家' : seat === 2 ? '对家' : '上家';
-  const styleStr = STYLE_LABELS[style] || '稳健型';
+  const seatPrefix = seat === 1 ? '下家' : seat === 2 ? '對家' : '上家';
+  const styleStr = STYLE_LABELS[style] || '穩健型';
 
-  let tier = '进阶';
+  let tier = '進階';
   if (difficulty === 'beginner') {
-    tier = '入门';
+    tier = '入門';
   } else if (difficulty === 'master') {
-    tier = skill >= 0.9 ? '宗师' : '大师';
+    tier = skill >= 0.9 ? '宗師' : '大師';
   } else if (difficulty === 'intermediate') {
-    tier = skill >= 0.65 ? '进阶' : '中级';
+    tier = skill >= 0.65 ? '進階' : '中級';
   } else {
     // tournament field
-    tier = skill >= 0.85 ? '宗师' : skill >= 0.65 ? '大师' : skill >= 0.45 ? '进阶' : '入门';
+    tier = skill >= 0.85 ? '宗師' : skill >= 0.65 ? '大師' : skill >= 0.45 ? '進階' : '入門';
   }
 
   return `${seatPrefix} · ${styleStr} (${tier})`;

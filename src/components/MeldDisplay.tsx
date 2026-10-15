@@ -50,7 +50,7 @@ export const MeldDisplay: React.FC<MeldDisplayProps> = ({
     return (
       <div
         className={`flex items-end gap-0.5 p-1 rounded-lg bg-black/40 border border-stone-800/80 shadow-md ${className}`}
-        title="吃牌 (中间为所吃之牌)"
+        title="吃牌 (中間為所吃之牌)"
       >
         {orderedTiles.map(({ tile, isCalled }, idx) => (
           <MahjongTile
@@ -85,7 +85,7 @@ export const MeldDisplay: React.FC<MeldDisplayProps> = ({
     // diff === 1: 下家 -> index 2 (右边一张)
     const horizontalIdx = diff === 3 ? 0 : diff === 2 ? 1 : 2;
 
-    const fromLabel = diff === 3 ? '碰上家 (左横)' : diff === 2 ? '碰对家 (中横)' : '碰下家 (右横)';
+    const fromLabel = diff === 3 ? '碰上家 (左橫)' : diff === 2 ? '碰對家 (中橫)' : '碰下家 (右橫)';
 
     return (
       <div
@@ -117,7 +117,7 @@ export const MeldDisplay: React.FC<MeldDisplayProps> = ({
     return (
       <div
         className={`flex items-end gap-0.5 p-1 rounded-lg bg-black/40 border border-stone-800/80 shadow-md ${className}`}
-        title="明杠"
+        title="明槓"
       >
         {meld.tiles.map((t, idx) => (
           <MahjongTile
@@ -136,7 +136,7 @@ export const MeldDisplay: React.FC<MeldDisplayProps> = ({
   return (
     <div
       className={`flex items-end gap-0.5 p-1 rounded-lg bg-black/40 border border-stone-800/80 shadow-md ${className}`}
-      title="暗杠"
+      title="暗槓"
     >
       {meld.tiles.map((t, idx) => (
         <MahjongTile

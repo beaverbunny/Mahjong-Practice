@@ -108,7 +108,7 @@ export type ClaimDecision =
 
 export type Rng = () => number;
 
-const PLAYER_NAMES = ['您 (玩家)', '下家 · 速攻型 (进阶)', '对家 · 稳健型 (大师)', '上家 · 防守型 (宗师)'];
+const PLAYER_NAMES = ['您 (玩家)', '下家 · 速攻型 (進階)', '對家 · 穩健型 (大師)', '上家 · 防守型 (宗師)'];
 
 export function seatWindFor(player: number, dealer: number): Wind {
   return WINDS[(player - dealer + 4) % 4];
@@ -337,7 +337,7 @@ export function declareKong(s: TableState, p: number, candidate: KongCandidate):
     const next: TableState = {
       ...s,
       players,
-      log: [...s.log, logEntry(s, p, { action: 'gang', tile: tiles[0], meld, aiComment: '暗杠' })],
+      log: [...s.log, logEntry(s, p, { action: 'gang', tile: tiles[0], meld, aiComment: '暗槓' })],
     };
     return drawReplacement(next, p);
   }
@@ -414,7 +414,7 @@ function applyFalseWin(s: TableState, p: number): TableState {
       ...s.log,
       logEntry(s, p, {
         action: 'hu',
-        aiComment: `诈胡！手牌不符合任何番种，罚付每家 ${FALSE_WIN_PENALTY_EACH} 点，本局不得再和牌`,
+        aiComment: `詐胡！手牌不符合任何胡牌種類，罰付每家 ${FALSE_WIN_PENALTY_EACH} 點，本盤不得再胡牌`,
       }),
     ],
   };
@@ -510,7 +510,7 @@ function completeAddedKong(s: TableState, p: number, tile: Tile, meldId: string)
   const next: TableState = {
     ...s,
     players,
-    log: [...s.log, logEntry(s, p, { action: 'gang', tile, meld, aiComment: '补杠' })],
+    log: [...s.log, logEntry(s, p, { action: 'gang', tile, meld, aiComment: '補槓' })],
   };
   return drawReplacement(next, p);
 }
@@ -546,7 +546,7 @@ function endHand(
           logEntry(s, winner, {
             action: 'hu' as const,
             tile: winningTile ?? undefined,
-            aiComment: isRobbingKong ? '抢杠和！' : isSelfDraw ? '自摸！' : '和牌！',
+            aiComment: isRobbingKong ? '搶槓胡！' : isSelfDraw ? '自摸！' : '胡牌！',
           }),
         ]
       : s.log;
