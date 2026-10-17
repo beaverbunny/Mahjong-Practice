@@ -193,7 +193,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         <div className="flex flex-col items-center gap-1.5 sm:gap-2 w-28 sm:w-36 shrink-0 py-0.5">
           {seatBadge(3)}
 
-          {/* Left Bot Hand Tiles */}
+          {/* Left Bot Hand Tiles: hidden tiles seen side-on from your seat (ivory face edge + green back), 22px each so a dealer's 14 still fit */}
           {revealAllHands ? (
             <div className="flex flex-wrap gap-1 max-w-[130px] sm:max-w-[150px] justify-center max-h-80 overflow-y-auto p-1 bg-stone-950/60 rounded-lg border border-stone-800">
               {sortTiles(leftBot.hand).map((tile) => {
@@ -217,11 +217,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               })}
             </div>
           ) : (
-            <div className="flex flex-col gap-0.5 sm:gap-1 items-center py-0.5">
+            <div className="flex flex-col gap-[3px] items-center py-0.5">
               {leftBot.hand.map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1 shrink-0"
+                  className="w-10 sm:w-12 h-[22px] rounded-[2px] bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-950 border border-emerald-950 shadow-sm flex items-center justify-between px-1 shrink-0"
                   title="上家手牌"
                 >
                   <div className="w-1.5 h-full bg-[#FAF8F5] rounded-l-[1px] border-r border-stone-300" />
@@ -231,11 +231,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           )}
 
-          {/* Left Melds */}
+          {/* Left Melds: discard-size tiles, so a kong fits the side column */}
           {leftBot.melds.length > 0 && (
             <div className="flex flex-col gap-1 items-center max-w-full mt-1 shrink-0">
               {leftBot.melds.map((meld) => (
-                <MeldDisplay key={meld.id} meld={meld} playerIndex={3} size="sm" />
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={3} size="xs" />
               ))}
             </div>
           )}
@@ -350,11 +350,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               })}
             </div>
           ) : (
-            <div className="flex flex-col gap-0.5 sm:gap-1 items-center py-0.5">
+            <div className="flex flex-col gap-[3px] items-center py-0.5">
               {rightBot.hand.map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-10 sm:w-12 h-3.5 sm:h-4 rounded-[2px] bg-gradient-to-r from-emerald-950 via-emerald-700 to-emerald-800 border border-emerald-950 shadow-sm flex items-center justify-between px-1 shrink-0"
+                  className="w-10 sm:w-12 h-[22px] rounded-[2px] bg-gradient-to-r from-emerald-950 via-emerald-700 to-emerald-800 border border-emerald-950 shadow-sm flex items-center justify-between px-1 shrink-0"
                   title="下家手牌"
                 >
                   <div className="flex-1 h-1 mx-1 rounded-[1px] bg-emerald-900/40 border border-emerald-600/30" />
@@ -368,7 +368,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {rightBot.melds.length > 0 && (
             <div className="flex flex-col gap-1 items-center max-w-full mt-1 shrink-0">
               {rightBot.melds.map((meld) => (
-                <MeldDisplay key={meld.id} meld={meld} playerIndex={1} size="sm" />
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={1} size="xs" />
               ))}
             </div>
           )}

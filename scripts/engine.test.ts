@@ -15,7 +15,7 @@ import {
   declareSelfDraw,
   playersWithClaimOptions,
   checkInvariants,
-  FALSE_WIN_PENALTY_EACH,
+  FALSE_WIN_PENALTY,
 } from '../src/engine/table';
 
 // Build a table from tile type lists. Unlisted tiles go to the wall (then to discards to make room).
@@ -270,7 +270,7 @@ describe('kongs', () => {
 });
 
 describe('false wins (strict mode)', () => {
-  test('declaring a 0-fan hand on a discard costs 50 to each opponent and kills the hand', () => {
+  test('declaring a 0-fan hand on a discard costs the declarer 150, pays no one, and kills the hand', () => {
     let s = table({
       hands: [
         // 0 fan on a discard: sequences + a plain triplet
@@ -288,12 +288,8 @@ describe('false wins (strict mode)', () => {
     s = resolveClaims(s, [{ type: 'hu' }]);
     expect(s.phase).toBe('turn'); // play continues
     expect(s.players[0].isDead).toBe(true);
-    expect(s.players.map((p) => p.score)).toEqual([
-      -3 * FALSE_WIN_PENALTY_EACH,
-      FALSE_WIN_PENALTY_EACH,
-      FALSE_WIN_PENALTY_EACH,
-      FALSE_WIN_PENALTY_EACH,
-    ]);
+    expect(FALSE_WIN_PENALTY).toBe(150);
+    expect(s.players.map((p) => p.score)).toEqual([-150, 0, 0, 0]);
     expect(checkInvariants(s)).toEqual([]);
   });
 });
