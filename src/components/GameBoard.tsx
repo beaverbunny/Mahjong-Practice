@@ -231,11 +231,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           )}
 
-          {/* Left Melds */}
+          {/* Left Melds: discard-size tiles, so a kong fits the side column */}
           {leftBot.melds.length > 0 && (
             <div className="flex flex-col gap-1 items-center max-w-full mt-1 shrink-0">
               {leftBot.melds.map((meld) => (
-                <MeldDisplay key={meld.id} meld={meld} playerIndex={3} size="sm" />
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={3} size="xs" />
               ))}
             </div>
           )}
@@ -368,7 +368,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           {rightBot.melds.length > 0 && (
             <div className="flex flex-col gap-1 items-center max-w-full mt-1 shrink-0">
               {rightBot.melds.map((meld) => (
-                <MeldDisplay key={meld.id} meld={meld} playerIndex={1} size="sm" />
+                <MeldDisplay key={meld.id} meld={meld} playerIndex={1} size="xs" />
               ))}
             </div>
           )}
