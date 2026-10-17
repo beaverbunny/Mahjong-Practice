@@ -2,7 +2,7 @@
 
 This file records the decisions that shape 雀圣研习社 and the reasons behind them. Read it before changing rules, bots, layout, wording or the build. When a decision changes, update its entry and note the date and PR. Reversals stay listed, because they record what was tried and why it was dropped.
 
-PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-15.
+PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-17.
 
 ## 1. Ground rules
 
@@ -175,6 +175,7 @@ These came from the owner's East/West and 四萬/南 examples. *(#11, #13)*
 - The hand and melds are centred on the table, with seat badges beside the hands. *(#15)*
 - Action buttons (吃/碰/杠/胡/过/出牌) sit centred above the hand, over the player's own river: "keep the old way, it's okay for the overlay to cover my river." The idle "请点击选择手牌" hint was removed. *(#15)*
 - Select a tile with a tap or click; tap it again to discard.
+- 上家 and 下家's hidden hands are drawn as their tiles look from your seat, side-on, with the ivory face edge and the green back. Each tile is 22 px along the column with 3 px gaps (it was 16 px). A dealer's 14 tiles fit at every supported size with about 100 px to spare; 26 px would also fit but was not chosen. *(10-17)*
 
 **Rivers.**
 - Each river shows its full 6×4 area as a soft dashed outline, labelled "对家弃牌区" etc. until its first discard. The layout keeps its shape all hand.
