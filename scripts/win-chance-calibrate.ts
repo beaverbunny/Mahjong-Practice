@@ -6,8 +6,12 @@
  *
  *   bun scripts/win-chance-calibrate.ts [matches=300] [--write]
  *
- * --write regenerates src/ai/winChance.ts. Re-run after changing the bots or the rules, then re-fit
- * the danger model (scripts/danger-calibrate.ts), since both depend on how the bots play.
+ * --write regenerates src/ai/winChance.ts. The table in use was measured on the bots before they
+ * planned with it. Re-measuring it on bots that already use it raised the late-hand chances of
+ * hands two or more tiles from ready, so the bots stopped giving those hands up, and they got weaker
+ * (+14.9 instead of +22.7 points per match against the earlier bots; docs/decisions.md §3). So run
+ * it without --write to look, and only replace the table after a rules change, checking the new
+ * bots head-to-head first. Re-fit the danger model (scripts/danger-calibrate.ts) after any change.
  */
 import { writeFileSync } from 'node:fs';
 import {
