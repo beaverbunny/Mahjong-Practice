@@ -89,6 +89,12 @@ These apply to every change.
 - Ready on a self-draw-only hand: 16.6% → 0.6%.
 - One new bot against three old ones on identical deals: about +4 points per match. *(#9)*
 
+**Bots value unready hands by how often they really win, and read danger with the hints' model (10-21).** The owner found Master too easy and chose both fixes, for every level ("All levels").
+- **Win chances.** Bots used to guess the chance of finishing a hand from its distance to ready. Mid-hand they guessed 40% from one tile away when the real figure was about 15%, since someone else usually wins first. So they broke cheap ready hands to chase bigger ones and passed on calls that would make them ready. They now use `src/ai/winChance.ts`: how often hands that far from ready, at that many turns left, really went on to win. Their estimate for ready hands was already accurate and is unchanged.
+- **Danger.** Bots now judge each discard by the expected points lost from the danger model behind the hints (§4) instead of their own rough read from melds and discard count. The rough read overrated opponents 2–3×.
+- **Result.** One new bot against three earlier ones on identical deals scores +23.3 ± 1.7 points per match over 400 matches; the win chances give about two thirds of that. A player as strong as the earlier bots loses 18.2 ± 1.5 more per match at a table of new bots. The fairness test still passes, and a decision takes about 1 ms.
+- **Field.** A Master table now wins 15.1 of 16 hands (was 14.3), with draws in 5.6% of hands (was 10.7%). When a hand ends, 33% of the non-winners are ready (was 20%). Tournament: 15.1 wins per 16 hands, 30% by self-draw, 1.98 fan per win (60 matches each).
+
 **Difficulties are style weights plus a skill range** (`FIELDS` in `src/ai/personas.ts`):
 
 | Level | Styles (weight) | Skill |
@@ -98,7 +104,7 @@ These apply to every change.
 | 比赛实战 tournament (default) | casual 3, speed 3, balanced 2.5, value 1.5, defensive 1 | 0.35–0.95 |
 | 宗师 master | speed 3, balanced 5, value 3, defensive 1 | 0.80–1.00 |
 
-- **Tournament** imitates the real qualifier field. It was calibrated to the playbook's statistics: about 15.5 wins per 16 hands, about 28% of wins by self-draw, about 2 fan per win.
+- **Tournament** imitates the real qualifier field. It was calibrated to the playbook's statistics: about 15.5 wins per 16 hands, about 28% of wins by self-draw, about 2 fan per win. Since the 10-21 upgrade it plays at 15.1 wins, 30% self-draw and 1.98 fan per win.
 - **Master** is the toughest table. The owner practises on Master ("I only care about master difficulty from this point on").
 - **Master weights were changed in #14** (they were 3 / 4 / 3 / 2). The owner then asked to drop defensive bots entirely, and reverted that; defensive stays at weight 1.
 - To change who sits at Master, change these weights, not the hand logic.
@@ -131,6 +137,7 @@ Don't regenerate the win-chance table (`src/ai/winChance.ts`) on bots that alrea
 - At Master, a bot plays a safe tile that sets its hand back in 17% (speed) to 44% (defensive) of hands. Draws are 10.7% of hands, against the playbook's about 3%.
 - With accurate reads, folds fall by about 40% and draws to 7.2%, at no measurable change in strength. The owner preferred the current behaviour.
 - Bots play for their own expected points, never for table rank. That matches the qualifier: rule B.2.a(ii) ranks players on cumulative points across all tables. A qualifier field may still push harder than the bots, because advancing needs a score near the top, not a good average.
+- Later the same day the strength upgrade (above) replaced the rough read with the hints' model. Bots still fold in about the same share of hands (14% speed to 44% defensive at Master), but now against real threats: more of them are ready when a hand ends (33%, was 20%) and draws halved.
 
 ## 4. Strategy panel (策略助手) and danger model
 
