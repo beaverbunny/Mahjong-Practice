@@ -1,5 +1,5 @@
 /**
- * Deal-in danger read for the human player, built only from what a player at the table can see:
+ * Deal-in danger read for the human player and the bots, built only from what a player at the table can see:
  * each opponent's discards in order (and whether each came from the draw or from the hand),
  * their calls, every tile visible on the table and the viewer's own hand.
  *
@@ -10,7 +10,8 @@
  * A tile's danger is the chance it wins for at least one opponent.
  *
  * The weights in ./dangerModel.ts are fitted on simulated Master games, where the hidden hands
- * are known (scripts/danger-calibrate.ts). The bots do not use this model.
+ * are known (scripts/danger-calibrate.ts). The bots judge their own discards with it too, so the
+ * fit and the bots depend on each other: re-fit after any bot change.
  */
 import { Meld, TileType, Wind } from '../types/mahjong';
 import type { TableState } from '../engine/table';

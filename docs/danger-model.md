@@ -1,6 +1,6 @@
-# Deal-in danger model (for the human player)
+# Deal-in danger model
 
-The strategy panel's tile tags (安/中/危 with a %), its opponent reads and the post-hand **放铳风险复盘** review all come from one model: `src/analysis/danger.ts`. The bots don't use it; their play is unchanged.
+The strategy panel's tile tags (安/中/危 with a %), its opponent reads and the post-hand **放铳风险复盘** review all come from one model: `src/analysis/danger.ts`. Since 2026-10-21 the bots use the same model to judge their own discards (its expected points lost per tile), so they read the table exactly as your hints do.
 
 ## What it looks at
 
@@ -51,9 +51,10 @@ What the fit found, for these bots:
 
 ## How to re-run
 
-Re-fit after changing the features in `danger.ts`, the bots or the rules:
+Re-fit after changing the features in `danger.ts`, the bots or the rules. Because the bots use the model, a re-fit changes how they play: re-measure their win chances first, then re-fit, then update the bot fingerprint (see `docs/decisions.md` §3).
 
 ```bash
+bun scripts/win-chance-calibrate.ts 400 --write # re-measure the bots' win chances (src/ai/winChance.ts, ~5 min)
 bun scripts/danger-calibrate.ts 300 0 --write   # fit on 300 matches, rewrite dangerModel.ts (~2 min)
 bun scripts/danger-calibrate.ts 0 100           # check on 100 other matches
 bun test scripts/                               # the accuracy test must still pass
