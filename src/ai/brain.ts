@@ -2,12 +2,15 @@
  * Bot decision-making for the TVB rules.
  *
  * Bots only use information a real player at the table has: their own hand, every exposed meld,
- * every discard, the wall count and the winds. Decisions compare expected points:
+ * every discard (in order, and whether it was the tile just drawn), the wall count and the winds.
+ * Decisions compare expected points:
  *  - hand value: fan the hand can reach (speed, flush, all-pungs routes) × chance to finish it.
  *    The speed route counts the distance to a hand that can win on a discard (at least 1 fan:
  *    Common Hand, a value triplet, ...); a shape with no fan can only win by self-draw and is
- *    valued as such.
- *  - danger: chance a discard wins for an opponent × the fan their exposed melds suggest
+ *    valued as such. The chance to finish a hand that isn't ready yet is measured, not guessed
+ *    (./winChance.ts): someone else often wins first.
+ *  - danger: expected points a discard loses, from the same visible-information danger model the
+ *    human's hints use (src/analysis/danger.ts)
  * Each bot's Persona scales these (value-chasing, caution, eagerness to call, skill noise).
  */
 import { Tile, Meld, Wind, TileType } from '../types/mahjong';
@@ -23,7 +26,9 @@ import { evaluateWin } from '../utils/rulesEngine';
 import { createHypotheticalTile, meldShapes, valueTileIndices } from '../utils/strategyEngine';
 import { fanShantenFromCounts } from '../engine/fanShanten';
 import { ALL_TILE_TYPES, shantenFromCounts, tileIndex, toCounts } from '../engine/shanten';
+import { publicView, readDanger } from '../analysis/danger';
 import { Persona } from './personas';
+import { WIN_CHANCE } from './winChance';
 
 export type Rng = () => number;
 
@@ -39,14 +44,6 @@ const SUITS: ('wan' | 'tiao' | 'tong')[] = ['wan', 'tiao', 'tong'];
 // What the bot can see
 // ---------------------------------------------------------------------------
 
-interface Threat {
-  seat: number;
-  pTenpai: number; // estimated chance this opponent is waiting
-  fan: number; // fan their exposed melds suggest
-  flushSuit: number | null; // 0-2 if their melds point to a flush in that suit
-  discarded: Set<number>; // tile indices they discarded
-}
-
 interface Ctx {
   s: TableState;
   me: number;
@@ -57,7 +54,7 @@ interface Ctx {
   turnsLeft: number;
   valueWeight: number[]; // fan a triplet of each honor index is worth to me
   valueTiles: number[]; // honor indices whose triplet gives me a fan
-  threats: Threat[];
+  danger: number[]; // expected points lost by discarding each tile index I hold
 }
 
 function buildCtx(s: TableState, me: number, persona: Persona, rng: Rng): Ctx {
@@ -78,11 +75,10 @@ function buildCtx(s: TableState, me: number, persona: Persona, rng: Rng): Ctx {
   valueWeight[WIND_INDEX[pl.seatWind]] += 1;
   valueWeight[WIND_INDEX[s.prevailingWind]] += 1;
 
-  const threats: Threat[] = [];
-  for (let k = 1; k < 4; k++) {
-    const seat = (me + k) % 4;
-    threats.push(readOpponent(s, seat, persona.skill));
-  }
+  // Deal-in danger of every tile I could throw, from what I can see of each opponent
+  const danger = new Array(34).fill(0);
+  const read = readDanger(publicView(s, me), pl.hand.map((t) => t.type));
+  for (const t of Object.values(read.tiles)) danger[tileIndex(t.type)] = t.expectedLoss;
 
   return {
     s,
@@ -94,102 +90,36 @@ function buildCtx(s: TableState, me: number, persona: Persona, rng: Rng): Ctx {
     turnsLeft: s.wall.length / 4,
     valueWeight,
     valueTiles: valueTileIndices(s.prevailingWind, pl.seatWind),
-    threats,
+    danger,
   };
-}
-
-// Read an opponent's likely fan and readiness from their exposed melds and discards
-function readOpponent(s: TableState, seat: number, skill: number): Threat {
-  const pl = s.players[seat];
-  const melds = pl.melds;
-  const m = melds.length;
-  const discarded = new Set(pl.discards.map((t) => tileIndex(t.type)));
-
-  let pTenpai = [0.03, 0.12, 0.32, 0.62, 0.9][Math.min(m, 4)];
-  // Concealed hands also get ready as the hand goes on
-  pTenpai = Math.min(0.92, pTenpai + Math.max(0, pl.discards.length - 5) * 0.03);
-
-  const valueOf = (idx: number) => {
-    let v = idx >= 31 ? 1 : 0;
-    if (idx >= 27 && idx <= 30) {
-      if (idx === WIND_INDEX[pl.seatWind]) v++;
-      if (idx === WIND_INDEX[s.prevailingWind]) v++;
-    }
-    return v;
-  };
-
-  let fan = 1;
-  let honorMelds = 0;
-  const meldSuits = new Set<number>();
-  let allPungs = m >= 2;
-  for (const meld of melds) {
-    const idx = tileIndex(meld.tiles[0].type);
-    if (meld.type !== 'chi') fan += valueOf(idx);
-    else allPungs = false;
-    if (idx >= 27) honorMelds++;
-    else meldSuits.add(Math.floor(idx / 9));
-  }
-
-  let flushSuit: number | null = null;
-  // Skilled players read flushes from melds and from which suit an opponent stopped discarding
-  if (m >= 2 && meldSuits.size === 1) {
-    const suit = [...meldSuits][0];
-    const suitDiscards = pl.discards.filter((t) => tileIndex(t.type) < 27 && Math.floor(tileIndex(t.type) / 9) === suit).length;
-    const looksFlush = suitDiscards <= 1 || skill < 0.5;
-    if (looksFlush) {
-      flushSuit = suit;
-      fan += honorMelds > 0 ? 3 : 5; // half flush, or a good chance of a full flush
-    }
-  }
-  if (allPungs) fan += 2;
-
-  return { seat, pTenpai, fan: Math.min(10, fan), flushSuit, discarded };
-}
-
-// Chance that `idx` is the tile an opponent is waiting on, given they're tenpai
-function dealInChance(ctx: Ctx, idx: number, th: Threat): number {
-  const left = ctx.unseen[idx];
-  let p: number;
-  if (idx >= 27) {
-    p = [0, 0.012, 0.03, 0.05, 0.05][left];
-  } else {
-    const v = idx % 9;
-    p = v === 0 || v === 8 ? 0.04 : v === 1 || v === 7 ? 0.055 : 0.07;
-    if (left === 0) p *= 0.5; // only a sequence wait remains possible
-    // Suji: a tile 3 away that they discarded makes a two-sided wait less likely
-    const suitStart = Math.floor(idx / 9) * 9;
-    const hasSuji =
-      (v >= 3 && th.discarded.has(suitStart + v - 3)) || (v <= 5 && th.discarded.has(suitStart + v + 3));
-    if (hasSuji) p *= 0.6;
-  }
-  // No furiten in these rules, but a tile they threw is still less likely to be their wait
-  if (th.discarded.has(idx)) p *= 0.3;
-  if (th.flushSuit !== null) {
-    if (idx < 27 && Math.floor(idx / 9) === th.flushSuit) p *= 2.4;
-    else if (idx < 27) p *= 0.12;
-    else p *= 1.2;
-  }
-  return Math.min(0.5, p);
 }
 
 // Expected points lost by discarding tile `idx`
 function danger(ctx: Ctx, idx: number): number {
-  let d = 0;
-  for (const th of ctx.threats) d += th.pTenpai * dealInChance(ctx, idx, th) * 10 * th.fan;
-  return d;
+  return ctx.danger[idx];
 }
 
 // ---------------------------------------------------------------------------
 // Hand value
 // ---------------------------------------------------------------------------
 
-// Chance to finish a hand `sh` tiles from tenpai
+// More useful tiles left (tiles that bring the hand closer to ready) make it likelier to finish
+export function ukeFactor(useful: number): number {
+  return Math.min(1.3, Math.max(0.5, 0.55 + useful / 24));
+}
+
+// Chance to finish a hand `sh` tiles from tenpai: how often such hands went on to win in simulated
+// Master play at this many turns left. Late in the hand that is often nearly 0, since someone else
+// usually wins first.
 function pWin(ctx: Ctx, sh: number, useful: number): number {
   if (sh < 0) return 1;
-  const base = [0.62, 0.4, 0.24, 0.13, 0.065, 0.03, 0.012, 0.005, 0.002][Math.min(sh, 8)];
-  const ukeFactor = Math.min(1.3, Math.max(0.5, 0.55 + useful / 24));
-  const time = Math.min(1, Math.max(0, ctx.turnsLeft / (2.5 * (sh + 1))));
-  return base * ukeFactor * time;
+  const row = WIN_CHANCE[Math.min(sh, WIN_CHANCE.length - 1)];
+  const t = Math.min(row.length - 1, Math.max(0, ctx.turnsLeft));
+  const lo = Math.floor(t);
+  const measured = row[lo] + (row[Math.min(row.length - 1, lo + 1)] - row[lo]) * (t - lo);
+  const further = Math.pow(0.5, Math.max(0, sh - (WIN_CHANCE.length - 1)));
+  // Keep a sliver of value so a hand further from ready still ranks below a closer one
+  return Math.max(measured * further, 0.001 * Math.pow(0.5, sh)) * ukeFactor(useful);
 }
 
 // Weight a fan value by the persona's appetite for big hands
