@@ -151,12 +151,12 @@ Don't regenerate the win-chance table (`src/ai/winChance.ts`) on bots that alrea
 
 **The panel floats over the table and may cover 下家.** Docking it beside the table was tried in #15 and shelved: "it's okay for the strategy overlay to cover the next player."
 
-**The danger model (`src/analysis/danger.ts`) is for the human only.**
+**The danger model (`src/analysis/danger.ts`) drives the hints, and since 10-21 the bots' danger read too.**
 - It uses visible information only, including 摸切/手切.
-- It was fitted on simulated Master games, with AUC 0.871 for ranking dangerous tiles.
+- It was fitted on simulated Master games, with AUC 0.883 for ranking dangerous tiles (re-fitted 10-21 on the upgraded bots).
 - Tags: 安 under 3%, 中 3–8%, 危 8% and up.
 - It shows one number: danger. Judging the reward is left to the player ("the reward is usually very easy for me to calculate").
-- Re-fit it after any bot change. *(#8, #9)*
+- Re-fit it after any bot change; the bots use it, so update their fingerprint after the re-fit. *(#8, #9, 10-21)*
 
 **The post-hand 放铳风险复盘 always appears, whether hints were on or off.**
 - It notes for each discard whether hints were on.
