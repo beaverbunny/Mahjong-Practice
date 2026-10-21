@@ -2,7 +2,7 @@
 
 This file records the decisions that shape 雀圣研习社 and the reasons behind them. Read it before changing rules, bots, layout, wording or the build. When a decision changes, update its entry and note the date and PR. Reversals stay listed, because they record what was tried and why it was dropped.
 
-PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-17.
+PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-21.
 
 ## 1. Ground rules
 
@@ -118,6 +118,14 @@ These apply to every change.
 | Give lone value honours some value | No gain at 0.05 and 0.1; −6.8 at 0.25 | 10-06 |
 | Remove the cap of 18 on useful tiles | −4.1 and −5.0 | 10-07 |
 | Spread the difficulty levels further apart | Offered; owner chose "keep things as is" | 10-03 |
+| Fold less: accurate opponent reads, half caution, or both | No gain at Master: −1.9 ± 1.6, −1.4 ± 1.5 and −2.2 ± 1.7 per match. Tournament: −0.0 ± 1.4 and +0.4 ± 1.3. No defence at all costs −8.8 ± 1.7. Owner chose to leave bots as they are. | 10-21 |
+
+**Bots fold more than they need to, by choice (10-21).** The owner noticed many bots unready when a hand ends and suspected over-folding. What 400-match paired tests and 60-match field studies found:
+- Mostly the hand just ends early. Hands end after about 12 turns, and about 80% of non-winners aren't ready, most of them one tile away. With defence switched off the figure is about the same (17% ready, against 20%).
+- The bots overrate opponents. `readOpponent` in `src/ai/brain.ts` guesses an opponent can win on a discard 2–3× more often than they really can (with 3 melds: 62–92% guessed, 34–56% real). So danger is about 2.4× too high.
+- At Master, a bot plays a safe tile that sets its hand back in 17% (speed) to 44% (defensive) of hands. Draws are 10.7% of hands, against the playbook's about 3%.
+- With accurate reads, folds fall by about 40% and draws to 7.2%, at no measurable change in strength. The owner preferred the current behaviour.
+- Bots play for their own expected points, never for table rank. That matches the qualifier: rule B.2.a(ii) ranks players on cumulative points across all tables. A qualifier field may still push harder than the bots, because advancing needs a score near the top, not a good average.
 
 ## 4. Strategy panel (策略助手) and danger model
 
