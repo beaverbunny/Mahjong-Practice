@@ -2,7 +2,7 @@
 
 How the four Master-level bot styles (速攻 speed, 大牌 big-hand, 稳健 steady, 防守 defensive) perform against each other under the TVB rules.
 
-- **Run:** 2026-10-05, after the bots learned fan-aware hand building (commit `0f601b4`). The first run (before it, on `f89965b`) is summarized under [Changes since the first run](#changes-since-the-first-run).
+- **Run:** 2026-10-21, after the bots started planning with measured win chances and reading danger with the hints' model (commit `aaf1529`). Earlier runs are summarized under [Changes since earlier runs](#changes-since-earlier-runs).
 - **Size:** 7,200 simulated matches, 115,200 hands.
 - **Reproduce:** see [How to re-run](#how-to-re-run). Re-run after any change to `src/ai/` or `src/engine/`, since the numbers depend on the bot logic.
 
@@ -14,12 +14,12 @@ How the four Master-level bot styles (速攻 speed, 大牌 big-hand, 稳健 stea
 
 ## Summary
 
-**Ranking (strongest first): 稳健 steady ≈ 速攻 speed > 防守 defensive ≈ 大牌 big-hand.**
+**Ranking (strongest first): 稳健 steady ≈ 防守 defensive > 速攻 speed > 大牌 big-hand.**
 
-- **稳健 steady** beats big-hand clearly and defensive narrowly, and is about even with speed (each wins one of the two head-to-head line-ups by a few points).
-- **速攻 speed** wins the most hands with the cheapest wins. It beats both slow styles.
-- **防守 defensive** deals in the least, but folding costs it wins. It is about even with big-hand.
-- **大牌 big-hand** still trails steady and speed by 6–8 points per match head-to-head, but much less than before (see below): it no longer wastes hands on shapes that can only win by self-draw.
+- **稳健 steady** leads the one-of-each table, beats big-hand, and is about even with speed and with defensive head-to-head.
+- **防守 defensive** gained the most from the 10-21 upgrade. Its folds now follow real threats, so it deals in the least (2.2 per match) and still wins about as often as steady. It beats speed and big-hand head-to-head.
+- **速攻 speed** still wins the most hands with the cheapest wins and calls the most, but it also deals in the most. It beats big-hand and loses to defensive.
+- **大牌 big-hand** trails every other style by about 4–5 points per match head-to-head.
 
 The gaps are a few points per match. A single 16-hand match swings by about ±90 points from luck, so these differences show up over many matches, not in any one.
 
@@ -33,95 +33,107 @@ The gaps are a few points per match. A single 16-hand match swings by about ±90
 
 ## Results
 
-### 1. One of each style (1,200 matches; 10.8% of hands drawn)
+### 1. One of each style (1,200 matches; 6.7% of hands drawn)
 
 **Final results after 16 hands:**
 
 | Style | Avg final score | Median | 1st | 2nd | 3rd | 4th | Ended positive | Reached +50 | −50 or worse | Middle 80% of scores |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 速攻 speed | **+5.1** | 0 | **27.2%** | 26.6% | 23.3% | 22.9% | **49.2%** | **26.8%** | 23.8% | −85 to +100 |
-| 稳健 steady | +2.0 | 0 | 26.2% | 25.7% | 23.1% | 25.1% | 45.7% | 24.8% | 24.3% | −90 to +95 |
-| 大牌 big-hand | −1.9 | −10 | 26.0% | 21.2% | 24.0% | 28.7% | 42.8% | 24.2% | **28.2%** | −95 to +100 |
-| 防守 defensive | −5.2 | −10 | 20.6% | 26.5% | 29.6% | 23.3% | 42.4% | 19.0% | 25.5% | −85 to +75 |
+| 稳健 steady | **+4.9** | 0 | **26.3%** | 27.0% | 23.5% | 23.3% | **47.7%** | **26.2%** | 24.8% | −85 to +100 |
+| 防守 defensive | +1.6 | −5 | 24.9% | 26.4% | 26.9% | 21.8% | 45.9% | 24.9% | 24.8% | −85 to +95 |
+| 速攻 speed | −1.5 | −10 | 24.2% | 24.5% | 24.6% | 26.8% | 43.8% | 24.1% | 26.2% | −90 to +100 |
+| 大牌 big-hand | −5.0 | −10 | 24.6% | 22.2% | 25.0% | 28.2% | 41.9% | 22.3% | **30.9%** | −90 to +90 |
 
-An even field would finish 1st 25% of the time. Every table's four final scores sum to zero.
+An even field would finish 1st 25% of the time; tied places are split evenly. Every table's four final scores sum to zero.
 
 **Per-match play statistics:**
 
 | Rank | Style | Points/match | Wins | Deal-ins | Fan per win | Self-draw share | Calls |
 |---|---|---|---|---|---|---|---|
-| 1 | 速攻 speed | **+5.1** ±4.1 | **4.07** | 2.57 | 1.83 | 28.2% | **31.8** |
-| 2 | 稳健 steady | +2.0 ±4.1 | 3.63 | 2.62 | 1.95 | 28.9% | 23.3 |
-| 3 | 大牌 big-hand | −1.9 ±4.3 | 3.25 | 2.67 | **2.09** | 29.0% | 23.5 |
-| 4 | 防守 defensive | −5.2 ±3.7 | 3.33 | **2.37** | 1.88 | 27.4% | 20.8 |
+| 1 | 稳健 steady | **+4.9** ±4.2 | 3.85 | 2.38 | 1.92 | 34.3% | 24.2 |
+| 2 | 防守 defensive | +1.6 ±4.1 | 3.67 | **2.19** | 1.90 | 32.4% | 22.3 |
+| 3 | 速攻 speed | −1.5 ±4.3 | **4.02** | 2.73 | 1.83 | 34.9% | **32.6** |
+| 4 | 大牌 big-hand | −5.0 ±4.3 | 3.40 | 2.57 | **2.05** | 34.2% | 24.4 |
 
 **Who pays whom** (discard wins per match; row = payer, column = winner):
 
 | Payer ↓ / Winner → | 速攻 | 大牌 | 稳健 | 防守 | Total |
 |---|---|---|---|---|---|
-| 速攻 speed | – | 0.80 | 0.91 | 0.86 | 2.57 |
-| 大牌 big-hand | **1.03** | – | 0.88 | 0.77 | 2.67 |
-| 稳健 steady | 1.02 | 0.81 | – | 0.79 | 2.62 |
-| 防守 defensive | 0.87 | **0.70** | 0.79 | – | 2.37 |
+| 速攻 speed | – | 0.89 | 0.93 | 0.91 | 2.73 |
+| 大牌 big-hand | **0.99** | – | 0.80 | 0.78 | 2.57 |
+| 稳健 steady | 0.87 | 0.72 | – | 0.78 | 2.38 |
+| 防守 defensive | 0.76 | **0.62** | 0.80 | – | 2.19 |
 
 ### 2. Two against two (600 matches each; half with partners seated together, half alternating)
 
 | Line-up | Result (first style's points/match) | Draws | Verdict |
 |---|---|---|---|
-| 2 稳健 vs 2 速攻 | 稳健 +2.9 ±3.1 | 7.5% | about even (稳健 slightly) |
-| 2 稳健 vs 2 大牌 | 稳健 +8.1 ±3.3 | 11.6% | **稳健** |
-| 2 稳健 vs 2 防守 | 稳健 +3.9 ±3.3 | 12.4% | 稳健 |
-| 2 速攻 vs 2 大牌 | 速攻 +6.4 ±3.2 | 8.9% | **速攻** |
-| 2 速攻 vs 2 防守 | 速攻 +3.8 ±3.1 | 9.6% | 速攻 |
-| 2 大牌 vs 2 防守 | 大牌 −3.5 ±3.2 | 14.4% | 防守, slightly |
+| 2 稳健 vs 2 速攻 | 稳健 +1.2 ±3.4 | 4.2% | about even |
+| 2 稳健 vs 2 大牌 | 稳健 +3.6 ±3.5 | 7.5% | **稳健** |
+| 2 稳健 vs 2 防守 | 稳健 +0.2 ±3.4 | 8.4% | even |
+| 2 速攻 vs 2 大牌 | 速攻 +4.5 ±3.4 | 4.4% | **速攻** |
+| 2 速攻 vs 2 防守 | 速攻 −3.8 ±3.3 | 5.7% | **防守** |
+| 2 大牌 vs 2 防守 | 大牌 −4.9 ±3.5 | 9.0% | **防守** |
 
-Seating partners together or alternating made no reliable difference, except big-hand vs defensive (big-hand −7.6 ±4.5 alternating, +0.6 ±4.6 together).
+Seating partners together or alternating made no reliable difference: every split was within its margin of error (about ±5).
 
 ### 3. One against three (400 matches each)
 
 | Line-up | Lone player's points/match |
 |---|---|
-| 1 稳健 vs 3 大牌 | **+14.0** ±8.0 |
-| 1 稳健 vs 3 速攻 | −3.2 ±6.2 |
-| 1 稳健 vs 3 防守 | +6.2 ±6.8 |
-| 1 速攻 vs 3 稳健 | +6.5 ±6.7 |
-| 1 防守 vs 3 稳健 | −5.5 ±6.8 |
-| 1 大牌 vs 3 稳健 | **−8.1** ±6.6 |
+| 1 稳健 vs 3 大牌 | **+19.8** ±7.5 |
+| 1 稳健 vs 3 速攻 | +5.2 ±6.7 |
+| 1 稳健 vs 3 防守 | −5.0 ±7.3 |
+| 1 速攻 vs 3 稳健 | −2.9 ±7.3 |
+| 1 防守 vs 3 稳健 | −0.8 ±6.7 |
+| 1 大牌 vs 3 稳健 | −5.0 ±7.7 |
 
 ## Interactions
 
-- **Table pace depends on who's playing.** Speed players make hands finish: 2 稳健 + 2 速攻 drew only 7.5% of hands, while 2 大牌 + 2 防守 drew 14.4%.
-- **Deal-ins are spread fairly evenly** (about 0.7–1.0 per match from each style to each other). The biggest flows are big-hand and steady paying speed. Defensive pays big-hand the least.
-- **Calls:** speed calls about 2 times per hand, the others about 1.3–1.5.
+- **Table pace depends on who's playing.** Speed players make hands finish: 2 稳健 + 2 速攻 drew only 4.2% of hands, while 2 大牌 + 2 防守 drew 9.0%.
+- **Deal-ins are spread fairly evenly** (about 0.6–1.0 per match from each style to each other). The biggest flows are big-hand paying speed and speed paying steady. Defensive pays big-hand the least.
+- **Calls:** speed calls about 2 times per hand, the others about 1.4–1.5.
 
 ## How the bots build their hands
 
 Under the 1-fan minimum, a finished shape with no fan (for example chows plus a pung of a plain tile) can only win by self-draw. The bots aim for hands that can win on a discard: Common Hand (all chows, any pair), a value triplet (dragons, seat or prevailing wind), flushes or all pungs. They accept a self-draw-only shape only when it's clearly better, usually late in the hand.
 
-Where Master wins' fan comes from (200 matches, all styles similar): Common Hand about 56%, value pung about 22%, all pungs about 11%, half flush about 7%, full flush about 1.5%. Self-draw is part of about 28% of wins, but the only fan in under 1%.
+Where Master wins' fan comes from (200 matches, 3,026 wins; a win can have several): Common Hand 48%, a dragon pung 26%, a seat-wind pung 9%, a prevailing-wind pung 9%, all pungs 9%, half flush 9%, full flush 1.6%. Self-draw is part of 33% of wins.
 
-## Changes since the first run
+## Changes since earlier runs
+
+### 2026-10-21: measured win chances and the shared danger model
+
+The bots now value a hand that isn't ready by how often such hands really win, and judge danger with the model behind the hints (see `docs/decisions.md` §3). One new bot against three bots of the previous run scored +23.3 ± 1.7 points per match on identical deals (400 matches).
+
+| One of each style | 2026-10-05 run | Now |
+|---|---|---|
+| 稳健 steady | +2.0 | +4.9 |
+| 防守 defensive | −5.2 | +1.6 |
+| 速攻 speed | +5.1 | −1.5 |
+| 大牌 big-hand | −1.9 | −5.0 |
+| Hands drawn | 10.8% | 6.7% |
+
+Defensive gained the most: it still deals in the least (2.19 per match) and now wins about as often as steady (3.67 against 3.85). Speed lost its lead; it now deals in the most (2.73 per match).
+
+### 2026-10-05: fan-aware hand building
 
 The first run of this study (on `f89965b`) used bots that counted plain shape distance. They often got ready on hands that could only win by self-draw, mostly after ponging a plain tile while holding chows. Fan-aware hand building changed that:
 
-| | First run | Now |
+| | First run | 2026-10-05 run |
 |---|---|---|
 | Ready but self-draw only | 16.6% of the times a bot was ready | 0.6% |
 | Wins whose only fan is self-draw | 6.0% | 0.8% |
 | One new bot vs three old ones, same deals (2,400 matches) | | about +4 points per match |
 
-It also changed the standings. The old ranking was 稳健 steady ≈ 速攻 speed > 防守 defensive > 大牌 big-hand, with big-hand at −9.4 points per match in the one-of-each line-up. Big-hand gained the most (now −1.9), since its slow hands had been the most likely to end up with no fan.
+It also changed the standings. The old ranking was 稳健 steady ≈ 速攻 speed > 防守 defensive > 大牌 big-hand, with big-hand at −9.4 points per match in the one-of-each line-up. Big-hand gained the most (to −1.9), since its slow hands had been the most likely to end up with no fan.
 
 ## Practice notes
 
-- A Master table currently draws its styles about 33% steady, 25% speed, 25% big-hand, 17% defensive (`FIELDS.master` in `src/ai/personas.ts`). The toughest tables are mostly steady and speed.
-- Speed opponents are the ones to beat for wins: they take about 4 per match. Big-hand and steady pay them the most.
+- A Master table draws its styles about 42% steady, 25% speed, 25% big-hand and 8% defensive (`FIELDS.master` in `src/ai/personas.ts`). Most tables are steady and speed, the two styles that win the most.
+- Speed opponents still take the most wins, about 4 per match, and big-hand pays them the most. They also deal in the most.
+- Defensive opponents rarely deal in, so don't count on them to feed you; beat them on speed.
 - Against steady and speed, small edges decide matches: deal-in avoidance and taking value when the hand offers it.
-
-## Caveats
-
-- These are this app's bot versions of each style. The study shows which strategy works best under these rules and this bot model, not measured behaviour of real human players.
-- Earlier tuning showed all reasonable heuristic settings land within a few points of each other against a Master table, so style differences are real but modest.
 
 ## How to re-run
 
