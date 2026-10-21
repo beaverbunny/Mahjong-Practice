@@ -1,0 +1,12 @@
+// Measured as scripts/win-chance-calibrate.ts does, on 100 Master matches played by the bots as they
+// were before they planned with this table (commit 608210a). Do not edit by hand, and see that
+// script before regenerating: a table measured on bots that already use it made them weaker.
+// WIN_CHANCE[shanten][whole turns left]: how often a bot that far from ready went on to win the hand,
+// per unit of its useful-tile factor (ukeFactor in ./brain.ts). Row 0 is a ready hand.
+export const WIN_CHANCE = [
+  [0.035, 0.1798, 0.2971, 0.3584, 0.426, 0.4952, 0.5137, 0.5343, 0.544, 0.5658, 0.5658, 0.5867, 0.5867, 0.603, 0.613, 0.6371, 0.6371, 0.7101, 0.7434, 0.7434, 0.7434],
+  [0, 0.0024, 0.0114, 0.0309, 0.0428, 0.0616, 0.0844, 0.0999, 0.1222, 0.1434, 0.1489, 0.1674, 0.1925, 0.221, 0.2543, 0.2852, 0.3088, 0.3528, 0.391, 0.4406, 0.4406],
+  [0, 0, 0, 0, 0.0043, 0.006, 0.0086, 0.0257, 0.0285, 0.0355, 0.0506, 0.0694, 0.082, 0.0973, 0.1123, 0.1285, 0.1537, 0.1819, 0.2023, 0.2298, 0.2651],
+  [0, 0, 0, 0, 0, 0, 0, 0.0102, 0.0102, 0.0102, 0.0103, 0.0214, 0.0437, 0.0475, 0.0567, 0.0705, 0.0855, 0.1048, 0.1361, 0.1513, 0.1744],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0088, 0.023, 0.0413, 0.0413, 0.0635, 0.0641, 0.0982, 0.1257],
+];

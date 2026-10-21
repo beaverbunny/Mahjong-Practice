@@ -131,12 +131,13 @@ describe('danger model is accurate on simulated Master games', () => {
 });
 
 describe('bot play is pinned', () => {
-  test('bots play exactly the recorded games (UI, guide and danger-model changes must not move them)', () => {
+  test('bots play exactly the recorded games (UI and guide changes must not move them)', () => {
     // Fingerprints of every action in these seeded matches. Only an intentional change to the bots
-    // (src/ai/) may change them: then check it head-to-head in simulation and record the new values.
-    // Last recorded: Master field reweighted (balanced 5, defensive 1).
-    expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(2343956129);
-    expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(1175943090);
+    // (src/ai/) or to the danger model they share (src/analysis/) may change them: then check it
+    // head-to-head in simulation and record the new values.
+    // Last recorded: bots plan with measured win chances and judge danger with the shared model (10-21).
+    expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(1473937285);
+    expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(2501784777);
   }, 120_000);
 });
 

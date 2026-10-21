@@ -1,7 +1,8 @@
 /**
- * Fit and check the human-facing danger model (src/analysis/danger.ts) on simulated Master games.
+ * Fit and check the danger model (src/analysis/danger.ts) on simulated Master games. The human's
+ * hints and the bots both use it.
  *
- * Bots play full matches unchanged. Before every discard, the discarder's public view is recorded
+ * Bots play full matches as they do in the app. Before every discard, the discarder's public view is recorded
  * along with the truth that view can't see: which opponents could win on a discard and on which
  * tiles. The model is fitted on the first set of matches and checked on a separate set.
  *

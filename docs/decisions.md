@@ -2,7 +2,7 @@
 
 This file records the decisions that shape 雀圣研习社 and the reasons behind them. Read it before changing rules, bots, layout, wording or the build. When a decision changes, update its entry and note the date and PR. Reversals stay listed, because they record what was tried and why it was dropped.
 
-PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-17.
+PR numbers refer to `beaverbunny/Mahjong-Practice`. Last updated 2026-10-21.
 
 ## 1. Ground rules
 
@@ -77,17 +77,23 @@ These apply to every change.
 - The strategy guide (#4) and the bots (#9) both use it.
 
 **What bots can see.**
-- They see their own hand, every discard (who threw it and in what order), exposed melds, seat winds and the number of tiles left in the wall.
+- They see their own hand, every discard (who threw it, in what order, and whether it was the tile just drawn), exposed melds, seat winds and the number of tiles left in the wall.
 - They never see other hands, the wall's contents or order, or internal tenpai flags.
 - `scripts/fairness.test.ts` swaps every hidden tile and requires identical bot decisions. Never weaken this test. *(#2, #6)*
 
-**Bots don't read draw-vs-hand discards (摸切/手切), and they don't use the human's danger model.** Both are visible information, but the owner liked how the bots played and wanted the new reads for the human only. So the bots are, if anything, slightly less informed than a sharp human, never more. *(#8)*
+**Bots read danger with the same model as the hints, 摸切/手切 included.** In #8 the owner kept these reads for the human only, because they liked how the bots played. On 10-21 the owner found Master too easy and chose to give the bots the same reads (see the strength upgrade below). Both are visible information, so a bot still never knows more than a sharp human could. *(#8, reversed 10-21)*
 
-**How bots decide.** A bot weighs expected hand value against `caution × danger`, shaped by a persona of style plus skill. Skill adds decision noise, scales how much defence counts, and gates flush-reading. *(#3)*
+**How bots decide.** A bot weighs expected hand value against `caution × danger`, shaped by a persona of style plus skill. Skill adds decision noise and scales how much defence counts. (Until 10-21 it also gated flush-reading in the bots' own rough danger read, which the shared model replaced.) *(#3)*
 
 **Bots build hands that can win on a discard.** In the owner's words: "real players do not rely on the self-draw as their only fan … they aim for pinfu unless they have a value triplet potential." Results over 200 Master matches:
 - Ready on a self-draw-only hand: 16.6% → 0.6%.
 - One new bot against three old ones on identical deals: about +4 points per match. *(#9)*
+
+**Bots value unready hands by how often they really win, and read danger with the hints' model (10-21).** The owner found Master too easy and chose both fixes, for every level ("All levels").
+- **Win chances.** Bots used to guess the chance of finishing a hand from its distance to ready. Mid-hand they guessed 40% from one tile away when the real figure was about 15%, since someone else usually wins first. So they broke cheap ready hands to chase bigger ones and passed on calls that would make them ready. They now use `src/ai/winChance.ts`: how often hands that far from ready, at that many turns left, really went on to win. Their estimate for ready hands was already accurate and is unchanged.
+- **Danger.** Bots now judge each discard by the expected points lost from the danger model behind the hints (§4) instead of their own rough read from melds and discard count. The rough read overrated opponents 2–3×.
+- **Result.** One new bot against three earlier ones on identical deals scores +23.3 ± 1.7 points per match over 400 matches; the win chances give about two thirds of that. A player as strong as the earlier bots loses 18.2 ± 1.5 more per match at a table of new bots. The fairness test still passes, and a decision takes about 1 ms.
+- **Field.** A Master table now wins 15.1 of 16 hands (was 14.3), with draws in 5.6% of hands (was 10.7%). When a hand ends, 33% of the non-winners are ready (was 20%). Tournament: 15.1 wins per 16 hands, 30% by self-draw, 1.98 fan per win (60 matches each).
 
 **Difficulties are style weights plus a skill range** (`FIELDS` in `src/ai/personas.ts`):
 
@@ -98,16 +104,18 @@ These apply to every change.
 | 比赛实战 tournament (default) | casual 3, speed 3, balanced 2.5, value 1.5, defensive 1 | 0.35–0.95 |
 | 宗师 master | speed 3, balanced 5, value 3, defensive 1 | 0.80–1.00 |
 
-- **Tournament** imitates the real qualifier field. It was calibrated to the playbook's statistics: about 15.5 wins per 16 hands, about 28% of wins by self-draw, about 2 fan per win.
+- **Tournament** imitates the real qualifier field. It was calibrated to the playbook's statistics: about 15.5 wins per 16 hands, about 28% of wins by self-draw, about 2 fan per win. Since the 10-21 upgrade it plays at 15.1 wins, 30% self-draw and 1.98 fan per win.
 - **Master** is the toughest table. The owner practises on Master ("I only care about master difficulty from this point on").
 - **Master weights were changed in #14** (they were 3 / 4 / 3 / 2). The owner then asked to drop defensive bots entirely, and reverted that; defensive stays at weight 1.
 - To change who sits at Master, change these weights, not the hand logic.
 - **Bot names show seat, style and rank during play** (e.g. 下家 · 速攻型 (大师)). The owner chose this over hiding styles until the match ends, and the difficulty screen says so (名牌显示对手风格). *(10-15)*
 
 **Bot behaviour is pinned by a fingerprint test** in `scripts/danger.test.ts`. Any intended bot change must:
-- update the fingerprint;
-- re-run the style study (`docs/master-style-study.md`);
-- re-fit the danger model (`docs/danger-model.md`).
+- re-fit the danger model (`docs/danger-model.md`). The bots use it, so a re-fit changes them too. Re-fitting it on the upgraded bots cost no strength (+22.7 against +23.2 without the re-fit, ±2.4);
+- update the fingerprint after the re-fit;
+- re-run the style study (`docs/master-style-study.md`).
+
+Don't regenerate the win-chance table (`src/ai/winChance.ts`) on bots that already use it; that made them weaker (see the ideas table). Replace it only after a rules change, and test the new bots head-to-head first.
 
 **Bot ideas tried and rejected.** Measured on identical deals; don't retry them without a new idea.
 
@@ -118,6 +126,18 @@ These apply to every change.
 | Give lone value honours some value | No gain at 0.05 and 0.1; −6.8 at 0.25 | 10-06 |
 | Remove the cap of 18 on useful tiles | −4.1 and −5.0 | 10-07 |
 | Spread the difficulty levels further apart | Offered; owner chose "keep things as is" | 10-03 |
+| Fold less: accurate opponent reads, half caution, or both | No gain at Master: −1.9 ± 1.6, −1.4 ± 1.5 and −2.2 ± 1.7 per match. Tournament: −0.0 ± 1.4 and +0.4 ± 1.3. No defence at all costs −8.8 ± 1.7. Owner chose to leave bots as they are. | 10-21 |
+| Noise-free play (skill 1, never careless) | −0.4 ± 1.7: no gain | 10-21 |
+| Weight the shared danger model more or less (0.75–2×, with measured win chances) | +20.1 to +22.5: no gain over 1× | 10-21 |
+| Re-measure the win-chance table on the bots that use it | +14.9 ± 2.3, against +22.7 ± 2.4 for the table measured on the earlier bots. It gave hands two or more tiles from ready a little late-hand value, so bots stopped giving them up. Scaling the earlier table 0.6–1.25× made no difference. | 10-21 |
+
+**Bots fold more than they need to, by choice (10-21).** The owner noticed many bots unready when a hand ends and suspected over-folding. What 400-match paired tests and 60-match field studies found:
+- Mostly the hand just ends early. Hands end after about 12 turns, and about 80% of non-winners aren't ready, most of them one tile away. With defence switched off the figure is about the same (17% ready, against 20%).
+- The bots overrate opponents. `readOpponent` in `src/ai/brain.ts` guesses an opponent can win on a discard 2–3× more often than they really can (with 3 melds: 62–92% guessed, 34–56% real). So danger is about 2.4× too high.
+- At Master, a bot plays a safe tile that sets its hand back in 17% (speed) to 44% (defensive) of hands. Draws are 10.7% of hands, against the playbook's about 3%.
+- With accurate reads, folds fall by about 40% and draws to 7.2%, at no measurable change in strength. The owner preferred the current behaviour.
+- Bots play for their own expected points, never for table rank. That matches the qualifier: rule B.2.a(ii) ranks players on cumulative points across all tables. A qualifier field may still push harder than the bots, because advancing needs a score near the top, not a good average.
+- Later the same day the strength upgrade (above) replaced the rough read with the hints' model. Bots still fold in about the same share of hands (14% speed to 44% defensive at Master), but now against real threats: more of them are ready when a hand ends (33%, was 20%) and draws halved.
 
 ## 4. Strategy panel (策略助手) and danger model
 
@@ -131,12 +151,12 @@ These apply to every change.
 
 **The panel floats over the table and may cover 下家.** Docking it beside the table was tried in #15 and shelved: "it's okay for the strategy overlay to cover the next player."
 
-**The danger model (`src/analysis/danger.ts`) is for the human only.**
+**The danger model (`src/analysis/danger.ts`) drives the hints, and since 10-21 the bots' danger read too.**
 - It uses visible information only, including 摸切/手切.
-- It was fitted on simulated Master games, with AUC 0.871 for ranking dangerous tiles.
+- It was fitted on simulated Master games, with AUC 0.883 for ranking dangerous tiles (re-fitted 10-21 on the upgraded bots).
 - Tags: 安 under 3%, 中 3–8%, 危 8% and up.
 - It shows one number: danger. Judging the reward is left to the player ("the reward is usually very easy for me to calculate").
-- Re-fit it after any bot change. *(#8, #9)*
+- Re-fit it after any bot change; the bots use it, so update their fingerprint after the re-fit. *(#8, #9, 10-21)*
 
 **The post-hand 放铳风险复盘 always appears, whether hints were on or off.**
 - It notes for each discard whether hints were on.
