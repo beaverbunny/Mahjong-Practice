@@ -77,13 +77,13 @@ These apply to every change.
 - The strategy guide (#4) and the bots (#9) both use it.
 
 **What bots can see.**
-- They see their own hand, every discard (who threw it and in what order), exposed melds, seat winds and the number of tiles left in the wall.
+- They see their own hand, every discard (who threw it, in what order, and whether it was the tile just drawn), exposed melds, seat winds and the number of tiles left in the wall.
 - They never see other hands, the wall's contents or order, or internal tenpai flags.
 - `scripts/fairness.test.ts` swaps every hidden tile and requires identical bot decisions. Never weaken this test. *(#2, #6)*
 
-**Bots don't read draw-vs-hand discards (摸切/手切), and they don't use the human's danger model.** Both are visible information, but the owner liked how the bots played and wanted the new reads for the human only. So the bots are, if anything, slightly less informed than a sharp human, never more. *(#8)*
+**Bots read danger with the same model as the hints, 摸切/手切 included.** In #8 the owner kept these reads for the human only, because they liked how the bots played. On 10-21 the owner found Master too easy and chose to give the bots the same reads (see the strength upgrade below). Both are visible information, so a bot still never knows more than a sharp human could. *(#8, reversed 10-21)*
 
-**How bots decide.** A bot weighs expected hand value against `caution × danger`, shaped by a persona of style plus skill. Skill adds decision noise, scales how much defence counts, and gates flush-reading. *(#3)*
+**How bots decide.** A bot weighs expected hand value against `caution × danger`, shaped by a persona of style plus skill. Skill adds decision noise and scales how much defence counts. (Until 10-21 it also gated flush-reading in the bots' own rough danger read, which the shared model replaced.) *(#3)*
 
 **Bots build hands that can win on a discard.** In the owner's words: "real players do not rely on the self-draw as their only fan … they aim for pinfu unless they have a value triplet potential." Results over 200 Master matches:
 - Ready on a self-draw-only hand: 16.6% → 0.6%.
@@ -105,9 +105,11 @@ These apply to every change.
 - **Bot names show seat, style and rank during play** (e.g. 下家 · 速攻型 (大师)). The owner chose this over hiding styles until the match ends, and the difficulty screen says so (名牌显示对手风格). *(10-15)*
 
 **Bot behaviour is pinned by a fingerprint test** in `scripts/danger.test.ts`. Any intended bot change must:
-- update the fingerprint;
-- re-run the style study (`docs/master-style-study.md`);
-- re-fit the danger model (`docs/danger-model.md`).
+- re-fit the danger model (`docs/danger-model.md`). The bots use it, so a re-fit changes them too. Re-fitting it on the upgraded bots cost no strength (+22.7 against +23.2 without the re-fit, ±2.4);
+- update the fingerprint after the re-fit;
+- re-run the style study (`docs/master-style-study.md`).
+
+Don't regenerate the win-chance table (`src/ai/winChance.ts`) on bots that already use it; that made them weaker (see the ideas table). Replace it only after a rules change, and test the new bots head-to-head first.
 
 **Bot ideas tried and rejected.** Measured on identical deals; don't retry them without a new idea.
 
@@ -119,6 +121,9 @@ These apply to every change.
 | Remove the cap of 18 on useful tiles | −4.1 and −5.0 | 10-07 |
 | Spread the difficulty levels further apart | Offered; owner chose "keep things as is" | 10-03 |
 | Fold less: accurate opponent reads, half caution, or both | No gain at Master: −1.9 ± 1.6, −1.4 ± 1.5 and −2.2 ± 1.7 per match. Tournament: −0.0 ± 1.4 and +0.4 ± 1.3. No defence at all costs −8.8 ± 1.7. Owner chose to leave bots as they are. | 10-21 |
+| Noise-free play (skill 1, never careless) | −0.4 ± 1.7: no gain | 10-21 |
+| Weight the shared danger model more or less (0.75–2×, with measured win chances) | +20.1 to +22.5: no gain over 1× | 10-21 |
+| Re-measure the win-chance table on the bots that use it | +14.9 ± 2.3, against +22.7 ± 2.4 for the table measured on the earlier bots. It gave hands two or more tiles from ready a little late-hand value, so bots stopped giving them up. Scaling the earlier table 0.6–1.25× made no difference. | 10-21 |
 
 **Bots fold more than they need to, by choice (10-21).** The owner noticed many bots unready when a hand ends and suspected over-folding. What 400-match paired tests and 60-match field studies found:
 - Mostly the hand just ends early. Hands end after about 12 turns, and about 80% of non-winners aren't ready, most of them one tile away. With defence switched off the figure is about the same (17% ready, against 20%).

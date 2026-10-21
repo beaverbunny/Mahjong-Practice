@@ -56,7 +56,7 @@ export const DifficultyModal: React.FC<DifficultyModalProps> = ({
       id: 'master',
       title: '雀圣宗师 (Master / 高级)',
       subTitle: '高手牌桌 · 精准出牌与读牌防守',
-      desc: '对手均为高水平：精确计算进张与番数，积极做大牌，按对手吃碰推算危险度防守，几乎没有失误。',
+      desc: '对手均为高水平：精确计算进张、番数与胡牌机会，积极做大牌，按对手吃碰、舍牌与是否摸到就打推算危险度防守，几乎没有失误。',
       features: ['精确进张', '积极做番', '读牌防守'],
       tag: '高难挑战',
     },
