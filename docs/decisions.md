@@ -101,10 +101,14 @@ These apply to every change.
 |---|---|---|
 | 入门 beginner | casual 5, speed 2, balanced 1 | 0.15–0.45 |
 | 进阶 intermediate | casual 2, speed 3, balanced 3, value 2, defensive 1 | 0.40–0.75 |
-| 比赛实战 tournament (default) | casual 3, speed 3, balanced 2.5, value 1.5, defensive 1 | 0.35–0.95 |
+| 比赛实战 tournament (default) | speed 1, balanced 4, value 4 | 0.60–1.00 |
 | 宗师 master | speed 3, balanced 5, value 3, defensive 1 | 0.80–1.00 |
 
-- **Tournament** imitates the real qualifier field. It was calibrated to the playbook's statistics: about 15.5 wins per 16 hands, about 28% of wins by self-draw, about 2 fan per win. Since the 10-21 upgrade it plays at 15.1 wins, 30% self-draw and 1.98 fan per win.
+- **Tournament** is the owner's read of the real field after playing a tournament: mostly strong players, half big-hand (value) and half steady (balanced), with speed at weight 1. *(10-28)*
+  - It used to imitate the playbook's qualifier statistics with a mixed field: casual 3, speed 3, balanced 2.5, value 1.5, defensive 1, skill 0.35–0.95.
+  - Measured over 1,000 matches each, before → after: 15.3 → 15.0 wins per 16 hands, draws 4.5% → 6.5%, self-draw share 31% → 33%, fan per win 1.97 → 2.03, wins of 3+ fan 23.4% → 24.6%.
+  - A Master-level bot seated at the table averages +13.4 → +0.9 points per match (± 2.6, 1,000 matches each). At a Master table it averages 0 by construction, so tournament is now about as hard as Master.
+  - Big-hand bots win slightly bigger hands than steady ones (2.12 against 2.00 fan) but less often (3.5 against 3.9 wins per 16 hands), and finish −5.4 per match against +5.8. So the table chases big hands more, but the hands that win get only a little bigger.
 - **Master** is the toughest table. The owner practises on Master ("I only care about master difficulty from this point on").
 - **Master weights were changed in #14** (they were 3 / 4 / 3 / 2). The owner then asked to drop defensive bots entirely, and reverted that; defensive stays at weight 1.
 - To change who sits at Master, change these weights, not the hand logic.
