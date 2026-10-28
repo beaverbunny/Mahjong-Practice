@@ -119,7 +119,7 @@ export default function App() {
     }
   });
 
-  // AI field: 'tournament' mimics a real qualifying field
+  // AI field: 'tournament' (default) is mostly strong big-hand and steady players
   const [difficulty, setDifficulty] = React.useState<DifficultyLevel>(() => {
     try {
       const saved = localStorage.getItem('mahjong_ai_difficulty_v2');

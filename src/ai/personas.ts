@@ -49,7 +49,8 @@ const STYLE_SPECS: Record<PlayStyle, StyleSpec> = {
   casual: { valueBias: [0.7, 1.3], caution: [0.05, 0.25], callThreshold: [-0.5, -0.1], recklessness: [0.2, 0.45] },
 };
 
-// Style weights and skill range per difficulty. 'tournament' mimics a real qualifying field.
+// Style weights and skill range per difficulty. 'tournament' is the owner's read of the real
+// field: mostly strong players, split evenly between big-hand and steady play.
 const FIELDS: Record<DifficultyLevel, { styles: [PlayStyle, number][]; skill: Range }> = {
   beginner: { styles: [['casual', 5], ['speed', 2], ['balanced', 1]], skill: [0.15, 0.45] },
   intermediate: {
@@ -57,10 +58,7 @@ const FIELDS: Record<DifficultyLevel, { styles: [PlayStyle, number][]; skill: Ra
     skill: [0.4, 0.75],
   },
   master: { styles: [['speed', 3], ['balanced', 5], ['value', 3], ['defensive', 1]], skill: [0.8, 1.0] },
-  tournament: {
-    styles: [['casual', 3], ['speed', 3], ['balanced', 2.5], ['value', 1.5], ['defensive', 1]],
-    skill: [0.35, 0.95],
-  },
+  tournament: { styles: [['speed', 1], ['balanced', 4], ['value', 4]], skill: [0.6, 1.0] },
 };
 
 function pick<T>(items: [T, number][], rng: () => number): T {
