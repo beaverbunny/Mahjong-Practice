@@ -136,8 +136,9 @@ describe('bot play is pinned', () => {
     // (src/ai/) or to the danger model they share (src/analysis/) may change them: then check it
     // head-to-head in simulation and record the new values.
     // Last recorded: bots plan with measured win chances and judge danger with the shared model (10-21).
+    // Tournament re-recorded for its new field (10-28); the bots themselves did not change.
     expect(runMatches(2, 'master', 21, { quiet: true }).fingerprint).toBe(1473937285);
-    expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(2501784777);
+    expect(runMatches(1, 'tournament', 22, { quiet: true }).fingerprint).toBe(3013357483);
   }, 120_000);
 });
 
